@@ -39,4 +39,11 @@ jobs:
       # one: a SCRIPT ERROR inside a test is a failed test, not a line of
       # output someone has to notice.
       - name: Run the suites
+        timeout-minutes: 6
         run: ./test/run.sh
+
+      # run.sh redirects rather than pipes, so a run that dies leaves its only
+      # account of itself in the log and the step output says nothing useful.
+      - name: Show the log on failure
+        if: failure()
+        run: tail -80 /tmp/bug-garden-tests/gut.txt

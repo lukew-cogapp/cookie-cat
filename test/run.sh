@@ -30,7 +30,10 @@ SELECT="${1:-}"
 OUT="${TMPDIR:-/tmp}/bug-garden-tests"
 mkdir -p "$OUT"
 log="$OUT/gut.txt"
-LIMIT=600
+# The whole run, not one suite. It was 600, which is GitHub's own patience for
+# the step: a run that overran reported `NO RESULT` and told you nothing about
+# which suite was slow. 240 fails sooner and leaves the log readable.
+LIMIT=240
 
 # GUT skips a script that does not extend GutTest: it warns and exits 0, so a
 # suite written in the old `extends SceneTree` style never runs and never
@@ -43,7 +46,10 @@ if [ -n "$stray" ]; then
     exit 1
 fi
 
-args=(-gdir=res://test -ginclude_subdirs -gprefix= -gsuffix=_test.gd -gexit)
+# No -ginclude_subdirs. Every suite lives directly in test/, and the only
+# subdirectory is test/shots, which is 5MB of PNGs that GUT walked on every run
+# for nothing.
+args=(-gdir=res://test -gprefix= -gsuffix=_test.gd -gexit)
 [ -n "$SELECT" ] && args+=("-gselect=$SELECT")
 
 # There is no `timeout` binary on macOS, hence perl. Redirect rather than pipe,

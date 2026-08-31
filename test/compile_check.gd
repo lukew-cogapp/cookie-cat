@@ -16,20 +16,30 @@ const DIRS := [
 ]
 
 ## `reload()` fails on a script that is already running as an autoload, whether
-## or not it compiles, so these are checked by loading alone. The engine has
-## already compiled them by the time this runs: a real error in one of them
-## fails the boot, which is louder than this check.
-const AUTOLOADS := [
-	"res://scripts/save_state.gd",
-	"res://scripts/audio.gd",
-	"res://scripts/run_state.gd",
-]
+## or not it compiles, so those are checked by loading alone. The engine has
+## already compiled them by the time this runs: a real error in one fails the
+## boot, which is louder than this check.
+##
+## Read from the project rather than listed here, or the list goes stale the
+## next time an autoload is added and the new one reports as broken.
+func _autoloads() -> Array[String]:
+	var out: Array[String] = []
+	for key: String in ProjectSettings.get_property_list().map(
+		func(p: Dictionary) -> String: return String(p["name"])
+	):
+		if not key.begins_with("autoload/"):
+			continue
+		var path := String(ProjectSettings.get_setting(key))
+		# The leading "*" marks a node autoload; the path is the rest.
+		out.append(path.trim_prefix("*"))
+	return out
 
 
 func _init() -> void:
 	await process_frame
 	var loaded := 0
 	var failed: Array[String] = []
+	var autoloads := _autoloads()
 	for dir in DIRS:
 		var d := DirAccess.open(dir)
 		if d == null:
@@ -49,7 +59,7 @@ func _init() -> void:
 			var res := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
 			if res == null:
 				failed.append(path)
-			elif res is GDScript and not path in AUTOLOADS:
+			elif res is GDScript and not path in autoloads:
 				if (res as GDScript).reload() != OK:
 					failed.append(path)
 				else:
