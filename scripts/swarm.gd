@@ -39,6 +39,11 @@ var slow_by: Array[float] = []
 var gait: Array[float] = []
 ## Seconds until a dung beetle's next lob. Meaningless on other kinds.
 var aim: Array[float] = []
+## A permanent walk multiplier per row, 1.0 for anything spawned normally. The
+## director sets it above 1.0 for a rush, and it multiplies the kind's listed
+## speed rather than replacing it, so the no-bug-outruns-the-cat rule is one
+## check on the product and not one per spawner.
+var hurry: Array[float] = []
 
 ## Poop balls in flight, pooled like the rows above. The dung beetle is the
 ## first enemy that hurts the cat without touching it, so its shots live here
@@ -138,13 +143,14 @@ func _grow(to: int) -> void:
 	slow_by.resize(to)
 	gait.resize(to)
 	aim.resize(to)
+	hurry.resize(to)
 
 
 func set_player(p: Node2D) -> void:
 	_player = p
 
 
-func spawn(at: Vector2, of_kind: int) -> void:
+func spawn(at: Vector2, of_kind: int, at_pace := 1.0) -> void:
 	if alive >= Tuning.ENEMY_MAX:
 		return
 	var i := alive
@@ -161,6 +167,7 @@ func spawn(at: Vector2, of_kind: int) -> void:
 	slow_by[i] = 1.0
 	gait[i] = _rng.randf() * Tuning.SPIDER_SCUTTLE_CYCLE
 	aim[i] = Tuning.DUNG_FIRE_COOLDOWN
+	hurry[i] = at_pace
 
 
 func _physics_process(delta: float) -> void:
@@ -177,7 +184,7 @@ func _physics_process(delta: float) -> void:
 		if d * d > cull:
 			_dead.append(i)
 			continue
-		var speed := Tuning.enemy_speed(k)
+		var speed := Tuning.enemy_speed(k) * hurry[i]
 		# The two flavoured walkers. The spider advances in bursts; the dung
 		# beetle stands off and lobs. Both still obey knockback and slows.
 		if k == Kind.SPIDER:
@@ -440,6 +447,7 @@ func _compact() -> void:
 			slow_by[i] = slow_by[alive]
 			gait[i] = gait[alive]
 			aim[i] = aim[alive]
+			hurry[i] = hurry[alive]
 	_dead.clear()
 
 

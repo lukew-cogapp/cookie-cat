@@ -494,6 +494,57 @@ const SPAWN_REFILL_RATE := 3.0
 ## Minutes at which one Big Bug arrives. Each drops a present.
 const BOSS_MINUTES := [4, 7, 9]
 
+# --- Rushes ---
+## A pack of the weakest bug, arriving from one side at a hurry, so the child
+## has something to run away from that is not a boss and not the steady drip of
+## the wave table.
+##
+## Nothing rushes for the first three minutes, and every other number here is
+## read off the clock: a rush is a wave-table entry in all but name, and no part
+## of it looks at how well the player is doing or what level they have reached.
+## Three minutes is two full waves of learning to walk away from a grub before
+## the first pack asks for it.
+const RUSH_AFTER := 180.0
+## The kind a rush is made of. The weakest bug in the table, because the whole
+## threat of a rush is the shape it arrives in.
+const RUSH_KIND := 0
+## The gap between rushes, rolled between these. Random rather than a fixed
+## period: a pack on a timer is a metronome a child learns to stand still for.
+const RUSH_GAP_MIN := 22.0
+const RUSH_GAP_MAX := 38.0
+## How many arrive, at the first minute a rush can happen and at the last. The
+## clock interpolates between them, the same input the wave table uses.
+const RUSH_COUNT_MIN := 8
+const RUSH_COUNT_MAX := 20
+## How much of the ring the pack is spread over, in radians. Narrow, because a
+## pack sprinkled all round is the normal spawn pattern and reads as a wave, not
+## a charge: at a third of a turn it arrives as one crowd with three quarters of
+## the compass left to run into.
+const RUSH_ARC := TAU / 3.0
+## A little depth, so the pack reads as a group with a front and a back rather
+## than as beads threaded on the spawn ring.
+const RUSH_RING_JITTER := 40.0
+## What the hurry multiplies a rusher's walk by. Faster than its own kind and
+## still under the cat: a grub at 46 comes in at 69, which leaves 49 of headroom
+## against PLAYER_SPEED and stays under a wasp's 104, so `STICK_WALK_FLOOR` is
+## still floored above the fastest bug in the game.
+const RUSH_HURRY := 1.5
+## The same warning the boss gets. A pack of quick bugs is the second thing in
+## the game that can end a run in a few seconds, so it is announced at the spot
+## it will come from and a child gets to be somewhere else.
+const RUSH_TELEGRAPH_TIME := 1.3
+const RUSH_RING_COUNT := 8
+const RUSH_RING_RADIUS := 26.0
+const RUSH_RING_SPEED := 70.0
+
+
+## How many bugs a rush holds at clock `t`. Linear across the run, so the pack
+## grows for the same reason everything else does.
+func rush_count(t: float) -> int:
+	var f := clampf(t / RUN_SECONDS, 0.0, 1.0)
+	return int(round(lerpf(float(RUSH_COUNT_MIN), float(RUSH_COUNT_MAX), f)))
+
+
 # --- Pickups ---
 const GEM_MAX := 300
 ## Pickups, keyed by name. `GEM_ORDER` is what fixes them to the indices in

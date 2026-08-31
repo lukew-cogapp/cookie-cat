@@ -18,12 +18,20 @@ var _bosses_done: Array[int] = []
 ## never surprise-bitten by the biggest bug in the game.
 var _boss_pos := Vector2.ZERO
 var _boss_in := -1.0
+## Seconds until the next rush, and where the pending one will come from.
+## `_rush_in` negative means none pending, the same shape as the boss above:
+## a pack of quick bugs is announced before it exists for the same reason the
+## boss is.
+var _rush_next := 0.0
+var _rush_from := Vector2.ZERO
+var _rush_in := -1.0
 ## Fractional spawns owed by the quota top-up, so its rate is independent of
 ## the frame rate.
 var _refill_credit := 0.0
 var _rng := RandomNumberGenerator.new()
 
 signal boss_arrived(at: Vector2)
+signal rush_arrived(at: Vector2)
 
 
 func setup(swarm: Swarm, player: Node2D) -> void:
@@ -33,6 +41,8 @@ func setup(swarm: Swarm, player: Node2D) -> void:
 	_bosses_done.clear()
 	_next_spawn = 0.0
 	_boss_in = -1.0
+	_rush_in = -1.0
+	_rush_next = Tuning.RUSH_AFTER + _roll_rush_gap()
 	_refill_credit = 0.0
 
 
@@ -45,6 +55,7 @@ func _physics_process(delta: float) -> void:
 		_boss_in -= delta
 		if _boss_in < 0.0:
 			_swarm.spawn(_boss_pos, Swarm.Kind.BIG)
+	_check_rush(delta)
 	# Top up towards the quota, but at a limited rate. The quota is what fills
 	# the screen; unthrottled it also refills every kill in the same frame, so
 	# clearing a crowd changed nothing and the pressure only ever rose. A probe
@@ -74,6 +85,37 @@ func _spawn_one(wave: Dictionary) -> void:
 func _ring_point() -> Vector2:
 	var a := _rng.randf() * TAU
 	return _player.global_position + Vector2.from_angle(a) * Tuning.SPAWN_RING
+
+
+## Rushes are on a rolled countdown from the clock alone. Nothing here reads
+## the player's level or how the run is going.
+func _check_rush(delta: float) -> void:
+	if _rush_in >= 0.0:
+		_rush_in -= delta
+		if _rush_in < 0.0:
+			_spawn_rush()
+		return
+	if Run.clock < Tuning.RUSH_AFTER or Run.clock < _rush_next:
+		return
+	_rush_next = Run.clock + _roll_rush_gap()
+	_rush_from = _ring_point()
+	_rush_in = Tuning.RUSH_TELEGRAPH_TIME
+	rush_arrived.emit(_rush_from)
+
+
+func _roll_rush_gap() -> float:
+	return _rng.randf_range(Tuning.RUSH_GAP_MIN, Tuning.RUSH_GAP_MAX)
+
+
+## The pack, spread over one arc of the ring around the announced spot, so it
+## arrives as a crowd from one side with the rest of the compass to run into.
+func _spawn_rush() -> void:
+	var from := (_rush_from - _player.global_position).angle()
+	for _n in Tuning.rush_count(Run.clock):
+		var a := from + _rng.randf_range(-Tuning.RUSH_ARC, Tuning.RUSH_ARC) * 0.5
+		var r := Tuning.SPAWN_RING + _rng.randf_range(0.0, Tuning.RUSH_RING_JITTER)
+		var at := _player.global_position + Vector2.from_angle(a) * r
+		_swarm.spawn(at, Tuning.RUSH_KIND, Tuning.RUSH_HURRY)
 
 
 func _check_boss() -> void:

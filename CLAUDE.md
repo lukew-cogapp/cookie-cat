@@ -293,6 +293,13 @@ often, and how many must be alive. The quota is what fills the screen; the
 interval only decides how lumpy the filling looks. Kinds arrive on a schedule,
 so minute 0 is grubs and minute 9 is all five plus bosses at 4, 7 and 9.
 
+Rushes ride on the same clock. Past `RUSH_AFTER` the director rolls a gap
+between `RUSH_GAP_MIN` and `RUSH_GAP_MAX` and sends a pack of the weakest bug in
+from one arc of the spawn ring, at `RUSH_HURRY` times its listed speed and
+announced `RUSH_TELEGRAPH_TIME` ahead like a boss. The hurry is a per-row
+`Swarm.hurry` multiplier, not a second entry in the enemy table, so the
+no-bug-outruns-the-cat rule is one check on the product.
+
 Enemy HP scales with the clock at spawn and is fixed thereafter, which is why
 `enemy_hp` takes the clock. It does **not** scale with player level: a child who
 levels fast should feel stronger, not meet tougher bugs.

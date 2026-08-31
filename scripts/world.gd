@@ -44,6 +44,7 @@ func _ready() -> void:
 	_weapons.killed.connect(_on_killed)
 	_gems.collected.connect(_on_collected)
 	_director.boss_arrived.connect(_on_boss)
+	_director.rush_arrived.connect(_on_rush)
 	_player.health_changed.connect(_hud.set_health)
 	_player.health_changed.connect(_on_health)
 	Run.consumed.connect(_on_consumed)
@@ -222,6 +223,21 @@ func _on_boss(at: Vector2) -> void:
 		Tuning.BOSS_RING_SPEED
 	)
 	_shake = Tuning.SHAKE_TIME
+
+
+## The pack's warning: the same poof ring as the boss, at the side it will come
+## from. No shake, so the biggest bug in the game still announces itself louder.
+func _on_rush(at: Vector2) -> void:
+	_hud.flash("Lots of them!")
+	Audio.play("boss")
+	_puffs.ring(
+		at,
+		Puffs.Kind.POOF,
+		Tuning.RUSH_RING_COUNT,
+		Tuning.PUFF_WHITE,
+		Tuning.RUSH_RING_RADIUS,
+		Tuning.RUSH_RING_SPEED
+	)
 
 
 func _on_died() -> void:
