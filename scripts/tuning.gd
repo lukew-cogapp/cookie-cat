@@ -29,7 +29,7 @@ const PROP_REFILL_DISTANCE := 1100.0
 const ZOOM := 2.5
 
 # --- Player ---
-## A bar, not hearts. Hearts could only show five states, so a grub and a boss
+## A bar, not a row of hearts. Hearts could only show five states, so a grub and a boss
 ## both took exactly one however hard they hit; with a bar the difference is
 ## visible. 100 so the numbers below read as percentages.
 const PLAYER_MAX_HP := 100.0
@@ -42,11 +42,11 @@ const PLAYER_RADIUS := 15.0
 ## and hard to find in a crowd.
 const PLAYER_DRAW_SIZE := 30.0
 ## A long blink after a hit. Standing in a crowd otherwise costs all three
-## hearts in a second, which teaches nothing.
+## of the bar in a second, which teaches nothing.
 const PLAYER_MERCY_TIME := 1.6
 ## A hit also shoves every bug off the cat. Mercy time alone is not enough:
-## a cat standing in a crowd loses the next heart the frame mercy ends, which
-## measured as all three hearts in 3.7 seconds. Clearing space is what gives a
+## a cat standing in a crowd takes the next hit the frame mercy ends, which
+## measured as the whole bar in 3.7 seconds. Clearing space is what gives a
 ## child the chance to walk out.
 const PLAYER_HIT_PUSH_RADIUS := 100.0
 const PLAYER_HIT_PUSH := 200.0
@@ -546,9 +546,14 @@ const HIT_FLASH_TIME := 0.08
 ## The quiet gap after a flash before another may start. Longer than the flash,
 ## or a thing under continuous damage is white more often than not.
 const HIT_FLASH_GAP := 0.22
-## Bugs are drawn white-tinted for this long after a hit. The art carries the
-## colour now, so a hit replaces it rather than blending towards white.
-const HIT_FLASH_COLOUR := Color(3.0, 3.0, 3.0)
+## What a hit tints a bug to. Amber, not white, and the blue channel is crushed
+## rather than raised: a flat white flash was 5 dE from the arctic's snow and 27
+## from the beach's sand, so on a pale map the child could not see their toy
+## working, and multiplying every channel up washed the dark outline out to
+## grey. Crushing blue clips the body to saturated amber and holds the outline
+## dark, which is the rim that keeps a pale bug readable on pale ground.
+## `test_the_hit_flash_reads_on_every_map` pins both.
+const HIT_FLASH_COLOUR := Color(2.6, 1.5, 0.15)
 ## Below this the walk direction is too vertical to flip on, so a bug walking
 ## straight down does not shimmer between facings.
 const ENEMY_FLIP_DEADZONE := 4.0
@@ -664,7 +669,7 @@ const GEM_STREAK_GAP := 1.0
 const GEM_STREAK_SEMITONES := 1.0
 const GEM_STREAK_CAP := 12
 
-## Hit squash: bugs flatten by this fraction while the white flash runs.
+## Hit squash: bugs flatten by this fraction while the hit flash runs.
 const HIT_SQUASH := 0.3
 ## Spawns scale in over this long, so nothing appears at full size and bites.
 const SPAWN_GROW_TIME := 0.35
@@ -741,7 +746,7 @@ const PLAYER_HALO_STEP := 0.3
 const PLAYER_HALO_PULSE := 0.07
 const PLAYER_HALO_RATE := 2.6
 ## Enough to hand the cat the brightest pixels on screen, not enough to mud
-## the bug art. The hit flash still blows past it to white.
+## the bug art. The hit flash still blows past it.
 const ENEMY_DIM := Color(0.88, 0.88, 0.93)
 
 # --- Audio feel ---
@@ -785,7 +790,7 @@ const TOUCH_KNOB_COLOUR := Color(1.0, 0.72, 0.82, 0.75)
 
 # --- HUD ---
 ## The health bar. Green while healthy, amber, then red: a colour a child reads
-## without counting, which is what the hearts were for.
+## without counting, which is what a row of hearts was for.
 const HEALTH_GOOD := Color(0.42, 0.85, 0.42)
 const HEALTH_FAIR := Color(1.0, 0.78, 0.3)
 const HEALTH_LOW := Color(0.95, 0.36, 0.4)
@@ -837,7 +842,7 @@ const BLURBS := {
 	"claw": "Hit harder",
 	"bell": "Attack more often",
 	"magnet": "Pick things up further away",
-	"snack": "Get a heart back",
+	"snack": "Get some health back",
 	"bowl": "All your toys get bigger",
 }
 ## The card art is 16x16, so it is drawn at this size with no filtering.
@@ -962,6 +967,47 @@ const PROPS := [
 		"xp": 8,
 	},
 ]
+# --- Traps ---
+## Holes in the ground. The only hazard that is not alive, and the only one that
+## does not chase: a trap is answered by looking where you are going, which is
+## the one thing a child can do that is not walking away.
+## Half the bar, so entering one below half health ends the run. Every other
+## threat is survivable by leaving; this one is not, which is what makes the
+## ground worth reading.
+const TRAP_DAMAGE := PLAYER_MAX_HP * 0.5
+## Drawn a little wider than a prop. A hazard that costs half the bar has to be
+## visible from further away than a pot worth a heart.
+const TRAP_RADIUS := 26.0
+## Only the middle bites. The sprite's outermost ring is its rim, and clipping
+## the rim while running past should not cost half the bar.
+const TRAP_BITE := 0.62
+## Long enough to walk out of. Without it the same hole bites every frame the
+## cat is inside it, which is three hits before a child can react.
+const TRAP_COOLDOWN := 1.4
+## Sparse, but not so sparse the child never meets one. The camera shows
+## 512x288 world units at `ZOOM`, so a 520 cell put a hole on screen only half
+## the time and a hazard nobody sees teaches nothing; 300 averages between one
+## and two in view. Five per cell like the props would be a minefield, and the
+## ground has to stay walkable in every direction.
+const TRAP_PER_CELL := 1
+const TRAP_CELL := 300.0
+const TRAP_COUNT := 40
+const TRAP_SEED := 20260903
+## Two overlapping holes read as one, and the gap between them has to be wider
+## than the cat. Kept under `TRAP_CELL` or nearly every placement is rejected.
+const TRAP_SPACING := 150.0
+## Bigger than the prop clearance, so the run does not open with half the bar
+## sitting under the cat, and small enough that the first hole is still on
+## screen to be learned from.
+const TRAP_CLEAR_RADIUS := 170.0
+const TRAP_REFILL_DISTANCE := 1100.0
+const TRAP_FORGET_DISTANCE := 1500.0
+## The splash out of the hole. Pale blue reads as water on all three maps: the
+## pond and the ice hole are water, and wet sand is darker than dry.
+const TRAP_SPLASH_COUNT := 10
+const TRAP_SPLASH_SPEED := 96.0
+const TRAP_SPLASH_COLOUR := Color(0.78, 0.9, 1.0)
+
 const PROP_COUNT := 120
 ## Seeded, so the garden is the same every run: a child who learns where the
 ## pots are should find them there again.
@@ -993,6 +1039,7 @@ const MAPS := {
 		"cost": 0,
 		"art": "res://assets/map_garden.png",
 		"lawn": "res://assets/lawn.png",
+		"trap": "res://assets/trap_pond.png",
 		"ground_art": GROUND_ART,
 		"ground_weights": GROUND_WEIGHTS,
 		"ground_scale": GROUND_SCALE,
@@ -1005,6 +1052,7 @@ const MAPS := {
 		"cost": 0,
 		"art": "res://assets/map_beach.png",
 		"lawn": "res://assets/lawn_beach.png",
+		"trap": "res://assets/trap_sandpit.png",
 		## Wet sand and tide pools are the common ground; shells and seaweed
 		## are the treats, like the garden's flowers and stones.
 		"ground_art":
@@ -1055,6 +1103,7 @@ const MAPS := {
 		"cost": 0,
 		"art": "res://assets/map_arctic.png",
 		"lawn": "res://assets/lawn_arctic.png",
+		"trap": "res://assets/trap_icehole.png",
 		## Ice sheets and drifts are the common ground; cracks and rocks are
 		## the treats.
 		"ground_art":

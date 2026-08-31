@@ -339,3 +339,89 @@ func test_every_weapon_can_be_made_bigger() -> void:
 			w.has("radius") or travels,
 			"%s has a radius, or is a shot whose sweep the bowl widens" % id,
 		)
+
+
+## Every map's dominant floor tones, as 8-bit triples from the palette in
+## `scripts/tools/make_art.py`: lawn greens, sand, then snow and ice. `Color8`
+## is a function rather than a constant expression, so these stay as ints.
+const FLOOR_TONES := [
+	[126, 186, 108],
+	[134, 194, 116],
+	[116, 176, 100],
+	[233, 209, 156],
+	[247, 229, 182],
+	[208, 178, 128],
+	[226, 238, 248],
+	[242, 248, 255],
+	[198, 216, 234],
+	[140, 192, 232],
+	[196, 228, 248],
+]
+## The art's outline, which is what gives a flashing bug its rim.
+const OUTLINE_TONE := [58, 42, 58]
+
+
+## CIE Lab dE76 between two colours, which counts hue as well as lightness. A
+## luminance ratio alone calls amber on snow invisible while the blue channel
+## differs by 220 levels, which is the difference the eye reads first.
+func _difference(a: Color, b: Color) -> float:
+	var la := _lab(a)
+	var lb := _lab(b)
+	return (la - lb).length()
+
+
+func _lab(c: Color) -> Vector3:
+	var r := c.srgb_to_linear()
+	var x := (0.4124 * r.r + 0.3576 * r.g + 0.1805 * r.b) / 0.95047
+	var y := 0.2126 * r.r + 0.7152 * r.g + 0.0722 * r.b
+	var z := (0.0193 * r.r + 0.1192 * r.g + 0.9505 * r.b) / 1.08883
+	return Vector3(
+		116.0 * _lab_f(y) - 16.0,
+		500.0 * (_lab_f(x) - _lab_f(y)),
+		200.0 * (_lab_f(y) - _lab_f(z)),
+	)
+
+
+func _lab_f(t: float) -> float:
+	return pow(t, 1.0 / 3.0) if t > 0.008856 else 7.787 * t + 16.0 / 116.0
+
+
+## An 8-bit triple from the art palette as a Color.
+func _tone(rgb: Array) -> Color:
+	return Color8(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+
+
+## What a bug's pixel becomes while flashing: the per-instance flash colour
+## times the per-kind dim, clipped, as the MultiMesh does it.
+func _flashed(texel: Color) -> Color:
+	var f := Tuning.HIT_FLASH_COLOUR
+	var d := Tuning.ENEMY_DIM
+	return Color(
+		minf(1.0, texel.r * f.r * d.r),
+		minf(1.0, texel.g * f.g * d.g),
+		minf(1.0, texel.b * f.b * d.b),
+	)
+
+
+## A hit has to be visible on every map, and the palest bug on the palest floor
+## is the case that decides it. A flat white flash sat 5 dE from the arctic's
+## snow, so on that map the child could not see their toy working at all.
+func test_the_hit_flash_reads_on_every_map() -> void:
+	var body := _flashed(Color.WHITE)
+	for tone: Array in FLOOR_TONES:
+		assert_gt(
+			_difference(body, _tone(tone)),
+			40.0,
+			"a flashing bug separates from floor %s" % [tone],
+		)
+
+
+## And the outline has to survive the flash, or a pale bug loses the dark rim
+## that holds its shape against pale ground. Raising every channel washed it
+## out to grey.
+func test_the_hit_flash_keeps_the_dark_outline() -> void:
+	assert_gt(
+		_difference(_flashed(Color.WHITE), _flashed(_tone(OUTLINE_TONE))),
+		45.0,
+		"a flashing bug keeps a rim",
+	)

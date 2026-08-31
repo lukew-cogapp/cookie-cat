@@ -86,7 +86,7 @@ func _ready() -> void:
 		node.multimesh = mm
 		node.texture = load(Tuning.ENEMY_TEXTURES[k])
 		# One property per kind, not per bug: the cat keeps the brightest pixels
-		# on screen. The hit flash still blows past this to white.
+		# on screen. The hit flash still blows past this.
 		node.modulate = Tuning.ENEMY_DIM
 		add_child(node)
 		_mm.append(mm)
@@ -461,7 +461,7 @@ func _redraw() -> void:
 			# Bugs face the way they walk, like the cat: art is drawn facing
 			# right, so a bug heading left is mirrored by a negative x scale.
 			var face := -1.0 if _facing_left[i] else 1.0
-			# White plus a squash while flashing: the flash says hit, the
+			# A tint plus a squash while flashing: the flash says hit, the
 			# squash says hit HARD, and both cost only this transform.
 			var c := Color.WHITE
 			var squash := 0.0
