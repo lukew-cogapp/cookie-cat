@@ -139,6 +139,33 @@ func test_menus_take_wasd_and_everything_else() -> void:
 	assert_true(_has_axis("ui_down", JOY_AXIS_RIGHT_Y, 1.0), "ui_down takes right stick")
 
 
+## The stick shipped orphaned once: the script was complete and correct and no
+## scene ever instantiated it, so there was no joystick on any device and
+## nothing failed. Assert it is in the tree, and that it drives the same four
+## actions the player reads.
+func test_the_touch_stick_is_in_the_world() -> void:
+	var world: Node = load("res://scenes/world.tscn").instantiate()
+	var stick: Node = world.get_node_or_null("TouchLayer/TouchStick")
+	assert_not_null(stick, "world.tscn holds a touch stick")
+	if stick != null:
+		var script: Script = stick.get_script()
+		assert_eq(
+			script.resource_path,
+			"res://scripts/touch_stick.gd",
+			"and it carries the stick's script",
+		)
+		# Paused is when a finger is most likely to leave the screen, and a
+		# paused node cannot release its own actions unless it still runs.
+		assert_eq(
+			stick.process_mode,
+			Node.PROCESS_MODE_ALWAYS,
+			"and it runs while the picker pauses the tree",
+		)
+		for action: String in stick.AXES:
+			assert_true(InputMap.has_action(action), "the stick drives %s" % action)
+	world.free()
+
+
 func _has_physical_key(action: String, code: int) -> bool:
 	for e: InputEvent in _events(action):
 		if e is InputEventKey and (e as InputEventKey).physical_keycode == code:

@@ -61,7 +61,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			queue_redraw()
 
 
+## Runs while the tree is paused (`process_mode` in `world.tscn`), because a
+## paused node stops processing with its actions still pressed and the cat would
+## walk off on its own the moment the picker closed.
 func _process(_delta: float) -> void:
+	if get_tree().paused:
+		if _held:
+			_release()
+		return
 	if not _held:
 		return
 	var off := _at - _origin

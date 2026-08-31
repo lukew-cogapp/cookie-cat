@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2"]
@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" path="res://assets/lawn.png" id="8"]
 [ext_resource type="Script" path="res://scripts/props.gd" id="9"]
 [ext_resource type="Script" path="res://scripts/ground.gd" id="11"]
+[ext_resource type="Script" path="res://scripts/touch_stick.gd" id="12"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1")
@@ -44,5 +45,17 @@ script = ExtResource("10")
 
 [node name="Director" type="Node" parent="."]
 script = ExtResource("6")
+
+[node name="TouchLayer" type="CanvasLayer" parent="."]
+
+[node name="TouchStick" type="Control" parent="TouchLayer"]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("12")
 
 [node name="Hud" parent="." instance=ExtResource("7")]
