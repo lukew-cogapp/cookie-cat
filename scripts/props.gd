@@ -8,27 +8,19 @@ extends Node2D
 ## makes every direction identical, so a child has nothing to aim at between
 ## waves; a pot worth a heart is a small errand.
 ##
-## Same parallel-array and MultiMesh shape as `swarm.gd`, for the same reason,
-## and they are hit by the same weapon queries: `world.gd` passes each weapon's
-## damage through `damage_near`, so anything that hurts a bug breaks a pot
-## without a single weapon knowing props exist.
+## Each prop is a `Prop` node, not a row in parallel arrays like the swarm. The
+## field around them is still the same seeded grid of cells `ground.gd` and
+## `traps.gd` use, and for the same reason: the cat is never walled in, so the
+## field follows it, and a cell is seeded by its own coordinates so walking back
+## finds the same garden.
+##
+## They are hit by the same weapon queries as before: `world.gd` passes each
+## weapon's damage through `damage_near`, so anything that hurts a bug breaks a
+## pot without a single weapon knowing props exist.
 
 signal broke(at: Vector2, kind: int)
 
-var alive := 0
-var pos: Array[Vector2] = []
-var hp: Array[float] = []
-var kind: Array[int] = []
-var flash: Array[float] = []
-
-var _mm: Array[MultiMesh] = []
-var _by_kind: Array[Array] = []
-var _dead: Array[int] = []
 var _rng := RandomNumberGenerator.new()
-## Reused by `damage_near`, so a weapon firing every frame allocates nothing.
-var _hits: Array[int] = []
-## Middle of the currently scattered field. The cat is never walled in, so the
-## field is re-scattered around it once it walks far enough from this.
 ## Cells already filled, so a cell is never filled twice.
 var _filled: Dictionary = {}
 ## Where the cat started, kept clear of props.
@@ -41,24 +33,20 @@ var _table: Array = []
 func _ready() -> void:
 	_table = Tuning.map_info(Run.map)["props"]
 	_rng.seed = Tuning.PROP_SEED
-	var q := Tuning.sprite_quad()
-	for k in _table.size():
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_2D
-		mm.use_colors = true
-		mm.mesh = q
-		mm.instance_count = Tuning.PROP_COUNT
-		mm.visible_instance_count = 0
-		var node := MultiMeshInstance2D.new()
-		node.multimesh = mm
-		node.texture = load(String(_table[k]["art"]))
-		add_child(node)
-		_mm.append(mm)
-		_by_kind.append([])
-	pos.resize(Tuning.PROP_COUNT)
-	hp.resize(Tuning.PROP_COUNT)
-	kind.resize(Tuning.PROP_COUNT)
-	flash.resize(Tuning.PROP_COUNT)
+
+
+func set_player(p: Node2D) -> void:
+	_player = p
+
+
+## How many props are standing. Was the high-water mark of an array; now it is
+## simply how many children there are, which cannot disagree with the tree.
+func count() -> int:
+	return get_child_count()
+
+
+func at(n: int) -> Prop:
+	return get_child(n) as Prop
 
 
 ## Fills the garden around a point, and remembers which cells it has filled.
@@ -69,20 +57,20 @@ func _ready() -> void:
 ## the WHOLE field every `PROP_REFILL_DISTANCE`, which teleported every pot on
 ## screen at once and reads to a player as the world jumping.
 func scatter(clear_around: Vector2) -> void:
-	alive = 0
-	_dead.clear()
+	for c in get_children():
+		_drop(c)
 	_filled.clear()
 	_clear_around = clear_around
 	_refill_around(clear_around)
 
 
-## Fills any cell near `at` that has not been filled yet, and drops rows that
-## have fallen far behind so the arrays never overflow.
-func _refill_around(at: Vector2) -> void:
+## Fills any cell near `around` that has not been filled yet, and forgets props
+## that have fallen far behind so the tree never grows without bound.
+func _refill_around(around: Vector2) -> void:
 	var cell := Tuning.PROP_CELL
 	var reach := int(ceil(Tuning.PROP_REFILL_DISTANCE / cell))
-	var here := Vector2i(floori(at.x / cell), floori(at.y / cell))
-	_cull_far(at)
+	var here := Vector2i(floori(around.x / cell), floori(around.y / cell))
+	_cull_far(around)
 	for dy in range(-reach, reach + 1):
 		for dx in range(-reach, reach + 1):
 			var c := here + Vector2i(dx, dy)
@@ -97,7 +85,7 @@ func _fill_cell(c: Vector2i) -> void:
 	_rng.seed = Tuning.PROP_SEED + c.x * 73856093 + c.y * 19349663
 	var cell := Tuning.PROP_CELL
 	for _n in Tuning.PROP_PER_CELL:
-		if alive >= Tuning.PROP_COUNT:
+		if count() >= Tuning.PROP_COUNT:
 			return
 		var p := Vector2(
 			(float(c.x) + _rng.randf()) * cell,
@@ -110,39 +98,43 @@ func _fill_cell(c: Vector2i) -> void:
 		if _too_close(p):
 			continue
 		var k := _rng.randi_range(0, _table.size() - 1)
-		var i := alive
-		alive += 1
-		pos[i] = p
-		kind[i] = k
-		hp[i] = float(_table[k]["hp"])
-		flash[i] = 0.0
-	_redraw()
+		add_child(Prop.make(k, _table, p))
 
 
-## Forgets props far enough away to be out of sight, so a long walk cannot fill
-## the arrays. Their cells are forgotten too, so walking back rebuilds them
-## from the same seed and the garden looks unchanged.
-func _cull_far(at: Vector2) -> void:
+## Forgets props far enough away to be out of sight, so a long walk cannot grow
+## the tree without bound. Their cells are forgotten too, so walking back
+## rebuilds them from the same seed and the garden looks unchanged.
+##
+## Dropped rather than compacted: with nodes there is no index to move, so the
+## whole `_dead` and `_compact` dance the swarm needs is gone from here.
+func _cull_far(around: Vector2) -> void:
 	var far := Tuning.PROP_FORGET_DISTANCE * Tuning.PROP_FORGET_DISTANCE
-	for i in range(alive - 1, -1, -1):
-		if pos[i].distance_squared_to(at) > far:
-			_dead.append(i)
-	_compact()
+	for c in get_children():
+		if (c as Prop).position.distance_squared_to(around) > far:
+			_drop(c)
 	var cell := Tuning.PROP_CELL
 	var reach := int(ceil(Tuning.PROP_FORGET_DISTANCE / cell))
-	var here := Vector2i(floori(at.x / cell), floori(at.y / cell))
-	for c: Vector2i in _filled.keys():
-		if absi(c.x - here.x) > reach or absi(c.y - here.y) > reach:
-			_filled.erase(c)
+	var here := Vector2i(floori(around.x / cell), floori(around.y / cell))
+	for k: Vector2i in _filled.keys():
+		if absi(k.x - here.x) > reach or absi(k.y - here.y) > reach:
+			_filled.erase(k)
 
 
-func set_player(p: Node2D) -> void:
-	_player = p
+## Removed as well as freed. `queue_free` leaves the node in the tree until the
+## end of the frame, so `count()` would still see it and `_fill_cell`'s cap would
+## read stale; removing first keeps the count honest, and the deferred free is
+## safe to call from inside a signal handler's call stack where an immediate
+## `free()` is not.
+func _drop(c: Node) -> void:
+	remove_child(c)
+	c.queue_free()
 
 
+## Two props on one spot read as one prop that takes twice the hits.
 func _too_close(p: Vector2) -> bool:
-	for i in alive:
-		if pos[i].distance_squared_to(p) < Tuning.PROP_SPACING * Tuning.PROP_SPACING:
+	for c in get_children():
+		var d := (c as Prop).position.distance_squared_to(p)
+		if d < Tuning.PROP_SPACING * Tuning.PROP_SPACING:
 			return true
 	return false
 
@@ -151,57 +143,53 @@ func _physics_process(delta: float) -> void:
 	if not Run.alive:
 		return
 	_refill_around(_player.global_position)
-	var faded := false
-	for i in alive:
-		if flash[i] > -Tuning.HIT_FLASH_GAP:
-			flash[i] = maxf(flash[i] - delta, -Tuning.HIT_FLASH_GAP)
-			faded = true
-	if faded or not _dead.is_empty():
-		_compact()
-		_redraw()
+	for c in get_children():
+		(c as Prop).tick(delta)
 
 
-## The nearest prop, or -1. Weapons fall back to this when no bug is in range,
+## The nearest prop, or null. Weapons fall back to this when no bug is in range,
 ## so a shot in a quiet moment goes into a pot rather than into empty grass.
-func nearest(point: Vector2, radius: float) -> int:
-	var best := -1
+##
+## Returns the prop rather than an index: an index into a list of children is
+## only true until one is freed, and the caller used to read a position back out
+## of the field with it.
+func nearest(point: Vector2, radius: float) -> Prop:
+	var best: Prop = null
 	var best_d := radius * radius
-	for i in alive:
-		var d := pos[i].distance_squared_to(point)
+	for c in get_children():
+		var p := c as Prop
+		var d := p.position.distance_squared_to(point)
 		if d <= best_d:
 			best_d = d
-			best = i
+			best = p
 	return best
 
 
 ## Damages every prop within `radius`. Weapons call this through `world.gd`
 ## rather than knowing about props, so a new weapon breaks pots for free.
+##
+## The children are snapshotted before anything is damaged, because `broke` runs
+## the world's drop handler synchronously: a handler that added or removed a prop
+## would otherwise move the ones this walk has not reached yet.
+##
+## A broken prop leaves the tree before `broke` is emitted, so nothing the
+## handler does can find a half-dead pot, and its position and kind are read out
+## first. `Prop.damage` reports the break once and only once, which is what stops
+## two overlapping areas of effect paying out one pot twice.
 func damage_near(point: Vector2, radius: float, amount: float) -> void:
-	if alive == 0:
-		return
 	var r2 := radius * radius
-	_hits.clear()
-	for i in alive:
-		if pos[i].distance_squared_to(point) <= r2:
-			_hits.append(i)
-	for i in _hits:
-		# Already broken this frame. Rows go once `_compact` runs, so a second
-		# weapon reaching the same pot would break it again and drop its reward
-		# twice. `weapons.gd` routes every area of effect through here, so two
-		# overlapping ones is the normal case, not a rare one.
-		if hp[i] <= 0.0:
+	var kids := get_children()
+	for c in kids:
+		var p := c as Prop
+		if p.position.distance_squared_to(point) > r2:
 			continue
-		hp[i] -= amount
-		# A flash, then a gap longer than the flash. An aura damages every
-		# frame; refreshing the timer pinned a pot solid white, and merely
-		# waiting for the last flash to end still left it white half the time.
-		# The countdown runs negative through the gap.
-		if flash[i] <= -Tuning.HIT_FLASH_GAP:
-			flash[i] = Tuning.HIT_FLASH_TIME
-		if hp[i] <= 0.0:
-			_dead.append(i)
-			broke.emit(pos[i], kind[i])
-			Audio.play("pop")
+		if not p.damage(amount):
+			continue
+		var at := p.position
+		var kind := p.kind
+		_drop(p)
+		broke.emit(at, kind)
+		Audio.play("pop")
 
 
 ## What a prop drops, as a Gems.Kind. Mostly nothing: a heart from every pot
@@ -216,46 +204,5 @@ func roll_drop(k: int) -> int:
 	return Gems.Kind.GEM
 
 
-func radius_of(k: int) -> float:
-	return float(_table[k]["radius"])
-
-
 func xp_of(k: int) -> int:
 	return int(_table[k]["xp"])
-
-
-func _compact() -> void:
-	if _dead.is_empty():
-		return
-	_dead.sort()
-	_dead.reverse()
-	var last := -1
-	for i in _dead:
-		# One prop can be queued twice by two weapons in a frame; dropping it
-		# twice would delete a standing one.
-		if i == last:
-			continue
-		last = i
-		alive -= 1
-		if i != alive:
-			pos[i] = pos[alive]
-			hp[i] = hp[alive]
-			kind[i] = kind[alive]
-			flash[i] = flash[alive]
-	_dead.clear()
-
-
-func _redraw() -> void:
-	for k in _by_kind.size():
-		_by_kind[k].clear()
-	for i in alive:
-		_by_kind[kind[i]].append(i)
-	for k in _mm.size():
-		var rows: Array = _by_kind[k]
-		var mm := _mm[k]
-		mm.visible_instance_count = rows.size()
-		var s := radius_of(k) * 2.0
-		for n in rows.size():
-			var i: int = rows[n]
-			mm.set_instance_transform_2d(n, Transform2D(0.0, Vector2(s, s), 0.0, pos[i]))
-			mm.set_instance_color(n, Tuning.HIT_FLASH_COLOUR if flash[i] > 0.0 else Color.WHITE)

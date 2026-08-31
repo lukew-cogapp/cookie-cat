@@ -158,4 +158,4 @@ func test_the_props_swap_with_the_map() -> void:
 	props.set_physics_process(false)
 	assert_eq(props._table, Tuning.MAPS["arctic"]["props"], "arctic props")
 	props.scatter(Vector2.ZERO)
-	assert_eq(props.alive, Tuning.PROP_COUNT, "and the field still fills")
+	assert_eq(props.count(), Tuning.PROP_COUNT, "and the field still fills")

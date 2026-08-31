@@ -130,7 +130,7 @@ func test_weapons_aim_at_props_when_no_bugs() -> void:
 	_clear_swarm()
 	_props.scatter(_player.global_position)
 	# A pot right beside the cat, inside every weapon's reach.
-	_props.pos[0] = _player.global_position + Vector2(60.0, 0.0)
+	_props.at(0).position = _player.global_position + Vector2(60.0, 0.0)
 	var target := _weapons._aim_at(_player.global_position)
 	assert_ne(target, _player.global_position, "it found something to aim at")
 
@@ -139,7 +139,7 @@ func test_weapons_aim_at_props_when_no_bugs() -> void:
 ## weapons distracted by scenery.
 func test_bugs_outrank_props() -> void:
 	_props.scatter(_player.global_position)
-	_props.pos[0] = _player.global_position + Vector2(40.0, 0.0)
+	_props.at(0).position = _player.global_position + Vector2(40.0, 0.0)
 	_swarm.spawn(_player.global_position + Vector2(0.0, 70.0), 0)
 	var target := _weapons._aim_at(_player.global_position)
 	assert_eq(target, _swarm.pos[0], "the bug is the target")

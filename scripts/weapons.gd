@@ -561,8 +561,8 @@ func _aim_at(from: Vector2) -> Vector2:
 		return _swarm.pos[i]
 	if _props != null:
 		var p := _props.nearest(from, Tuning.SHOT_SEEK_RANGE)
-		if p >= 0:
-			return _props.pos[p]
+		if p != null:
+			return p.position
 	return from
 
 

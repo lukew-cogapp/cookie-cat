@@ -38,6 +38,8 @@ scripts/weapons.gd         all ten toys in one node
 scripts/gems.gd            pickups, same pattern as the swarm
 scripts/traps.gd           the hole field, one hazard per map
 scripts/trap.gd            one hole, a node rather than a row
+scripts/props.gd           the breakable field, one prop set per map
+scripts/prop.gd            one pot, a node rather than a row
 scripts/director.gd        the wave table, and bosses
 scripts/world.gd           wires the run together
 scripts/hud.gd             health bar, clock, xp bar, the pick screen
@@ -88,6 +90,18 @@ it standing.
 The seeded-cell field is unchanged and is the part worth protecting: a cell is
 seeded by its own coordinates, so walking away and back finds the same garden.
 Nodes changed where a hole is stored, not how the field decides where holes go.
+
+Both fields keep their children as the collection: `count()` and `at(n)` read the
+tree, so the count cannot disagree with what is drawn, and `PROP_COUNT` and
+`TRAP_COUNT` stay caps a long walk cannot exceed. A prop leaves the tree through
+`remove_child` before `queue_free`, and `Props` emits `broke` only once it is
+out, because `queue_free` alone leaves it in `count()` until the end of the frame
+while `broke` runs the world's drop handler on the spot. `Prop.damage` returns
+true on the breaking hit and never again, which is what makes the reward
+once-only rather than something every caller has to remember. `nearest()` hands
+back the prop itself: it used to return an index that `weapons.gd` read a
+position out of, and an index into a list of children stops being true the moment
+one is freed.
 
 **Rows are swap-removed.** A kill moves the last row into the dead one's index,
 so:
