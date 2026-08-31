@@ -14,6 +14,9 @@ config/name="Cookie Cat"
 run/main_scene="res://scenes/start_screen.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
+; Back opens the pause screen instead of killing the app. Quitting mid-run
+; skips Run.finish, so every cookie earned in that run is lost.
+config/quit_on_go_back=false
 
 [autoload]
 
@@ -28,6 +31,13 @@ window/size/viewport_height=720
 window/size/mode=2
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+; Android and iOS only, and a no-op everywhere else: on web the overlay in
+; web/rotate.html asks instead, for the reasons in CLAUDE.md. Sensor rather
+; than plain landscape, so a tablet held the other way up still works.
+window/handheld/orientation=4
+; A ten minute run with no button pressed is long enough for the screen to
+; sleep, and the cat is moving the whole time.
+window/energy_saving/keep_screen_on=true
 
 [input]
 

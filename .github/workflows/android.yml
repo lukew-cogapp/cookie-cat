@@ -1,0 +1,132 @@
+name: Publish Android build
+
+# Same trigger as the web build, and a separate workflow on purpose: a Play
+# upload failing should not stop the web build reaching people, and the web
+# build is the one whose link everybody already has.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Export the Android build
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          lfs: false
+
+      # Godot signs the package itself with apksigner and needs Gradle for the
+      # AAB, so both the JDK and the SDK have to be present before the export
+      # runs rather than only at build time.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      # GitHub secrets hold text, so the keystore travels as base64. It is
+      # decoded outside the checkout so that no later step can commit it.
+      - name: Restore the release keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set. See CLAUDE.md, Deploying."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+
+      # Fetched by hand rather than through an action, because the AAB export
+      # needs --install-android-build-template and no action exposes it.
+      - name: Install Godot and its export templates
+        run: |
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -sSL -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip && mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+          unzip -q templates.tpz
+          DEST="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$DEST" && mv templates/* "$DEST/"
+          godot --version
+
+      # Godot reads the SDK and JDK locations from its editor settings file
+      # rather than from the environment. The name carries major.minor, and a
+      # file under the wrong name is ignored in silence: the export then fails
+      # reporting a missing SDK it was never told about.
+      - name: Point Godot at the SDK and JDK
+        run: |
+          DIR="$HOME/.config/godot"
+          mkdir -p "$DIR"
+          cat > "$DIR/editor_settings-4.7.tres" <<TRES
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          TRES
+          cat "$DIR/editor_settings-4.7.tres"
+
+      # An import pass first: a headless export of a project with no .godot
+      # cache exports missing textures without saying so.
+      - name: Import resources
+        run: godot --headless --path . --import
+
+      # The APK is the sideload path and needs no Gradle. The AAB is what Play
+      # takes, and --install-android-build-template unpacks android_source.zip
+      # into the project so Gradle has something to build.
+      - name: Export the APK
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/release.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p build/android
+          godot --headless --path . --export-release "Android" build/android/cookie-cat.apk
+
+      - name: Export the AAB
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/release.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          godot --headless --path . --install-android-build-template \
+            --export-release "Android Play" build/android/cookie-cat.aab
+
+      # An Android export can exit 0 and leave nothing behind, the same way the
+      # web one can. Fail here rather than publishing an empty release.
+      - name: Check both packages exist
+        run: |
+          test -s build/android/cookie-cat.apk || { echo "::error::no APK produced"; ls -R build; exit 1; }
+          test -s build/android/cookie-cat.aab || { echo "::error::no AAB produced"; ls -R build; exit 1; }
+          ls -lh build/android
+
+      # The APK on the release is the sideload path: download it on a tablet
+      # and open it, with no Play account involved.
+      - name: Attach the APK to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/android/cookie-cat.apk
+
+      # Internal testing, never production. A Play release is hard to take back,
+      # and promoting a track is one button in the console once the listing has
+      # actually been looked at.
+      - name: Upload the AAB to Play internal testing
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: r0adkll/upload-google-play@v1.1.3
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: uk.co.cogapp.lukew.cookiecat
+          releaseFiles: build/android/cookie-cat.aab
+          track: internal
+          status: completed

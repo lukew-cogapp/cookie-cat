@@ -53,6 +53,10 @@ func start() -> void:
 	alive = true
 	won = false
 	cookies = 0
+	# Cleared with the rest: `Run` outlives the scene, so a run that ended with
+	# the cat hurt would otherwise offer a snack on the next run's first level
+	# up, with the bar still full.
+	hurt = false
 	# The cat decides the opening weapon, which is the only difference between
 	# them and the reason to unlock another.
 	var starter := String(Tuning.CATS[cat]["weapon"])

@@ -15,6 +15,8 @@ extends Node
 ## written and there is no race to lose.
 
 const PATH := "user://save.json"
+## Written first, then renamed over `PATH`, so a save is never half a file.
+const TMP_PATH := "user://save.json.tmp"
 ## The browser localStorage key used instead of a file on the web. Namespaced,
 ## because every game published under the same github.io account shares one
 ## origin and therefore one storage bucket: an unprefixed "save" would be
@@ -78,11 +80,21 @@ func _write_raw(text: String) -> void:
 			true,
 		)
 		return
-	var f := FileAccess.open(PATH, FileAccess.WRITE)
+	# Written beside the real file and renamed over it. `FileAccess.WRITE`
+	# truncates the moment it opens, so writing in place means a kill between
+	# the open and the close leaves an empty save. Android kills a backgrounded
+	# app without warning, and this runs on exactly the actions a child takes
+	# before leaving: buying a hat, finishing a run, turning the sound off.
+	# A rename is atomic, so an interrupted write keeps the old save instead.
+	var f := FileAccess.open(TMP_PATH, FileAccess.WRITE)
 	if f == null:
 		return
 	f.store_string(text)
 	f.close()
+	if f.get_error() != OK:
+		DirAccess.remove_absolute(TMP_PATH)
+		return
+	DirAccess.rename_absolute(TMP_PATH, PATH)
 
 
 func load_now() -> void:

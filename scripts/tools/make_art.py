@@ -21,6 +21,7 @@ import zlib
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parents[2] / "assets"
+ICONS = Path(__file__).resolve().parents[2] / "icons"
 
 # Cookie Cat: a pink ice-cream cat sandwiched in biscuit. The palette is the
 # whole game's, so a new sprite reuses these letters rather than adding a hue.
@@ -1479,6 +1480,50 @@ def write_png(path, grid):
     return width, height
 
 
+def write_icon(path, grid, size, pad=0, background=None):
+    """One square launcher icon, nearest-neighbour scaled from a 16x16 grid.
+
+    Android wants 192 for the legacy icon and 432 for each adaptive layer, and
+    a pixel grid only survives that if it is scaled by whole pixels. `pad` is
+    in grid cells, and is what keeps the cat clear of the circular mask an
+    adaptive icon is cropped to.
+    """
+    cells = len(grid) + pad * 2
+    if size % cells:
+        raise SystemExit(f"{path.name}: {size} is not a whole multiple of {cells}")
+    step = size // cells
+    blank = background if background else (0, 0, 0, 0)
+    rows = []
+    for y in range(size):
+        row = bytearray([0])
+        gy = y // step - pad
+        for x in range(size):
+            gx = x // step - pad
+            pixel = blank
+            if 0 <= gy < len(grid) and 0 <= gx < len(grid[gy]):
+                ch = grid[gy][gx]
+                if ch not in PALETTE:
+                    raise SystemExit(f"{path.name}: no palette entry for {ch!r}")
+                here = PALETTE[ch]
+                pixel = here if here[3] else blank
+            row += bytes(pixel)
+        rows.append(bytes(row))
+    raw = zlib.compress(b"".join(rows), 9)
+
+    def chunk(tag, data):
+        head = struct.pack(">I", len(data)) + tag
+        return head + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+    ihdr = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", raw)
+        + chunk(b"IEND", b"")
+    )
+    return size
+
+
 def recolour(grid, swap):
     """A copy of the grid with palette letters remapped.
 
@@ -1557,6 +1602,16 @@ def main():
         grid, _ = recolour(source, swap)
         write_png(OUT / f"{name}.png", grid)
         print(f"{name}.png 16x16", flush=True)
+    # Android launcher icons. The adaptive pair is padded because the launcher
+    # crops it to a circle on most phones, and an unpadded cat loses its ears.
+    ICONS.mkdir(parents=True, exist_ok=True)
+    lawn = PALETTE["T"]
+    write_icon(ICONS / "icon.png", CAT_STAND, 192, background=lawn)
+    print("icons/icon.png 192x192", flush=True)
+    write_icon(ICONS / "icon_foreground.png", CAT_STAND, 432, pad=4)
+    print("icons/icon_foreground.png 432x432", flush=True)
+    write_icon(ICONS / "icon_background.png", [["T"] * 16] * 16, 432)
+    print("icons/icon_background.png 432x432", flush=True)
 
 
 if __name__ == "__main__":

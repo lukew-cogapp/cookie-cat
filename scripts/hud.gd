@@ -56,6 +56,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pause()
 
 
+## Android's Back gesture and the app being sent to the background. Back would
+## otherwise quit outright, and quitting mid-run skips `Run.finish`, so every
+## cookie earned in that run is thrown away. Both open the pause screen, which
+## is also what a child coming back to the tablet wants to find.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_WM_GO_BACK_REQUEST and what != NOTIFICATION_APPLICATION_PAUSED:
+		return
+	if not is_node_ready() or not Run.alive or _picker.visible or _over.visible:
+		return
+	if not _paused.visible:
+		_pause()
+
+
 func _pause() -> void:
 	_paused.visible = true
 	_fill_stats()

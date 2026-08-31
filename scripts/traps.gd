@@ -25,7 +25,13 @@ var _rng := RandomNumberGenerator.new()
 ## Cells already filled, so a cell is never filled twice.
 var _filled: Dictionary[Vector2i, bool] = {}
 ## Where the cat started, kept clear of holes.
+## Where the cat started, so no hole opens under it. Fixed for the whole run:
+## moving it would reject every candidate near wherever the cat last crossed a
+## refill boundary, and those cells are marked filled and never reconsidered, so
+## the ground ahead quietly runs out of holes.
 var _clear_around := Vector2.ZERO
+## Where the field was last topped up, which is what does move with the cat.
+var _last_refill := Vector2.ZERO
 var _player: Node2D
 ## Seconds until any trap can bite again. One hole cannot chain-hit across the
 ## frames the cat spends climbing out of it.
@@ -55,6 +61,7 @@ func scatter(clear_around: Vector2) -> void:
 		_drop(c)
 	_filled.clear()
 	_clear_around = clear_around
+	_last_refill = clear_around
 	_refill_around(clear_around)
 
 
@@ -135,8 +142,8 @@ func _physics_process(delta: float) -> void:
 	if _player == null or not Run.alive:
 		return
 	var here: Vector2 = _player.global_position
-	if here.distance_to(_clear_around) > Tuning.TRAP_REFILL_DISTANCE:
-		_clear_around = here
+	if here.distance_to(_last_refill) > Tuning.TRAP_REFILL_DISTANCE:
+		_last_refill = here
 		_refill_around(here)
 	if _cooldown > 0.0:
 		return
