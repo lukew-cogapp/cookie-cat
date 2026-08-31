@@ -108,7 +108,7 @@ func test_nearest_returns_minus_one_when_empty() -> void:
 
 
 ## Being hit shoves the crowd off the cat. Without this a surrounded child
-## loses the next heart the frame mercy ends: measured at all three in 3.7s.
+## takes the next hit the frame mercy ends: measured at the whole bar in 3.7s.
 func test_push_moves_rows_away() -> void:
 	_swarm.spawn(Vector2(20.0, 0.0), 0)
 	_swarm.push_from(Vector2.ZERO, 100.0, 200.0)

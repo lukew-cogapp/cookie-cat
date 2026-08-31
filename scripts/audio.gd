@@ -59,7 +59,7 @@ func _ready() -> void:
 	_bank["pickup"] = _tone(880.0, 1180.0, 0.06, "sine", 0.20)
 	_bank["level_up"] = _chime([659.0, 784.0, 988.0, 1319.0], 0.55)
 	_bank["choose"] = _chime([523.0, 784.0], 0.22)
-	# Losing a heart. The one cue that must cut through a full swarm, so it is
+	# Taking a hit. The one cue that must cut through a full swarm, so it is
 	# the loudest thing in the bank.
 	_bank["hurt"] = _tone(320.0, 120.0, 0.20, "square", 0.5)
 	_bank["heal"] = _chime([523.0, 659.0, 784.0], 0.34)
@@ -68,7 +68,7 @@ func _ready() -> void:
 	# End of a run. Falling, but a major third, not a dirge: the run ending is
 	# not a punishment.
 	_bank["run_over"] = _chime([784.0, 659.0, 523.0], 0.8)
-	# The last heart going. A soft wobble down rather than a sting: the run
+	# The bar emptying. A soft wobble down rather than a sting: the run
 	# still ends on a tally, so this cannot read as a punishment.
 	_bank["death"] = _chime([659.0, 587.0, 523.0, 440.0, 392.0], 0.9)
 	_bank["win"] = _chime([523.0, 659.0, 784.0, 1047.0, 1319.0, 1568.0], 1.1)

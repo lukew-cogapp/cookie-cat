@@ -9,7 +9,7 @@ extends Node2D
 
 signal died
 signal health_changed(hp: float, max_hp: float)
-## Fired before the heart is deducted, so the world can clear space around the
+## Fired before the damage is taken, so the world can clear space around the
 ## cat. The player cannot do it itself: it does not know about the swarm.
 signal hurt_taken
 
@@ -22,7 +22,7 @@ var _slow_for := 0.0
 var hp := 0.0
 var max_hp := 0.0
 ## Seconds of invulnerability left after a hit. Without it a child standing in
-## a crowd loses every heart in under a second and cannot learn why.
+## a crowd loses the whole bar in under a second and cannot learn why.
 var mercy := 0.0
 
 @onready var _sprite: Sprite2D = $Sprite
@@ -136,7 +136,7 @@ func hurt(amount: float) -> void:
 	_flash_red()
 	if hp <= 0.0:
 		# Before `finish`, which stops the music and plays the tally cue: the
-		# last heart going needs its own moment first.
+		# bar emptying needs its own moment first.
 		Audio.play("death")
 		died.emit()
 		Run.finish(false)

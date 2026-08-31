@@ -50,7 +50,7 @@ func test_the_switches_survive_a_reload() -> void:
 	assert_true(Audio.muted, "and Audio was told")
 
 
-## The last heart going needs its own cue, before the tally.
+## The bar emptying needs its own cue, before the tally.
 func test_death_has_a_sound() -> void:
 	Audio.set_muted(false, false)
 	Audio.play("death")

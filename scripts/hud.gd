@@ -77,7 +77,7 @@ func _process(_delta: float) -> void:
 	_clock.text = "%d:%02d" % [int(left) / 60, int(left) % 60]
 
 
-## The health bar. A bar rather than hearts, so a boss's hit visibly takes more
+## The health bar. A bar rather than a row of hearts, so a boss's hit visibly takes more
 ## than a grub's; the colour is what a child reads, not the number.
 func set_health(hp: float, max_hp: float) -> void:
 	var frac: float = clampf(hp / maxf(max_hp, 1.0), 0.0, 1.0)

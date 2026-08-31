@@ -34,7 +34,7 @@ var cat := Tuning.STARTER_CAT
 var map := Tuning.STARTER_MAP
 ## Set by `world.gd` each time the player's health changes. `_choices` reads it
 ## rather than the player, which `Run` cannot reach, and a snack is only worth
-## offering when there is a heart missing.
+## offering when the bar is not full.
 var hurt := false
 
 
@@ -145,7 +145,7 @@ func _choices() -> Array:
 		if lv < Tuning.PASSIVE_LEVEL_MAX:
 			pool.append(id)
 	# A snack at full health is a wasted card, and the one pick a child would
-	# resent, so it is only in the pool while a heart is missing.
+	# resent, so it is only in the pool while the bar is not full.
 	if hurt:
 		for id: String in Tuning.CONSUMABLES:
 			pool.append(id)

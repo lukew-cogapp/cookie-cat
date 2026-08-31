@@ -142,7 +142,7 @@ func test_the_clock_ends_the_run() -> void:
 
 
 ## A snack heals rather than levelling, and is a wasted card at full health, so
-## it is only offered while a heart is missing.
+## it is only offered while the bar is not full.
 func test_a_snack_is_only_offered_when_hurt() -> void:
 	Run.hurt = false
 	for _i in 30:
@@ -154,7 +154,7 @@ func test_a_snack_is_only_offered_when_hurt() -> void:
 		for id: String in Run._choices():
 			if Tuning.CONSUMABLES.has(id):
 				seen = true
-	assert_true(seen, "a snack is offered once a heart is missing")
+	assert_true(seen, "a snack is offered once the bar is not full")
 
 
 ## Taking one must not put it in a pool: a snack cannot be levelled and must
