@@ -940,7 +940,7 @@ const ICONS := {
 const BLURBS := {
 	"paw": "Swipes all around you",
 	"yarn": "Throws yarn at bugs",
-	"purr": "Hurts bugs that come close",
+	"purr": "Buzzes bugs that come close",
 	"fish": "Fish circle around you",
 	"mouse": "A mouse chases bugs",
 	"milk": "Milk puddles slow bugs down",
@@ -1415,9 +1415,10 @@ static func sprite_quad() -> ArrayMesh:
 
 static func upgrade_blurb(id: String, level: int) -> String:
 	if PASSIVES.has(id):
-		var per := float(PASSIVES[id]["per_level"])
-		var pct := int(round(absf(per) * 100.0))
-		return "%d%% %s" % [pct, "less waiting" if per < 0.0 else "better"]
+		# Words, not the number. A percentage is the one thing on any card a
+		# child who cannot read or count could not act on, and every weapon
+		# card already says "hits harder" rather than by how much.
+		return "less waiting" if float(PASSIVES[id]["per_level"]) < 0.0 else "better"
 	if not WEAPONS.has(id):
 		return ""
 	var parts: Array[String] = []
