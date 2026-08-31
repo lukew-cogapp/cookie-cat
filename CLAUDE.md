@@ -217,6 +217,19 @@ palette gained one deep blue (`Q`) instead.
 
 ## Godot facts worth not relearning
 
+**There is no padding property on a Control.** Godot's containers are close to
+flexbox otherwise: `VBoxContainer` is a flex column, `size_flags` is
+`flex-grow`, `alignment` is `justify-content`. Padding is the exception, and it
+is a node: without a `MarginContainer` wrapping the contents, a child sits hard
+against the card's outline. `PRESET_FULL_RECT` does not help, being inset zero
+rather than width 100%, so it pins the contents to the edges on purpose.
+
+This has now been the cause of two rounds of clipped text, and both times it
+survived because the labels happened to be short enough not to reach the edge:
+a three-line blurb spilling through the bottom of a pick card, then "Fish
+Friends" running across the side of a cat card. A card holding text gets a
+`MarginContainer`.
+
 **A `QuadMesh` draws a texture upside down in 2D.** Its UVs map `uv.y=0`, the
 top of the image, to `y=+0.5`, which on screen is DOWN, so every MultiMesh
 sprite is vertically mirrored. It hid for a long time because most of the art
