@@ -876,7 +876,10 @@ const HEALTH_FAIR_BELOW := 0.6
 const HEALTH_LOW_BELOW := 0.3
 
 const BANNER_TIME := 1.6
-const CARD_SIZE := Vector2(200, 250)
+## Tall enough for a three-line blurb. At 250 the longest two ("Pick things up
+## further away", "Milk puddles slow bugs down") wrapped to three lines and the
+## last one spilled through the bottom border.
+const CARD_SIZE := Vector2(200, 280)
 
 # --- Text sizes ---
 ## Sized for a phone first, which is where this is actually played, and where
