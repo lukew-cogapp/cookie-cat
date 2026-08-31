@@ -879,7 +879,7 @@ const BANNER_TIME := 1.6
 ## Tall enough for a three-line blurb. At 250 the longest two ("Pick things up
 ## further away", "Milk puddles slow bugs down") wrapped to three lines and the
 ## last one spilled through the bottom border.
-const CARD_SIZE := Vector2(200, 280)
+const CARD_SIZE := Vector2(200, 300)
 
 # --- Text sizes ---
 ## Sized for a phone first, which is where this is actually played, and where
