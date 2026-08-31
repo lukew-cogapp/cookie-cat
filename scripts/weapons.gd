@@ -671,7 +671,13 @@ func _draw() -> void:
 			# needs a vertical flip, and a vertical flip reverses the nose: it
 			# swam backwards through a quarter of the orbit however the flip
 			# was gated. It simply rolls round the ring instead.
-			_sprite(_fish_art, here, a + PI * 0.5, Tuning.ORBIT_DRAW_SIZE, Color.WHITE)
+			_sprite(
+				_fish_art,
+				here,
+				a + PI * 0.5,
+				Tuning.ORBIT_DRAW_SIZE * Run.passive("bowl"),
+				Color.WHITE,
+			)
 
 	for s in shots:
 		var here := to_local(shot_pos[s])
@@ -693,7 +699,7 @@ func _draw() -> void:
 			spin = Run.clock * Tuning.SHOT_SPIN
 		elif shot_kind[s] == 2:
 			spin = Run.clock * Tuning.BOOMER_SPIN + float(s)
-		_sprite(art, here, spin, Tuning.SHOT_DRAW_SIZE, Color.WHITE)
+		_sprite(art, here, spin, Tuning.SHOT_DRAW_SIZE * Run.passive("bowl"), Color.WHITE)
 
 	_draw_fx(at)
 
