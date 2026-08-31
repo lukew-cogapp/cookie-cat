@@ -163,3 +163,7 @@ pause={
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+; Godot refuses an Android export without this, whatever the project actually
+; imports. Every texture here is a 16x16 lossless PNG with `vram_texture` off,
+; so nothing is recompressed and the export is the same size either way.
+textures/vram_compression/import_etc2_astc=true
