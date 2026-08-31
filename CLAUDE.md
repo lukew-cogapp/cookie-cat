@@ -30,19 +30,27 @@ keep a headless run out of the real editor config.
 
 ```
 project.godot              input map, autoloads, main scene
+scenes/start_screen.tscn   main scene: cat, map and hat are picked here
+scenes/world.tscn          one run
 scripts/tuning.gd          every tunable number, the `Tuning` class
-scripts/save_state.gd      cookies and unlocked cats, autoloaded as `Save`
+scripts/save_state.gd      cookies, unlocks and sound flags, autoloaded as `Save`
 scripts/run_state.gd       one run's state, autoloaded as `Run`
+scripts/audio.gd           procedural sound bank, autoloaded as `Audio`
 scripts/swarm.gd           enemies as array rows, one MultiMesh per kind
 scripts/weapons.gd         all ten toys in one node
 scripts/gems.gd            pickups, same pattern as the swarm
+scripts/puffs.gd           pooled bursts and floating numbers
 scripts/traps.gd           the hole field, one hazard per map
 scripts/trap.gd            one hole, a node rather than a row
 scripts/props.gd           the breakable field, one prop set per map
 scripts/prop.gd            one pot, a node rather than a row
-scripts/director.gd        the wave table, and bosses
+scripts/ground.gd          scattered decals, decoration only
+scripts/director.gd        the wave table, rushes and bosses
+scripts/player.gd          the cat: movement, mercy time, health
+scripts/touch_stick.gd     the on-screen thumbstick
 scripts/world.gd           wires the run together
 scripts/hud.gd             health bar, clock, xp bar, the pick screen
+scripts/start_screen.gd    the cat, map and hat shop
 scripts/tools/make_art.py  draws every sprite from pixel grids
 assets/*.png               16x16, all generated
 ui/*.tres                  shared styles
@@ -354,6 +362,24 @@ buy. Retuning freely is the point; breaking one of those is a bug.
 Cookies are banked by `Save` when a run **ends**, not as they are picked up, so
 quitting halfway pays nothing. Surviving the full ten minutes pays
 `COOKIE_FINISH_BONUS` on top.
+
+**A map is a skin, never a difficulty.** `Tuning.MAPS` holds the floor, the
+ground decals, the trap art and the prop set, and nothing else: garden, beach
+and arctic run the same wave table against the same bugs at the same numbers.
+Picking a place a child likes the look of must never be the same act as picking
+how hard the run is, because they cannot tell that they have done it. Only the
+hazard's picture changes, not `TRAP_DAMAGE`.
+
+All three are free. `Save` still carries the buy-and-unlock machinery for them
+(`can_afford_map`, `unlock_map`), and a non-zero `cost` is all it takes to lock
+one; hats are what cookies actually buy today.
+
+**One sound bank owns every cue, because the throttle needs to see them all.** A
+hundred bugs popping in one frame is one sound, not a hundred: `Audio.THROTTLED`
+maps a cue to the gap it must keep, and the music ducks under whatever gets
+through. Per-scene players cannot know what another player is already doing, so
+they produce exactly the wall of noise this exists to stop. Tones are
+synthesised at startup rather than shipped, so there is nothing to license.
 
 `Run.cat` is set by the start screen before `world.tscn` loads, and decides the
 opening weapon. `Save` keeps the file in `user://save.json` and writes on every
