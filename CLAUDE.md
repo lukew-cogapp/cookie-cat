@@ -27,6 +27,11 @@ nothing and says so. Wrap long invocations in `perl -e 'alarm N; exec @ARGV'`,
 because `timeout` is not installed here, and pass `env HOME=/private/tmp` to
 keep a headless run out of the real editor config.
 
+`.mcp.json` wires up godot-mcp for the headless half only: parsing scenes,
+reading project settings and export presets, validating scripts. Its runtime
+autoload is not installed. That listens on 127.0.0.1:9090 with no auth and
+runs arbitrary GDScript, and it would ship inside the export.
+
 ## Layout
 
 ```
@@ -484,8 +489,10 @@ holds itself on top while it runs: macOS stops presenting a covered window,
 and every later capture is then the same stale frame.
 
 A promo video is optional and is a YouTube URL only, ads disabled on it.
-Footage can come from `godot --path . --write-movie out.avi --fixed-fps 30
---quit-after N`.
+Footage can come from `godot --path . --write-movie out.avi --fixed-fps 60
+--quit-after N`. The fps must match the 60Hz physics tick or the footage plays
+at half speed. Output is uncompressed: a minute at 1080p is most of a
+gigabyte.
 
 ### Android signing
 
