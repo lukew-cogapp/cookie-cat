@@ -153,6 +153,26 @@ crossing out does not flicker.
 
 ## Godot facts worth not relearning
 
+**There is no wall, on purpose.** The cat used to be clamped to `WORLD_HALF`,
+and the edge was about eight seconds of walking away. Being cornered against an
+invisible edge with bugs closing in is the one situation a child cannot escape,
+and the whole difficulty rests on running away always working, so the clamp is
+gone. The lawn is one tiling sprite snapped to the cat in whole `LAWN_TILE`
+steps, and `Props` re-scatters its field around the cat past
+`PROP_REFILL_DISTANCE`, seeded off the field's own position so walking back
+finds the same garden.
+
+**`is_touchscreen_available()` reports true on desktops with no touchscreen**
+(godot#84235), so `touch_stick.gd` does not gate on it. Nothing is drawn until
+an `InputEventScreenTouch` proves a real finger, which needs no platform check
+and is correct on a touch laptop whose owner is using the trackpad.
+
+Godot 4.7 ships no analogue virtual joystick: `TouchScreenButton` is boolean,
+and the `emulate_*` settings only translate between mouse and touch. The stick
+feeds `Input.action_press(action, strength)`, which `Input.get_vector` reads
+back through `get_action_raw_strength`, so the cat's movement code stays one
+`get_vector` call and the touch input is genuinely analogue.
+
 Most of these are inherited from `../godot-world` and still true here.
 
 **Screenshots must run windowed.** `godot --path . -s test/shots.gd`. Under

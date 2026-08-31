@@ -28,12 +28,19 @@ var _held := false
 
 
 func _ready() -> void:
-	# Only shown where there is a touchscreen, so a desktop build does not
-	# draw a thumbstick nobody can use. `emulate_mouse_from_touch` means a mouse
-	# click would otherwise trigger it in the editor.
-	visible = DisplayServer.is_touchscreen_available()
-	set_process_unhandled_input(visible)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Armed, but drawn nothing until a finger actually arrives.
+	#
+	# `is_touchscreen_available()` is not enough on its own: it reports true on
+	# desktops with no touchscreen at all (godot#84235), so gating visibility on
+	# it would put a thumbstick on a machine that can only use a keyboard. It is
+	# also true on a touch-capable laptop whose owner is using the trackpad.
+	#
+	# So nothing is drawn until `InputEventScreenTouch` proves a real finger,
+	# and `_draw` returns early while `_held` is false. A desktop player never
+	# sees it; a tablet player sees it the moment they touch the screen. That
+	# needs no platform check at all.
+	set_process_unhandled_input(true)
 
 
 func _unhandled_input(event: InputEvent) -> void:

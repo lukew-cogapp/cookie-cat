@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2"]
@@ -7,7 +7,7 @@
 [ext_resource type="Script" path="res://scripts/weapons.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/director.gd" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="7"]
-[ext_resource type="Script" path="res://scripts/puffs.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/puffs.gd" id="10"]
 [ext_resource type="Texture2D" path="res://assets/lawn.png" id="8"]
 [ext_resource type="Script" path="res://scripts/props.gd" id="9"]
 
@@ -18,7 +18,7 @@ script = ExtResource("1")
 texture = ExtResource("8")
 texture_repeat = 2
 region_enabled = true
-region_rect = Rect2(0, 0, 4096, 4096)
+region_rect = Rect2(-1024, -1024, 2048, 2048)
 scale = Vector2(2, 2)
 
 [node name="Props" type="Node2D" parent="."]
@@ -36,7 +36,7 @@ script = ExtResource("3")
 script = ExtResource("5")
 
 [node name="Puffs" type="Node2D" parent="."]
-script = ExtResource("9")
+script = ExtResource("10")
 
 [node name="Director" type="Node" parent="."]
 script = ExtResource("6")

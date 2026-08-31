@@ -24,6 +24,15 @@ func test_the_garden_is_the_same_every_run() -> void:
 	assert_eq(_props.pos.slice(0, _props.alive), first, "the same layout")
 
 
+## The cat is never walled in: being cornered against an invisible edge with
+## bugs closing in is the one situation a child cannot escape.
+func test_there_is_no_wall() -> void:
+	assert_false(
+		"WORLD_HALF" in Tuning,
+		"nothing clamps the cat any more",
+	)
+
+
 ## A prop on the starting spot would open the run in the player's face.
 func test_nothing_spawns_on_the_cat() -> void:
 	for i in _props.alive:
@@ -34,10 +43,38 @@ func test_nothing_spawns_on_the_cat() -> void:
 		)
 
 
-func test_props_stay_inside_the_world() -> void:
+## The field is scattered around wherever the cat is, not around the origin,
+## because there is no wall to bound it.
+func test_props_land_in_the_field_around_the_cat() -> void:
+	var here := Vector2(5000.0, -3000.0)
+	_props.scatter(here)
 	for i in _props.alive:
-		assert_lte(absf(_props.pos[i].x), Tuning.WORLD_HALF.x, "inside on x")
-		assert_lte(absf(_props.pos[i].y), Tuning.WORLD_HALF.y, "inside on y")
+		var off := _props.pos[i] - here
+		assert_lte(absf(off.x), Tuning.PROP_FIELD_HALF.x, "inside the field on x")
+		assert_lte(absf(off.y), Tuning.PROP_FIELD_HALF.y, "inside the field on y")
+
+
+## Walking back over old ground must find the same garden, not a fresh roll.
+func test_the_same_spot_gives_the_same_garden() -> void:
+	var here := Vector2(2400.0, 800.0)
+	_props.scatter(here)
+	var first := _props.pos.slice(0, _props.alive)
+	_props.scatter(Vector2(-9000.0, 9000.0))
+	_props.scatter(here)
+	assert_eq(_props.pos.slice(0, _props.alive), first, "the same layout came back")
+
+
+## The one thing the removed wall was hiding: walking in one direction forever
+## has to keep finding garden.
+func test_the_field_refills_as_the_cat_walks() -> void:
+	_props.scatter(Vector2.ZERO)
+	var near_edge := Vector2(Tuning.PROP_REFILL_DISTANCE + 200.0, 0.0)
+	_props.scatter(near_edge)
+	var ahead := 0
+	for i in _props.alive:
+		if _props.pos[i].x > near_edge.x:
+			ahead += 1
+	assert_gt(ahead, 0, "there is garden ahead of the cat")
 
 
 ## Two props on one spot read as one prop that takes twice the hits.

@@ -21,6 +21,9 @@ const HEART_EMPTY := "♡"
 @onready var _again: Button = $Over/Panel/Pad/Col/Again
 
 var _pending: Array = []
+## True while the slow-mo ramp runs, so a second level in that window queues
+## rather than restarting the ramp.
+var _slowing := false
 var _card_style := load("res://ui/card.tres")
 var _card_hover := load("res://ui/card_hover.tres")
 
@@ -74,8 +77,24 @@ func _offer(choices: Array) -> void:
 	if choices.is_empty():
 		return
 	_pending.append(choices)
-	if not _picker.visible:
-		_show_next()
+	if not _picker.visible and not _slowing:
+		_slow_into_pick()
+
+
+## A beat of slow motion before the pause, so the level-up is a moment the
+## whole screen leans into rather than a stop.
+func _slow_into_pick() -> void:
+	_slowing = true
+	Engine.time_scale = Tuning.LEVELUP_SLOWMO
+	# Real seconds, unpaused: the timer must outlive the slow-mo it measures.
+	await get_tree().create_timer(Tuning.LEVELUP_SLOWMO_TIME, true, false, true).timeout
+	_slowing = false
+	Engine.time_scale = 1.0
+	# Died mid-ramp: _finish cleared the queue, and _show_next's empty branch
+	# would unpause the game-over screen.
+	if not Run.alive:
+		return
+	_show_next()
 
 
 func _show_next() -> void:
@@ -90,6 +109,8 @@ func _show_next() -> void:
 		_cards.add_child(_card(id))
 	_picker.visible = true
 	get_tree().paused = true
+	# In case the ramp was skipped or interrupted; the pause replaces it.
+	Engine.time_scale = 1.0
 	_pop_in()
 	# So mashing the confirm button always works, and a child who cannot yet
 	# read a card still progresses.
@@ -98,15 +119,34 @@ func _show_next() -> void:
 		_cards.get_child(0).grab_focus()
 
 
-## The panel pops from small to full size. A modal that simply appears is easy
-## to miss mid-fight; this reads as the game stopping for you.
+## The panel pops from small to full size, then each card pops in turn. A
+## modal that simply appears is easy to miss mid-fight; this reads as the
+## game stopping for you. Tweens run TWEEN_PAUSE_PROCESS because the tree is
+## paused by the time they play.
 func _pop_in() -> void:
 	var panel: Control = _picker.get_node("Panel")
 	panel.pivot_offset = panel.size * 0.5
 	panel.scale = Vector2(Tuning.MODAL_POP_FROM, Tuning.MODAL_POP_FROM)
 	var t := create_tween()
+	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	t.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	t.tween_property(panel, "scale", Vector2.ONE, Tuning.MODAL_POP_TIME)
+	_pop_cards()
+
+
+## Cards pop one after another, left to right. Sizes are only known after a
+## layout pass, hence the deferred pivot.
+func _pop_cards() -> void:
+	var n := 0
+	for c: Control in _cards.get_children():
+		c.scale = Vector2(Tuning.CARD_POP_FROM, Tuning.CARD_POP_FROM)
+		var t := create_tween()
+		t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		t.tween_callback(func() -> void: c.pivot_offset = c.size * 0.5)
+		t.tween_interval(Tuning.CARD_STAGGER * float(n))
+		t.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		t.tween_property(c, "scale", Vector2.ONE, Tuning.CARD_POP_TIME)
+		n += 1
 
 
 ## A card: the picture first, then the name, then what it does. Built in code
@@ -185,6 +225,8 @@ func _restart() -> void:
 
 
 func _finish(won: bool) -> void:
+	# A death mid-ramp must not leave the whole game slow.
+	Engine.time_scale = 1.0
 	_over.visible = true
 	_picker.visible = false
 	_pending.clear()

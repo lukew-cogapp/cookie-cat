@@ -52,6 +52,59 @@ func _init() -> void:
 	await _wait(25)
 	await _shoot("05_boss")
 
+	# The juice layer, each effect caught mid-burst. A -s script cannot name
+	# autoloads, so Tuning comes from the root.
+	var tuning: Node = get_root().get_node("Tuning")
+
+	# Kill a close ring through the world's kill path, so the star pop and
+	# the reward numbers are on screen together.
+	for i in 14:
+		var a := TAU * float(i) / 14.0
+		swarm.spawn(player.global_position + Vector2.from_angle(a) * 90.0, i % 5)
+	await _wait(30)
+	var popped := 0
+	var row := 0
+	while row < swarm.alive and popped < 12:
+		var d: float = swarm.pos[row].distance_to(player.global_position)
+		if d < 130.0:
+			var at: Vector2 = swarm.pos[row]
+			var k: int = swarm.kind[row]
+			swarm.damage(row, 9999.0, player.global_position)
+			world._on_killed(at, k)
+			popped += 1
+		row += 1
+	await _wait(3)
+	await _shoot("07_kill_pop")
+
+	# The dropped gems dart away and fly in; sparkles land at the cat.
+	await _wait(14)
+	await _shoot("08_pickup_sparkle")
+
+	# The XP just collected can level up mid-harness, and the picker would sit
+	# over the remaining shots. Dismiss it; _wait already unpauses.
+	var hud: Node = world.get_node("Hud")
+	hud._pending.clear()
+	hud._picker.visible = false
+	await _wait(2)
+
+	# The boss telegraph ring, placed on screen so it can be judged.
+	world._on_boss(player.global_position + Vector2(130, -50))
+	await _wait(5)
+	await _shoot("09_boss_telegraph")
+
+	# The combo cheer: prime the counter, then one kill trips it.
+	world._combo = int(tuning.COMBO_EVERY) - 1
+	world._on_killed(player.global_position + Vector2(60, 0), 0)
+	await _wait(4)
+	await _shoot("10_combo_cheer")
+
+	# Fresh spawns mid grow-in, half size.
+	for i in 8:
+		var a := TAU * float(i) / 8.0
+		swarm.spawn(player.global_position + Vector2.from_angle(a) * 130.0, i % 5)
+	await _wait(6)
+	await _shoot("11_spawn_grow")
+
 	# The pick screen, which is the one piece of UI a child has to use.
 	run.add_xp(run.xp_needed)
 	await _wait(30)

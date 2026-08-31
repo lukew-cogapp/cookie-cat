@@ -7,7 +7,18 @@ extends Node
 ## Ten minutes. Long enough to earn an evolution, short enough that a child
 ## finishes one rather than abandoning it.
 const RUN_SECONDS := 600.0
-const WORLD_HALF := Vector2(900, 900)
+## How far props are scattered from the origin. There is no wall: the cat is
+## never clamped, because being cornered against an invisible edge with bugs
+## closing in is the one situation a child cannot escape, and the whole
+## difficulty rests on running away always working. The lawn tiles and the props
+## wrap around the cat instead, so walking in one direction forever is fine.
+const PROP_FIELD_HALF := Vector2(1600, 1600)
+## Props are re-scattered ahead of the cat once it walks this far from the
+## middle of the current field, so the garden never runs out.
+const PROP_REFILL_DISTANCE := 1100.0
+## The lawn sprite's tile size on screen, which is what its position is snapped
+## to as it follows the cat. The art is 16px drawn at 2x.
+const LAWN_TILE := 32.0
 ## The camera zoom. Art is 16x16, so at 2.5 a bug is 40 screen pixels and the
 ## cat 64: big enough to read at a glance. Rendered at 1.0 the cat was a speck
 ## and no weapon effect could be made out at all.

@@ -28,6 +28,10 @@ var _dead: Array[int] = []
 var _rng := RandomNumberGenerator.new()
 ## Reused by `damage_near`, so a weapon firing every frame allocates nothing.
 var _hits: Array[int] = []
+## Middle of the currently scattered field. The cat is never walled in, so the
+## field is re-scattered around it once it walks far enough from this.
+var _centre := Vector2.ZERO
+var _player: Node2D
 
 
 func _ready() -> void:
@@ -58,13 +62,16 @@ func _ready() -> void:
 func scatter(clear_around: Vector2) -> void:
 	alive = 0
 	_dead.clear()
-	_rng.seed = Tuning.PROP_SEED
+	_centre = clear_around
+	# Seeded off the field's position, so walking back over old ground finds
+	# the same garden rather than a freshly rolled one.
+	_rng.seed = Tuning.PROP_SEED + int(_centre.x) * 73856093 + int(_centre.y) * 19349663
 	var tries := 0
 	while alive < Tuning.PROP_COUNT and tries < Tuning.PROP_COUNT * 20:
 		tries += 1
-		var p := Vector2(
-			_rng.randf_range(-Tuning.WORLD_HALF.x, Tuning.WORLD_HALF.x),
-			_rng.randf_range(-Tuning.WORLD_HALF.y, Tuning.WORLD_HALF.y),
+		var p := _centre + Vector2(
+			_rng.randf_range(-Tuning.PROP_FIELD_HALF.x, Tuning.PROP_FIELD_HALF.x),
+			_rng.randf_range(-Tuning.PROP_FIELD_HALF.y, Tuning.PROP_FIELD_HALF.y),
 		)
 		# Never on top of where the cat starts, or the run opens with a pot in
 		# the player's face.
@@ -82,6 +89,10 @@ func scatter(clear_around: Vector2) -> void:
 	_redraw()
 
 
+func set_player(p: Node2D) -> void:
+	_player = p
+
+
 func _too_close(p: Vector2) -> bool:
 	for i in alive:
 		if pos[i].distance_squared_to(p) < Tuning.PROP_SPACING * Tuning.PROP_SPACING:
@@ -91,6 +102,9 @@ func _too_close(p: Vector2) -> bool:
 
 func _physics_process(delta: float) -> void:
 	if not Run.alive:
+		return
+	if _player != null and _player.global_position.distance_to(_centre) > Tuning.PROP_REFILL_DISTANCE:
+		scatter(_player.global_position)
 		return
 	var faded := false
 	for i in alive:

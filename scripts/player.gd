@@ -61,7 +61,6 @@ func _physics_process(delta: float) -> void:
 		if dir.length() < Tuning.STICK_WALK_FLOOR:
 			dir = dir.normalized() * Tuning.STICK_WALK_FLOOR
 		position += dir * speed * delta
-		position = position.clamp(-Tuning.WORLD_HALF, Tuning.WORLD_HALF)
 		# Face travel by flipping, not rotating: a rotated gardener reads as
 		# falling over, and there is only ever left and right art.
 		if not is_zero_approx(dir.x):

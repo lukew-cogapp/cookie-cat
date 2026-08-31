@@ -10,6 +10,7 @@ extends Node2D
 @onready var _director: Director = $Director
 @onready var _puffs: Puffs = $Puffs
 @onready var _props: Props = $Props
+@onready var _lawn: Sprite2D = $Lawn
 @onready var _camera: Camera2D = $Player/Camera
 @onready var _hud: CanvasLayer = $Hud
 
@@ -25,6 +26,7 @@ func _ready() -> void:
 	_gems.set_player(_player)
 	_weapons.setup(_swarm, _gems, _player)
 	_director.setup(_swarm, _player)
+	_props.set_player(_player)
 	_props.scatter(_player.global_position)
 	_props.broke.connect(_on_prop_broke)
 	_weapons.set_props(_props)
@@ -40,6 +42,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	Run.tick(delta)
+	_follow_lawn()
 	if Run.clock > _combo_until:
 		_combo = 0
 	if _shake > 0.0:
@@ -96,6 +99,15 @@ func _on_hurt() -> void:
 		_player.global_position, Tuning.PLAYER_HIT_PUSH_RADIUS, Tuning.PLAYER_HIT_PUSH
 	)
 	_shake = Tuning.SHAKE_TIME
+
+
+## The lawn is one tiling sprite that snaps along with the cat in whole tiles.
+## There is no wall in this garden, so a fixed sprite would eventually be walked
+## off the edge of; snapping by the tile size means the seam never shows.
+func _follow_lawn() -> void:
+	var tile := Tuning.LAWN_TILE
+	var at := _player.global_position
+	_lawn.position = Vector2(snappedf(at.x, tile), snappedf(at.y, tile))
 
 
 ## A broken prop drops what it rolled: usually the xp a bug would give,
