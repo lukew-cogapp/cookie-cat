@@ -176,6 +176,20 @@ func stop_music() -> void:
 func stop_sounds() -> void:
 	for p: AudioStreamPlayer in _players:
 		p.stop()
+		# Dropped as well as stopped. `stop()` ends playback but leaves the
+		# player holding the stream, and the audio server keeps a playback
+		# instance alive alongside it. The bank owns the only lasting
+		# reference; a voice only borrows one for the length of a cue.
+		p.stream = null
+
+
+## A voice still holding a stream at shutdown is reported as a leaked instance,
+## and a run that always ends on that warning is a run nobody reads it in.
+func _exit_tree() -> void:
+	stop_sounds()
+	if _music_player != null:
+		_music_player.stop()
+		_music_player.stream = null
 
 
 ## Applies the saved switches. Called by `Save` once it has loaded, and by the
