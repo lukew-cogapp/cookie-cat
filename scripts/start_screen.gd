@@ -164,7 +164,7 @@ func _card(id: String) -> Button:
 	var cat_name := Label.new()
 	cat_name.text = String(cat["name"])
 	cat_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	cat_name.add_theme_font_size_override("font_size", 20)
+	cat_name.add_theme_font_size_override("font_size", Tuning.TEXT_BODY)
 	col.add_child(cat_name)
 
 	var row := HBoxContainer.new()
@@ -178,7 +178,7 @@ func _card(id: String) -> Button:
 	var wname := Label.new()
 	wname.text = String(Tuning.WEAPONS[weapon]["name"])
 	wname.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	wname.add_theme_font_size_override("font_size", 14)
+	wname.add_theme_font_size_override("font_size", Tuning.TEXT_TINY)
 	wname.add_theme_color_override("font_color", Tuning.CARD_BLURB_COLOUR)
 	row.add_child(wname)
 
@@ -217,7 +217,7 @@ func _map_card(id: String) -> Button:
 	var map_name := Label.new()
 	map_name.text = String(info["name"])
 	map_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	map_name.add_theme_font_size_override("font_size", 16)
+	map_name.add_theme_font_size_override("font_size", Tuning.TEXT_SMALL)
 	col.add_child(map_name)
 
 
@@ -258,7 +258,7 @@ func _hat_card(id: String) -> Button:
 	var hat_name := Label.new()
 	hat_name.text = String(info["name"])
 	hat_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hat_name.add_theme_font_size_override("font_size", 13)
+	hat_name.add_theme_font_size_override("font_size", Tuning.TEXT_TINY)
 	col.add_child(hat_name)
 
 	var price := HBoxContainer.new()
@@ -270,7 +270,7 @@ func _hat_card(id: String) -> Button:
 	var cost := Label.new()
 	cost.text = str(int(info["cost"]))
 	cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	cost.add_theme_font_size_override("font_size", 14)
+	cost.add_theme_font_size_override("font_size", Tuning.TEXT_TINY)
 	cost.add_theme_color_override("font_color", Tuning.START_COST_COLOUR)
 	price.add_child(cost)
 	_hat_prices[id] = price

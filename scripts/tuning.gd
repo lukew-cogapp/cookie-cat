@@ -857,6 +857,24 @@ const HEALTH_LOW_BELOW := 0.3
 
 const BANNER_TIME := 1.6
 const CARD_SIZE := Vector2(200, 250)
+
+# --- Text sizes ---
+## Sized for a phone first, which is where this is actually played, and where
+## the numbers are unforgiving: `aspect=expand` maps the design's 720 units of
+## height onto about 360 real pixels on a 20:9 handset, so everything on screen
+## is drawn at roughly half size. A 14px blurb landed at 7 real pixels, which a
+## child cannot read and an adult squints at.
+##
+## These are the sizes that put the smallest text at about 14 real pixels there.
+## They look large on a desktop, and that is the right way round: the audience
+## is five, the words are few, and nothing here is dense enough to crowd.
+##
+## Scaling the whole canvas instead was tried and reverted. `content_scale_factor`
+## enlarges the layout about a fixed origin, so the title went behind the cards
+## and Play fell off the bottom: the text has to grow without the layout moving.
+const TEXT_TINY := 22
+const TEXT_SMALL := 26
+const TEXT_BODY := 30
 ## The pause screen's tally. A picture per line, because the point of pausing
 ## mid-run is to see how it is going and the audience cannot read a label.
 const PAUSE_ICON_SIZE := Vector2(34, 34)
@@ -1247,7 +1265,9 @@ const HATS := {
 ## row 1, so an origin-aligned overlay lands the brim on the eyes. Lifting it
 ## three rows rests the brim on the top of the head instead.
 const HAT_LIFT := -3.0
-const START_HAT_CARD_SIZE := Vector2(104, 122)
+## Wide enough for "Party Hat" at `TEXT_TINY`, which the old 104 clipped once
+## the text grew for phones.
+const START_HAT_CARD_SIZE := Vector2(132, 122)
 const START_HAT_ART_SIZE := Vector2(48, 48)
 const START_HAT_COOKIE_SIZE := Vector2(24, 24)
 

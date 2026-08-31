@@ -404,7 +404,7 @@ func _card(id: String) -> Button:
 	name.text = String(data["name"])
 	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name.add_theme_font_size_override("font_size", 20)
+	name.add_theme_font_size_override("font_size", Tuning.TEXT_BODY)
 	col.add_child(name)
 
 	var blurb := Label.new()
@@ -417,7 +417,7 @@ func _card(id: String) -> Button:
 			blurb.text = gives
 	blurb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	blurb.add_theme_font_size_override("font_size", 14)
+	blurb.add_theme_font_size_override("font_size", Tuning.TEXT_SMALL)
 	blurb.add_theme_color_override("font_color", Tuning.CARD_BLURB_COLOUR)
 	col.add_child(blurb)
 
