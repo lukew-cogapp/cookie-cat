@@ -208,9 +208,10 @@ const WEAPONS := {
 	},
 	"boomer":
 	{
-		"name": "Boomerang Fish",
-		## Out and back, hitting on both legs. The only weapon that rewards
-		## letting a bug approach: it is worth twice as much on the return.
+		"name": "Feather Wand",
+		## Out and back on its string, hitting on both legs. The only weapon
+		## that rewards letting a bug approach: it is worth twice as much on
+		## the way home.
 		"kind": "boomer",
 		"damage": 6.0,
 		"cooldown": 1.5,
@@ -293,6 +294,13 @@ const SHOT_SPIN := 7.0
 const SHOT_TRAIL := 16.0
 const SHOT_TRAIL_WIDTH := 4.0
 const SHOT_TRAIL_COLOUR := Color(1.0, 0.85, 0.92, 0.4)
+## Per-kind trail tints, in SHOT_KINDS order, so a grey mouse does not fly a
+## pink streak. The boomerang overrides these per leg (BOOMER_TRAIL_*).
+const SHOT_TRAIL_COLOURS := [
+	Color(1.0, 0.85, 0.92, 0.4),
+	Color(0.9, 0.9, 0.95, 0.35),
+	Color(0.65, 0.9, 1.0, 0.45),
+]
 ## A boomerang within this of the cat has been caught.
 const BOOMER_CATCH_RADIUS := 22.0
 ## Crumbs hurt over time like a puddle, so their listed damage is a rate.
@@ -337,6 +345,8 @@ const ENEMIES := [
 	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 1.0, "radius": 8.5, "xp": 3, "gem_up": 0.1, "knock": 60.0},
 	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 1.0, "radius": 11.0, "xp": 3, "gem_up": 0.12, "knock": 34.0},
 	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 1.0, "radius": 26.0, "xp": 60, "gem_up": 0.8, "knock": 6.0},
+	{"name": "Spider", "hp": 12.0, "speed": 92.0, "damage": 1.0, "radius": 9.0, "xp": 3, "gem_up": 0.1, "knock": 42.0},
+	{"name": "Dung Beetle", "hp": 26.0, "speed": 40.0, "damage": 1.0, "radius": 11.0, "xp": 5, "gem_up": 0.16, "knock": 18.0},
 ]
 const ENEMY_MAX := 220
 ## Past this from the player an enemy is forgotten. Over a screen and a half,
@@ -354,8 +364,52 @@ const ENEMY_TEXTURES := [
 	"res://assets/wasp.png",
 	"res://assets/slime.png",
 	"res://assets/big.png",
+	"res://assets/spider.png",
+	"res://assets/dung.png",
 ]
 const SWARM_SEED := 20260831
+
+# --- Spider and dung beetle ---
+## The spider scuttles: full speed in bursts, near-still between them. The
+## listed speed is the burst, so the no-bug-outruns-the-cat rule still holds.
+const SPIDER_SCUTTLE_CYCLE := 1.1
+## Fraction of each cycle spent moving.
+const SPIDER_SCUTTLE_DUTY := 0.45
+## Pace between bursts. Not zero: a bug frozen mid-walk reads as a hang.
+const SPIDER_PAUSE_PACE := 0.12
+
+## The dung beetle is the first bug that hurts the cat without touching it, so
+## every number here is about being dodgeable: it stands off, shivers in plain
+## view before each lob, and the ball flies slower than the cat walks.
+const DUNG_FIRE_RANGE := 240.0
+## It stops closing here, so it reads as a thrower rather than a biter.
+const DUNG_STAND_RANGE := 150.0
+## Longer than mercy time, so one beetle cannot chain hits.
+const DUNG_FIRE_COOLDOWN := 2.8
+## The wind-up shiver before each lob. A five-year-old cannot dodge a shot
+## that appears from nothing.
+const DUNG_TELEGRAPH := 0.7
+const DUNG_WOBBLE := 0.22
+const DUNG_WOBBLE_RATE := 26.0
+
+## Poop balls: pooled rows in swarm.gd, drawn by one MultiMesh, like the bugs.
+const POOP_MAX := 64
+const POOP_SPEED := 88.0
+const POOP_DAMAGE := 1.0
+const POOP_HIT_RADIUS := 8.0
+## Long enough to reach the cat from the far edge of the fire range.
+const POOP_LIFE := 3.2
+const POOP_DRAW_SIZE := 14.0
+const POOP_SPIN := 6.0
+const POOP_ART := "res://assets/poop.png"
+
+
+## The spider's speed multiplier at time `t`, one burst per cycle.
+func spider_pace(t: float) -> float:
+	var phase := fmod(t, SPIDER_SCUTTLE_CYCLE)
+	if phase < SPIDER_SCUTTLE_CYCLE * SPIDER_SCUTTLE_DUTY:
+		return 1.0
+	return SPIDER_PAUSE_PACE
 
 # --- Waves ---
 ## One entry per minute of the run: which kinds spawn, how often, and how many
@@ -369,10 +423,10 @@ const WAVES := [
 	{"kinds": [0, 1], "interval": 1.0, "min_alive": 25},
 	{"kinds": [1, 3], "interval": 0.9, "min_alive": 34},
 	{"kinds": [1, 2, 3], "interval": 0.8, "min_alive": 46},
-	{"kinds": [0, 3, 4], "interval": 0.7, "min_alive": 60},
-	{"kinds": [1, 2, 4], "interval": 0.65, "min_alive": 78},
-	{"kinds": [1, 2, 3, 4], "interval": 0.6, "min_alive": 98},
-	{"kinds": [0, 1, 2, 3, 4], "interval": 0.55, "min_alive": 124},
+	{"kinds": [0, 3, 4, 6], "interval": 0.7, "min_alive": 60},
+	{"kinds": [1, 2, 4, 7], "interval": 0.65, "min_alive": 78},
+	{"kinds": [1, 2, 3, 4, 6, 7], "interval": 0.6, "min_alive": 98},
+	{"kinds": [0, 1, 2, 3, 4, 6, 7], "interval": 0.55, "min_alive": 124},
 ]
 ## Spawns land on a ring just off screen. Slightly wider than the corner of a
 ## 1280x720 viewport, so nothing appears in front of the player.
@@ -482,6 +536,27 @@ const FX_BOLT_WIDTH := 3.0
 const FX_BOLT_STEPS := 6
 const FX_BOLT_JAG := 11.0
 const FX_BOLT_FLASH := 9.0
+## Second-pass effects: an impact star where a hit lands, the boomerang's
+## turn, and the catch as it comes home.
+const FX_HIT := 3
+const FX_TWIRL := 4
+const FX_CATCH := 5
+const FX_TIME_HIT := 0.14
+const FX_TIME_TWIRL := 0.22
+const FX_TIME_CATCH := 0.28
+## The impact star: short spokes flaring out of the hit point, tinted per
+## weapon, so different toys connecting read as different touches.
+const HIT_FX_SIZE := 9.0
+const HIT_FX_SPOKES := 4
+const HIT_FX_WIDTH := 2.0
+## A swipe through a crowd caps its stars, or one paw fills the fx pool.
+const HIT_FX_PER_SWIPE := 3
+const HIT_TINTS := {
+	"paw": Color(1.0, 0.95, 0.7),
+	"yarn": Color(1.0, 0.72, 0.85),
+	"mouse": Color(0.88, 0.86, 0.92),
+	"boomer": Color(0.65, 0.9, 1.0),
+}
 ## Popped bugs within this window count towards the cheer.
 const COMBO_WINDOW := 4.0
 const COMBO_EVERY := 25
@@ -556,6 +631,91 @@ const COMBO_STARS := 12
 const COMBO_RING_RADIUS := 34.0
 const COMBO_RING_SPEED := 110.0
 
+
+# --- Boomerang feel ---
+## The fish tumbles as it flies: below about 12 rad/s a 16px sprite at 60fps
+## reads as wobbling, not spinning.
+const BOOMER_SPIN := 16.0
+## A longer streak than other shots, and a different tint per leg: cool going
+## out, gold coming home, because the return is the leg that pays twice.
+const BOOMER_TRAIL := 26.0
+const BOOMER_TRAIL_OUT := Color(0.65, 0.9, 1.0, 0.45)
+const BOOMER_TRAIL_BACK := Color(1.0, 0.85, 0.45, 0.6)
+## A small flash where the fish turns, so the far point of the throw reads.
+const TWIRL_RADIUS := 16.0
+## The catch ring closes onto the cat rather than expanding, which is what
+## makes it read as caught rather than as another blast.
+const CATCH_RADIUS := 24.0
+const CATCH_PUFFS := 4
+
+# --- Crumb trail look ---
+const ZONE_MILK := 0
+const ZONE_CRUMB := 1
+## Biscuit tones from the cat's own sandwich, so crumbs read as food.
+const CRUMB_COLOUR := Color(0.77, 0.55, 0.36)
+const CRUMB_LIGHT := Color(0.91, 0.72, 0.52)
+const CRUMB_OUTLINE := Color(0.23, 0.16, 0.23, 0.85)
+## Crumbs per drop. They vanish one by one as the drop's life runs out, so a
+## trail being eaten empties visibly.
+const CRUMB_COUNT := 5
+const CRUMB_SIZE := 3.2
+## How far crumbs scatter, as a fraction of the zone radius.
+const CRUMB_SPREAD := 0.6
+## A bitten pile jiggles this long, which is the "being eaten" read.
+const CRUMB_BITE_TIME := 0.3
+const CRUMB_JIGGLE := 1.6
+const CRUMB_JIGGLE_RATE := 34.0
+const CRUMB_PUFF_COUNT := 3
+const CRUMB_PUFF_SPEED := 45.0
+## Minimum seconds between nibble puffs, or a crowd on a trail is a blizzard.
+const CRUMB_PUFF_GAP := 0.35
+
+# --- Finding the cat ---
+## At minute eight the screen holds a hundred bugs, and the cat has to stay
+## findable without per-bug cost: a ground shadow and a soft halo under the
+## cat, and one modulate on each enemy MultiMesh node.
+const PLAYER_SHADOW_COLOUR := Color(0.1, 0.08, 0.12, 0.3)
+const PLAYER_SHADOW_RADIUS := 12.0
+const PLAYER_SHADOW_SQUASH := 0.38
+const PLAYER_SHADOW_DROP := 14.0
+## Layered translucent discs fake a glow; alpha stacks towards the centre.
+const PLAYER_HALO_COLOUR := Color(1.0, 0.97, 0.75, 0.13)
+const PLAYER_HALO_RINGS := 3
+const PLAYER_HALO_RADIUS := 26.0
+const PLAYER_HALO_STEP := 0.3
+const PLAYER_HALO_PULSE := 0.07
+const PLAYER_HALO_RATE := 2.6
+## Enough to hand the cat the brightest pixels on screen, not enough to mud
+## the bug art. The hit flash still blows past it to white.
+const ENEMY_DIM := Color(0.88, 0.88, 0.93)
+
+# --- Audio feel ---
+## Random pitch spread on the spammy cues. Identical samples at ten a second
+## machine-gun; jingles (level up, chest) stay fixed on purpose, like an alarm.
+const AUDIO_VARY := 0.07
+## While a big cue plays, the spammy cues drop by this much, so a level-up is
+## heard over a hundred pops.
+const AUDIO_DUCK_DB := -8.0
+const AUDIO_DUCK_TIME := 0.5
+const AUDIO_BIG_CUES := ["level_up", "hurt", "heal", "chest", "boss", "win", "run_over", "pop_big"]
+## Pops the throttle swallowed are banked; every so many earn one deep pop
+## that cuts through, so mowing a crowd sounds bigger rather than busier.
+const POP_BIG_EVERY := 8
+const POP_BIG_GAP := 0.8
+## Per-weapon pitch over the shared shoot and hit cues, so ten toys are not
+## one click. Big and slow sits low; small and quick sits high.
+const WEAPON_VOICE := {
+	"paw": 0.9,
+	"yarn": 1.25,
+	"purr": 1.0,
+	"fish": 1.0,
+	"mouse": 0.75,
+	"milk": 0.85,
+	"zap": 1.4,
+	"boomer": 0.65,
+	"trail": 1.1,
+	"nap": 0.55,
+}
 
 # --- Touch ---
 ## The on-screen thumbstick, for phones and tablets. It appears wherever the
@@ -821,7 +981,9 @@ const MAPS := {
 			"res://assets/ground_ice.png",
 			"res://assets/ground_drift.png",
 			"res://assets/ground_cracks.png",
-			"res://assets/ground_rocks.png",
+			## The garden's stones as they are: grey reads as rock on snow,
+			## where a darker recolour read as a bug at a glance.
+			"res://assets/ground_stones.png",
 		],
 		"ground_weights": [0.30, 0.32, 0.22, 0.16],
 		"ground_scale": [1.7, 1.5, 0.9, 0.55],

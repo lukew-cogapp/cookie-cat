@@ -224,6 +224,47 @@ SLIME = [
     "....ooooooo.....",
     "................",
 ]
+# The spider is all legs: four splayed each side, so the silhouette reads at
+# a glance where another round body in a new hue would not.
+SPIDER = [
+    "................",
+    "................",
+    "..o...o..o...o..",
+    "..o...o..o...o..",
+    "...o..o..o..o...",
+    "....oooooooo....",
+    "...oNNNNNNNNo...",
+    "..oNvNNWWNWWNo..",
+    "..oNNNNWKNWKNo..",
+    "..oNNNNNNNNNNo..",
+    "...oNNNNNNNNo...",
+    "....oooooooo....",
+    "...o..o..o..o...",
+    "..o...o..o...o..",
+    "..o...o..o...o..",
+    "................",
+]
+# The dung beetle pushes its ball in front, so the two-blob outline is the
+# silhouette. Stink lines are light green: funny, not gross.
+DUNG = [
+    "................",
+    "...........g..g.",
+    "...........g..g.",
+    "................",
+    "..........oooo..",
+    ".........oMmmmo.",
+    "..ooo...oMmmmmmo",
+    ".oVVVo..ommmmmno",
+    "oVvVVVooommmmmno",
+    "oVVVWKooommmnnno",
+    "oVvVVVo..ommmno.",
+    ".oVVVo....oooo..",
+    "..o.o.o.........",
+    ".o..o..o........",
+    "................",
+    "................",
+]
+
 # The boss: the same slime shape scaled up in-engine would read as a big
 # slime, so this one gets a crown and a face of its own.
 BIG = [
@@ -821,44 +862,45 @@ GROUND_STONES = [
     "..oo............",
 ]
 
-# The boomerang fish. Drawn as a fish rather than a bent boomerang: a V at
-# 16px read as a slug, a boot, a blob and a tick across four attempts, and the
-# spin in flight is what sells the return anyway.
+# The feather wand: a real cat toy, and the string is what explains the
+# return. It replaced a boomerang, whose V read as a slug, a boot, a blob and
+# a tick at this size. The barbs sit OUTSIDE the spine with the outline broken
+# between them: a smooth outline reads as a sausage whatever is drawn inside.
 BOOMER = [
     "................",
+    ".............o..",
+    "...........o.Po.",
+    "..........oPoPo.",
+    ".........oPoPo..",
+    "..o.....oPoPPo..",
+    ".oWo...oPoPPo...",
+    "..oWo.oPoPPo....",
+    "...oWo.oPPo.....",
+    "....oWo.oPo.....",
+    ".....oWo.o......",
+    "......oWo.......",
+    ".......o........",
     "................",
-    "......oooo......",
-    ".....oCCCCoo....",
-    "...ooCcCCCCCo...",
-    "..oCCCCCCCCCCo..",
-    ".oCWKCCCCCCCCo.o",
-    ".oCWKCCCCCCCoocC",
-    ".oCCCCCCCCCoocCC",
-    "..oCcCCCCCCoCCCo",
-    "...oCCCCCCCCCCo.",
-    "....oCCCCCCCoo..",
-    ".....ooCCCoo....",
-    ".......ooo......",
     "................",
     "................",
 ]
 ICON_BOOMER = [
     "................",
-    "....oooo........",
-    "...oCCCCoo......",
-    "..oCcCCCCCoo....",
-    "..oCCCCCCCCCo...",
-    "...oCCCoooCCo...",
-    "....oCCo.oCCo...",
-    "...oCCo..oCCo...",
-    "..oCCo..oCCo....",
-    "..oCCo.oCCo.....",
-    "..oCCCoCCo......",
-    "...oCCCCo.......",
-    "....oooo........",
-    "................",
-    "................",
-    "................",
+    "............o.o.",
+    "..........o.PoPo",
+    ".........oPoPoP.",
+    ".........oPoPo..",
+    "........oPoPo.o.",
+    ".......oPoPoPo..",
+    "..o...oPoPPo....",
+    ".oWo.oPoPPo.....",
+    "..oWo.oPPo......",
+    "...oWo.oPo......",
+    "....oWo.o.......",
+    "..oBWo..........",
+    ".oBBo...........",
+    ".oBo............",
+    "..o.............",
 ]
 ICON_TRAIL = [
     "................",
@@ -876,6 +918,27 @@ ICON_TRAIL = [
     "..........oo....",
     ".........oBBo...",
     "..........oo....",
+    "................",
+]
+
+# The dung beetle's lob: a cartoon swirl with stink lines, drawn small. It has
+# to read as the beetle's ball in flight, so it shares the ball's mud tones.
+POOP = [
+    "................",
+    "................",
+    "....g......g....",
+    "....g..oo..g....",
+    "....g.onno.g....",
+    "......onnno.....",
+    ".....oonnnoo....",
+    "....omnnnnnmo...",
+    "...omnnnnnnnmo..",
+    "..ommnnnnnnmmo..",
+    "..oMmmmmmmmmMo..",
+    "...oooooooooo...",
+    "................",
+    "................",
+    "................",
     "................",
 ]
 
@@ -1146,6 +1209,9 @@ SPRITES = {
     "wasp": WASP,
     "slime": SLIME,
     "big": BIG,
+    "spider": SPIDER,
+    "dung": DUNG,
+    "poop": POOP,
     "gem": GEM,
     "gem_green": GEM_GREEN,
     "gem_red": GEM_RED,
@@ -1166,7 +1232,6 @@ RECOLOURED = {
     "ground_pool": (GROUND_MUD, {"M": "h", "m": "L", "n": "l"}),
     "ground_ice": (GROUND_MUD, {"M": "u", "m": "U", "n": "l"}),
     "ground_drift": (GROUND_PATCH, {"t": "j", "d": "W"}),
-    "ground_rocks": (GROUND_STONES, {"X": "N", "x": "X"}),
 }
 
 
