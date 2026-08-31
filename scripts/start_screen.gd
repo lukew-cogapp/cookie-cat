@@ -575,16 +575,30 @@ func _launch_bug(bug: TextureRect, mid_crossing: bool) -> void:
 ## its bundled third-party notices, so nothing here has to be kept in step by
 ## hand.
 func _build_licence() -> void:
+	# A credit rather than a button. The engine's licence has to be reachable,
+	# but this screen belongs to a child choosing a cat, and a big control they
+	# cannot read is one they will press. Small, dim, and along the bottom edge
+	# where the run stats already are.
 	var open := Button.new()
-	open.text = "?"
+	open.text = "Made with Godot Engine"
 	open.name = "About"
-	open.custom_minimum_size = Vector2(Tuning.MIN_TOUCH, Tuning.MIN_TOUCH)
+	open.flat = true
+	open.custom_minimum_size.y = Tuning.START_CREDIT_HEIGHT
+	# The bottom left corner, opposite Quit. The middle of this screen is full:
+	# under the stats is off the edge at 720 tall, and above them is behind the
+	# Play button.
 	open.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	open.offset_left = Tuning.START_EDGE_PAD
-	open.offset_top = -(Tuning.MIN_TOUCH + Tuning.START_EDGE_PAD)
-	open.offset_right = Tuning.MIN_TOUCH + Tuning.START_EDGE_PAD
+	open.offset_right = Tuning.START_EDGE_PAD + Tuning.START_CREDIT_WIDTH
+	open.offset_top = -(Tuning.START_CREDIT_HEIGHT + Tuning.START_EDGE_PAD)
 	open.offset_bottom = -Tuning.START_EDGE_PAD
-	open.add_theme_font_size_override("font_size", Tuning.TEXT_BODY)
+	open.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	open.add_theme_font_size_override("font_size", Tuning.START_CREDIT_SIZE)
+	open.add_theme_color_override("font_color", Tuning.START_CREDIT_COLOUR)
+	# The same outline the run stats carry. Without it the text sits on the
+	# lawn at low contrast and cannot be read at all.
+	open.add_theme_color_override("font_outline_color", Tuning.START_STAT_OUTLINE)
+	open.add_theme_constant_override("outline_size", Tuning.START_STAT_OUTLINE_SIZE)
 	add_child(open)
 
 	var panel := PanelContainer.new()

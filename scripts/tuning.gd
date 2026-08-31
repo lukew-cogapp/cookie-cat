@@ -1024,6 +1024,18 @@ const START_HAT_SEPARATION := 8.0
 const START_BAND_GAP := 56.0
 ## The inset the start screen's corner controls already sit at in the scene.
 const START_EDGE_PAD := 18.0
+## The engine credit along the bottom of the start screen, which is also how
+## the licence is reached. Deliberately quiet: it has to be findable, not seen.
+const START_CREDIT_SIZE := 15
+const START_CREDIT_WIDTH := 260.0
+## Shorter than MIN_TOUCH: this is a credit that happens to be tappable, not a
+## control a child is meant to find, and a 96-tall strip here would sit under
+## the Play button's reach.
+const START_CREDIT_HEIGHT := 30.0
+const START_CREDIT_COLOUR := Color(1.0, 0.97, 0.9, 0.7)
+## Matching the run stats, which sit on the same lawn.
+const START_STAT_OUTLINE := Color(0.18, 0.32, 0.12, 1.0)
+const START_STAT_OUTLINE_SIZE := 5
 
 ## The HUD's own geometry, matching what `hud.tscn` sets, so the safe-area
 ## inset has something to add to rather than a literal in two places.
