@@ -171,6 +171,13 @@ func stop_music() -> void:
 	_music_player.stop()
 
 
+## Silences the cues already in the air. `play` only refuses the next one, so
+## without this muting mid-fanfare still lets that fanfare finish.
+func stop_sounds() -> void:
+	for p: AudioStreamPlayer in _players:
+		p.stop()
+
+
 ## Applies the saved switches. Called by `Save` once it has loaded, and by the
 ## title screen's toggles.
 func set_muted(sound_off: bool, music_off: bool) -> void:
@@ -180,6 +187,8 @@ func set_muted(sound_off: bool, music_off: bool) -> void:
 	# The flags are enough: `play_music` checks them when it is next called.
 	if _music_player == null:
 		return
+	if muted:
+		stop_sounds()
 	if music_muted:
 		_music_player.stop()
 	elif _music_player.stream != null and not _music_player.playing:

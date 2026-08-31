@@ -23,6 +23,16 @@ func test_muting_stops_cues() -> void:
 	assert_eq(Audio.played.size(), 0, "nothing played")
 
 
+## Refusing the next cue is not enough: the fanfares run about a second, so a
+## child who hits mute during one would otherwise sit through the rest of it.
+func test_muting_silences_a_cue_already_playing() -> void:
+	Audio.set_muted(false, false)
+	Audio.play("level_up")
+	assert_true(_any_voice_playing(), "the cue is in the air")
+	Audio.set_muted(true, false)
+	assert_false(_any_voice_playing(), "and mute cut it off")
+
+
 func test_unmuting_lets_them_through() -> void:
 	Audio.set_muted(false, false)
 	Audio.play("pop")
@@ -63,3 +73,10 @@ func test_the_music_loop_is_long_enough() -> void:
 	var music: AudioStreamWAV = Audio._bank["music"]
 	var seconds := float(music.data.size() / 2) / float(Audio.RATE)
 	assert_gt(seconds, 4.5, "the loop runs %.1fs before repeating" % seconds)
+
+
+func _any_voice_playing() -> bool:
+	for p: AudioStreamPlayer in Audio._players:
+		if p.playing:
+			return true
+	return false
