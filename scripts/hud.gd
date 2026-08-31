@@ -210,7 +210,29 @@ func _show_next() -> void:
 	# read a card still progresses.
 	await get_tree().process_frame
 	if _cards.get_child_count() > 0:
+		_link_cards()
 		_cards.get_child(0).grab_focus()
+
+
+## Left and right wrap around the three cards, spelled out rather than left to
+## Godot's geometric guess: the cards are rebuilt every level, and a stick
+## nudged slightly off the horizontal would otherwise find nothing and the
+## picker would look frozen. The start screen wires its own cards the same way.
+func _link_cards() -> void:
+	var cards: Array[Node] = _cards.get_children()
+	for i in cards.size():
+		var b: Control = cards[i]
+		b.focus_mode = Control.FOCUS_ALL
+		var left: Control = cards[(i - 1 + cards.size()) % cards.size()]
+		var right: Control = cards[(i + 1) % cards.size()]
+		b.focus_neighbor_left = b.get_path_to(left)
+		b.focus_neighbor_right = b.get_path_to(right)
+		# Up and down stay put: there is nothing else on this screen, and a
+		# nudge that lost focus read as the game hanging.
+		b.focus_neighbor_top = b.get_path_to(b)
+		b.focus_neighbor_bottom = b.get_path_to(b)
+		b.focus_next = b.get_path_to(right)
+		b.focus_previous = b.get_path_to(left)
 
 
 ## The panel pops from small to full size, then each card pops in turn. A
