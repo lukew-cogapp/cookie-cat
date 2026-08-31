@@ -51,7 +51,7 @@ PALETTE = {
     "S": (120, 210, 170, 255),  # slime
     "s": (176, 238, 214, 255),
     "Z": (250, 226, 120, 255),  # wasp yellow
-    "N": (86, 74, 96, 255),  # wasp stripes
+    "w": (86, 74, 96, 255),  # wasp stripes
     "M": (188, 176, 200, 255),  # toy mouse grey
     "Q": (46, 96, 150, 255),  # deep water, the bottom of a trap
     "L": (140, 200, 246, 255),  # water / milk blue
@@ -63,7 +63,7 @@ PALETTE = {
     "T": (126, 186, 108, 255),  # lawn
     "t": (134, 194, 116, 255),  # lawn, a shade lighter
     "d": (116, 176, 100, 255),  # lawn, a shade darker
-    "M": (158, 132, 98, 255),  # mud, edge
+    "z": (158, 132, 98, 255),  # mud, edge
     "m": (140, 114, 82, 255),  # mud
     "n": (122, 98, 70, 255),  # mud, wet middle
     "X": (156, 152, 158, 255),  # stone
@@ -78,6 +78,30 @@ PALETTE = {
     "U": (140, 192, 232, 255),  # ice
     "u": (196, 228, 248, 255),  # ice light
 }
+
+
+def _check_palette(path: Path) -> None:
+    """One letter, one colour.
+
+    A repeated key is legal Python and the later one silently wins, so a
+    collision costs a wrongly coloured sprite rather than an error: the dung
+    beetle rendered in wasp grey for a long time because `N` was declared
+    twice. The dict itself cannot show that, so the source is read back.
+    """
+    text = path.read_text()
+    block = text.split("PALETTE = {", 1)[1].split("\n}", 1)[0]
+    seen: dict[str, int] = {}
+    for line in block.splitlines():
+        line = line.strip()
+        if not line.startswith('"'):
+            continue
+        letter = line[1]
+        seen[letter] = seen.get(letter, 0) + 1
+    twice = sorted(k for k, n in seen.items() if n > 1)
+    if twice:
+        raise SystemExit(
+            "palette letters declared more than once: %s" % ", ".join(twice)
+        )
 
 # The cat, facing right, three frames: stand, step, step-other. Chunky enough
 # that a five-year-old reads the face across a room.
@@ -202,9 +226,9 @@ WASP = [
     "...oZZZZZZo.....",
     "..oZZoZZoZZo....",
     "..oZZKZZKZZo....",
-    "..oNNNNNNNNo....",
+    "..owwwwwwwwo....",
     "..oZZZZZZZZo....",
-    "..oNNNNNNNNo....",
+    "..owwwwwwwwo....",
     "...oZZZZZZo.....",
     "....oooooo......",
     "......oo........",
@@ -241,11 +265,11 @@ SPIDER = [
     "..o...o..o...o..",
     "...o..o..o..o...",
     "....oooooooo....",
-    "...oNNNNNNNNo...",
-    "..oNvNNWWNWWNo..",
-    "..oNNNNWKNWKNo..",
-    "..oNNNNNNNNNNo..",
-    "...oNNNNNNNNo...",
+    "...owwwwwwwwo...",
+    "..owvwwWWwWWwo..",
+    "..owwwwWKwWKwo..",
+    "..owwwwwwwwwwo..",
+    "...owwwwwwwwo...",
     "....oooooooo....",
     "...o..o..o..o...",
     "..o...o..o...o..",
@@ -778,6 +802,63 @@ POOF = [
 
 # Breakable props. Each is bigger and stiller than a bug, so nothing is
 # mistaken for one, and each looks like something a cat would knock over.
+# The garden's breakables are the cat's own things: a bowl of biscuits, a bowl
+# of milk, and a fish supper. A pot of flowers is scenery a cat has no opinion
+# about, and these are the things worth knocking over.
+PROP_BOWL_FOOD = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "....oooooooo....",
+    "...oBbBbBbBBo...",
+    "..oOOOOOOOOOOo..",
+    "..oOWWWWWWWWOo..",
+    "..oOWWWWWWWWOo..",
+    "...oOWWWWWWOo...",
+    "....oOOOOOOo....",
+    ".....oooooo.....",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+PROP_BOWL_MILK = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "....oooooooo....",
+    "...oWWWWWWWWo...",
+    "..oCCCCCCCCCCo..",
+    "..oCWWWWWWWWCo..",
+    "..oCWWWWWWWWCo..",
+    "...oCWWWWWWCo...",
+    "....oCCCCCCo....",
+    ".....oooooo.....",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+PROP_BOWL_FISH = [
+    "................",
+    "................",
+    "................",
+    "....oo..........",
+    "...oCCoooooo....",
+    "..oCCCCoKoCCo...",
+    "..oCCCCCCCCCCo..",
+    "..oOWWWWWWWWOo..",
+    "..oOWWWWWWWWOo..",
+    "...oOWWWWWWOo...",
+    "....oOOOOOOo....",
+    ".....oooooo.....",
+    "................",
+    "................",
+    "................",
+    "................",
+]
 PROP_POT = [
     "................",
     "................",
@@ -837,20 +918,20 @@ PROP_BOX = [
 # needs variety, but a patch that reads as loudly as a bug makes the crowd hard
 # to pick out, which is the one thing that must stay legible.
 GROUND_MUD = [
-    "....MMMMMMM.....",
-    "..MMMmmmmmMMM...",
-    ".MMmmmmmmmmmMM..",
-    "MMmmmmnnmmmmmMM.",
-    "MmmmmnnnnmmmmmMM",
-    "MmmmnnnnnnmmmmmM",
-    "MmmmnnnnnnnmmmmM",
-    "MmmmmnnnnnnmmmmM",
-    "MMmmmmnnnnmmmmmM",
-    ".MMmmmmnnmmmmmMM",
-    "..MMmmmmmmmmmMM.",
-    "...MMmmmmmmmMM..",
-    "....MMMmmmMMM...",
-    "......MMMMM.....",
+    "....zzzzzzz.....",
+    "..zzzmmmmmzzz...",
+    ".zzmmmmmmmmmzz..",
+    "zzmmmmnnmmmmmzz.",
+    "zmmmmnnnnmmmmmzz",
+    "zmmmnnnnnnmmmmmz",
+    "zmmmnnnnnnnmmmmz",
+    "zmmmmnnnnnnmmmmz",
+    "zzmmmmnnnnmmmmmz",
+    ".zzmmmmnnmmmmmzz",
+    "..zzmmmmmmmmmzz.",
+    "...zzmmmmmmmzz..",
+    "....zzzmmmzzz...",
+    "......zzzzz.....",
     "................",
     "................",
 ]
@@ -1420,6 +1501,9 @@ SPRITES = {
     "ground_shells": GROUND_SHELLS,
     "ground_seaweed": GROUND_SEAWEED,
     "ground_cracks": GROUND_CRACKS,
+    "prop_bowl_food": PROP_BOWL_FOOD,
+    "prop_bowl_milk": PROP_BOWL_MILK,
+    "prop_bowl_fish": PROP_BOWL_FISH,
     "prop_pot": PROP_POT,
     "prop_bush": PROP_BUSH,
     "prop_box": PROP_BOX,
@@ -1473,8 +1557,8 @@ SPRITES = {
 # and snow lawn tiles. name -> (source grid, palette letter swap).
 RECOLOURED = {
     "ground_wet": (GROUND_PATCH, {"t": "h", "d": "H"}),
-    "ground_pool": (GROUND_MUD, {"M": "h", "m": "L", "n": "l"}),
-    "ground_ice": (GROUND_MUD, {"M": "u", "m": "U", "n": "l"}),
+    "ground_pool": (GROUND_MUD, {"z": "h", "m": "L", "n": "l"}),
+    "ground_ice": (GROUND_MUD, {"z": "u", "m": "U", "n": "l"}),
     "ground_drift": (GROUND_PATCH, {"t": "j", "d": "W"}),
 }
 
@@ -1742,6 +1826,7 @@ def feature_graphic():
 
 
 def main():
+    _check_palette(Path(__file__).resolve())
     OUT.mkdir(parents=True, exist_ok=True)
     for name, grid in SPRITES.items():
         w, h = write_png(OUT / f"{name}.png", grid)
