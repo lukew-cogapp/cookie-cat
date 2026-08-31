@@ -36,9 +36,10 @@ scripts/run_state.gd       one run's state, autoloaded as `Run`
 scripts/swarm.gd           enemies as array rows, one MultiMesh per kind
 scripts/weapons.gd         all eight toys in one node
 scripts/gems.gd            pickups, same pattern as the swarm
+scripts/traps.gd           holes in the ground, one hazard per map
 scripts/director.gd        the wave table, and bosses
 scripts/world.gd           wires the run together
-scripts/hud.gd             hearts, clock, xp bar, the pick screen
+scripts/hud.gd             health bar, clock, xp bar, the pick screen
 scripts/tools/make_art.py  draws every sprite from pixel grids
 assets/*.png               16x16, all generated
 ui/*.tres                  shared styles
@@ -110,7 +111,7 @@ which at eight compass points hits one. A probe reported three kills in twenty
 seconds and a dead cat. It is 2.5 now, a bit over 140 degrees: a child cannot
 aim, so anything in front counts.
 
-**Mercy time alone is not survivable.** Three hearts went in 3.7 seconds
+**Mercy time alone is not survivable.** The whole bar went in 3.7 seconds
 standing in a crowd, because the next touch landed the frame the flashing
 stopped. A hit now also shoves every bug clear (`Swarm.push_from`), which is
 what buys the room to walk out. `test_mercy_outlasts_a_touch` pins the
@@ -150,6 +151,19 @@ crossing out does not flicker.
 **Props are damaged through `world.gd`, not by each weapon.** `Props` exposes
 `damage_near`, and `weapons.gd` routes every area of effect through
 `_break_props`, so a new weapon breaks pots without knowing props exist.
+
+**A hazard the camera never shows teaches nothing.** The traps were first
+scattered one per 520-unit cell, which is a reasonable-looking number and put a
+hole on screen about half the time: the camera shows 512x288 world units at
+`ZOOM`, not the whole field. Any field of anything the player must react to has
+to be sized against the visible area, not against the world.
+
+**A hole is read by its darkness, not its colour.** The ice hole was first
+drawn in the palette's ice blues and vanished on snow, which is the same
+value-range trap the white hit flash fell into. All three traps now share one
+rule: near-black or deep-water centre, pale lip, one dark outline. Mud was
+tried for the pond's depth and read as a mud patch rather than water, so the
+palette gained one deep blue (`Q`) instead.
 
 ## Godot facts worth not relearning
 

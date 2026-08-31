@@ -12,6 +12,7 @@ extends Node2D
 @onready var _props: Props = $Props
 @onready var _lawn: Sprite2D = $Lawn
 @onready var _ground: Ground = $Ground
+@onready var _traps: Traps = $Traps
 @onready var _camera: Camera2D = $Player/Camera
 @onready var _hud: CanvasLayer = $Hud
 
@@ -34,6 +35,9 @@ func _ready() -> void:
 	_props.scatter(_player.global_position)
 	_ground.set_player(_player)
 	_ground.scatter(_player.global_position)
+	_traps.set_player(_player)
+	_traps.scatter(_player.global_position)
+	_traps.fell_in.connect(_on_fell_in)
 	_props.broke.connect(_on_prop_broke)
 	_weapons.set_props(_props)
 	_weapons.set_puffs(_puffs)
@@ -166,6 +170,26 @@ func _on_prop_broke(at: Vector2, kind: int) -> void:
 	elif drop == Gems.Kind.COOKIE:
 		worth = Tuning.COOKIE_VALUE
 	_gems.drop(at, drop, worth)
+
+
+## The cat walked into a hole. This goes through `hurt` like a bug's touch, so
+## mercy time protects against it and it cannot land twice in a blink: the trap
+## keeps its own cooldown for the case where the cat is still standing in it.
+##
+## Half the bar at once, which is lethal from half health down. That is the
+## whole point of a hazard that does not move, so nothing here softens it.
+func _on_fell_in(at: Vector2) -> void:
+	_player.hurt(Tuning.TRAP_DAMAGE)
+	# A ring of the map's own water or snow, thrown up out of the hole.
+	_puffs.ring(
+		at,
+		Gems.Kind.GEM,
+		Tuning.TRAP_SPLASH_COUNT,
+		Tuning.TRAP_SPLASH_COLOUR,
+		Tuning.TRAP_RADIUS * 0.5,
+		Tuning.TRAP_SPLASH_SPEED,
+	)
+	_shake = Tuning.SHAKE_TIME
 
 
 ## A sparkle where the pickup was collected; hearts sparkle pink so healing
