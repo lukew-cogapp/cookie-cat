@@ -139,3 +139,33 @@ func test_the_clock_ends_the_run() -> void:
 	Run.tick(Tuning.RUN_SECONDS + 1.0)
 	assert_false(Run.alive, "time is up")
 	assert_true(Run.won, "and surviving it is a win")
+
+
+## A snack heals rather than levelling, and is a wasted card at full health, so
+## it is only offered while a heart is missing.
+func test_a_snack_is_only_offered_when_hurt() -> void:
+	Run.hurt = false
+	for _i in 30:
+		for id: String in Run._choices():
+			assert_false(Tuning.CONSUMABLES.has(id), "no snack at full health")
+	Run.hurt = true
+	var seen := false
+	for _i in 60:
+		for id: String in Run._choices():
+			if Tuning.CONSUMABLES.has(id):
+				seen = true
+	assert_true(seen, "a snack is offered once a heart is missing")
+
+
+## Taking one must not put it in a pool: a snack cannot be levelled and must
+## not fill a passive slot.
+func test_a_snack_is_never_owned() -> void:
+	var told: Array[String] = []
+	var watch := func(id: String) -> void: told.append(id)
+	Run.consumed.connect(watch)
+	Run.take("snack")
+	Run.consumed.disconnect(watch)
+	assert_eq(told, ["snack"], "the world was told to apply it")
+	assert_false("snack" in Run.passives, "not in passives")
+	assert_false("snack" in Run.weapons, "not in weapons")
+	assert_eq(Run.level_of("snack"), 0, "and owns none of it")

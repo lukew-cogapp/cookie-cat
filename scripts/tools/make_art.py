@@ -55,6 +55,11 @@ PALETTE = {
     "T": (126, 186, 108, 255),  # lawn
     "t": (134, 194, 116, 255),  # lawn, a shade lighter
     "d": (116, 176, 100, 255),  # lawn, a shade darker
+    "M": (158, 132, 98, 255),  # mud, edge
+    "m": (140, 114, 82, 255),  # mud
+    "n": (122, 98, 70, 255),  # mud, wet middle
+    "X": (156, 152, 158, 255),  # stone
+    "x": (186, 182, 190, 255),  # stone highlight
 }
 
 # The cat, facing right, three frames: stand, step, step-other. Chunky enough
@@ -687,8 +692,88 @@ PROP_BOX = [
     "................",
 ]
 
+# Ground decals, scattered under everything. Low contrast on purpose: the lawn
+# needs variety, but a patch that reads as loudly as a bug makes the crowd hard
+# to pick out, which is the one thing that must stay legible.
+GROUND_MUD = [
+    "....MMMMMMM.....",
+    "..MMMmmmmmMMM...",
+    ".MMmmmmmmmmmMM..",
+    "MMmmmmnnmmmmmMM.",
+    "MmmmmnnnnmmmmmMM",
+    "MmmmnnnnnnmmmmmM",
+    "MmmmnnnnnnnmmmmM",
+    "MmmmmnnnnnnmmmmM",
+    "MMmmmmnnnnmmmmmM",
+    ".MMmmmmnnmmmmmMM",
+    "..MMmmmmmmmmmMM.",
+    "...MMmmmmmmmMM..",
+    "....MMMmmmMMM...",
+    "......MMMMM.....",
+    "................",
+    "................",
+]
+GROUND_PATCH = [
+    "................",
+    "....ttttt.......",
+    "..tttdddttt.....",
+    ".ttdddddddtt....",
+    ".tdddddddddt....",
+    "ttddddddddddt...",
+    "tddddddddddddt..",
+    "tddddddddddddt..",
+    ".tddddddddddt...",
+    ".ttdddddddddt...",
+    "..tttdddddtt....",
+    "....tttttt......",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+GROUND_FLOWERS = [
+    "................",
+    "...W....R.......",
+    "..WYW..RYR...W..",
+    "...W....R...WYW.",
+    "....g.g......W..",
+    ".....g..g...g...",
+    "..Y....g...g....",
+    ".YWY....g.g.....",
+    "..Y......g......",
+    "....g.g.........",
+    "..R..g..........",
+    ".RYR..W.....R...",
+    "..R..WYW...RYR..",
+    "......W.....R...",
+    "................",
+    "................",
+]
+GROUND_STONES = [
+    "................",
+    "................",
+    "...oooo.........",
+    "..oXXXXo....oo..",
+    "..oXxXXo...oXXo.",
+    "...oooo....oXxo.",
+    "..........oooo..",
+    "................",
+    ".....oooooo.....",
+    "....oXXXXXXo....",
+    "....oXxXXXXo....",
+    ".....oooooo.....",
+    "................",
+    "..oo............",
+    ".oXXo...........",
+    "..oo............",
+]
+
 SPRITES = {
     "cat": CAT_STAND,
+    "ground_mud": GROUND_MUD,
+    "ground_patch": GROUND_PATCH,
+    "ground_flowers": GROUND_FLOWERS,
+    "ground_stones": GROUND_STONES,
     "prop_pot": PROP_POT,
     "prop_bush": PROP_BUSH,
     "prop_box": PROP_BOX,

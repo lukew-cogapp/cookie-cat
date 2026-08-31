@@ -114,6 +114,9 @@ func test_everything_offered_has_art_and_words() -> void:
 	for id: String in Tuning.PASSIVES:
 		assert_true(Tuning.ICONS.has(id), "%s has an icon" % id)
 		assert_true(Tuning.BLURBS.has(id), "%s has a blurb" % id)
+	for id: String in Tuning.CONSUMABLES:
+		assert_true(Tuning.ICONS.has(id), "%s has an icon" % id)
+		assert_true(Tuning.BLURBS.has(id), "%s has a blurb" % id)
 
 
 func test_every_icon_file_exists() -> void:
@@ -193,6 +196,42 @@ func test_mercy_outlasts_a_touch() -> void:
 ## standing exactly on them.
 func test_the_magnet_reaches_further_than_the_grab() -> void:
 	assert_gt(Tuning.MAGNET_RADIUS, Tuning.GEM_TAKE_RADIUS, "gems fly in")
+
+
+## Playing well has to pay. Cookies used to come almost entirely from bosses and
+## the finish bonus, so a good run and a poor one paid the same and there was no
+## reason to fight rather than hide.
+func test_playing_well_pays_better() -> void:
+	@warning_ignore("integer_division")
+	var poor := (200 / Tuning.COOKIE_EVERY) * Tuning.COOKIE_VALUE
+	@warning_ignore("integer_division")
+	var good := (900 / Tuning.COOKIE_EVERY) * Tuning.COOKIE_VALUE
+	var fixed := (
+		Tuning.COOKIE_PER_BOSS * Tuning.BOSS_MINUTES.size() * Tuning.COOKIE_VALUE
+		+ Tuning.COOKIE_FINISH_BONUS
+	)
+	assert_gt(
+		float(good + fixed) / float(poor + fixed),
+		1.4,
+		"a strong run pays well over a weak one",
+	)
+
+
+## The first new cat should arrive after about one run, or the shop is a wall
+## rather than a reward.
+func test_the_first_cat_costs_about_one_run() -> void:
+	var cheapest := 999999
+	for id: String in Tuning.CATS:
+		var cost := int(Tuning.CATS[id]["cost"])
+		if cost > 0:
+			cheapest = mini(cheapest, cost)
+	@warning_ignore("integer_division")
+	var a_run := (
+		(400 / Tuning.COOKIE_EVERY) * Tuning.COOKIE_VALUE
+		+ Tuning.COOKIE_PER_BOSS * Tuning.BOSS_MINUTES.size() * Tuning.COOKIE_VALUE
+		+ Tuning.COOKIE_FINISH_BONUS
+	)
+	assert_lte(cheapest, a_run, "one run buys the first new cat")
 
 
 ## A cat has to be affordable within a few runs, or the shop is decoration.

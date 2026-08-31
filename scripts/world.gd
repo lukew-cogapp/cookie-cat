@@ -11,6 +11,7 @@ extends Node2D
 @onready var _puffs: Puffs = $Puffs
 @onready var _props: Props = $Props
 @onready var _lawn: Sprite2D = $Lawn
+@onready var _ground: Ground = $Ground
 @onready var _camera: Camera2D = $Player/Camera
 @onready var _hud: CanvasLayer = $Hud
 
@@ -28,12 +29,16 @@ func _ready() -> void:
 	_director.setup(_swarm, _player)
 	_props.set_player(_player)
 	_props.scatter(_player.global_position)
+	_ground.set_player(_player)
+	_ground.scatter(_player.global_position)
 	_props.broke.connect(_on_prop_broke)
 	_weapons.set_props(_props)
 	_weapons.killed.connect(_on_killed)
 	_gems.collected.connect(_on_collected)
 	_director.boss_arrived.connect(_on_boss)
 	_player.health_changed.connect(_hud.set_health)
+	_player.health_changed.connect(_on_health)
+	Run.consumed.connect(_on_consumed)
 	_player.died.connect(_on_died)
 	_player.hurt_taken.connect(_on_hurt)
 	_hud.set_health(_player.hp, _player.max_hp)
@@ -108,6 +113,19 @@ func _follow_lawn() -> void:
 	var tile := Tuning.LAWN_TILE
 	var at := _player.global_position
 	_lawn.position = Vector2(snappedf(at.x, tile), snappedf(at.y, tile))
+
+
+## `Run` decides what to offer and cannot reach the player, so whether a heart
+## is missing is pushed to it here.
+func _on_health(hp: float, max_hp: float) -> void:
+	Run.hurt = hp < max_hp
+
+
+## A snack heals on the spot rather than being levelled.
+func _on_consumed(id: String) -> void:
+	var heals := float(Tuning.CONSUMABLES[id].get("heals", 0.0))
+	if heals > 0.0:
+		_player.heal(heals)
 
 
 ## A broken prop drops what it rolled: usually the xp a bug would give,

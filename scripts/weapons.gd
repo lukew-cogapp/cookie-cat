@@ -47,6 +47,11 @@ var _zone_dead: Array[int] = []
 ## Where the orbiting fish are this frame, for the drawing code.
 var orbit_angle := 0.0
 
+## Loaded once in `_ready`: a load() per shot per frame would hit the cache and
+## still cost a lookup for every ball on screen.
+var _fish_art: Texture2D
+var _shot_art: Array[Texture2D] = []
+
 ## Effects with no travel time still have to be seen, or a weapon that fires
 ## reads as the world dealing damage by itself. A swipe, a yawn and a zap each
 ## leave a shape here for a fraction of a second. `kind` indexes
@@ -65,6 +70,9 @@ signal killed(at: Vector2, kind: int)
 
 
 func _ready() -> void:
+	_fish_art = load(Tuning.ORBIT_ART)
+	for path: String in Tuning.SHOT_ART:
+		_shot_art.append(load(path))
 	shot_pos.resize(SHOT_MAX)
 	shot_vel.resize(SHOT_MAX)
 	shot_damage.resize(SHOT_MAX)
@@ -406,29 +414,120 @@ func _compact_zones() -> void:
 	_zone_dead.clear()
 
 
-## Weapon effects are drawn, not spawned as nodes: a puddle is a circle and a
-## yarn ball is a dot, and `_draw` costs nothing next to a scene per shot.
+## Weapon effects are drawn here rather than spawned as nodes: a scene per
+## yarn ball would cost more than the ball.
+##
+## Every toy is drawn as its own sprite, not as a coloured dot. A fish drawn as
+## a blue circle reads as a bubble, and eight weapons drawn as primitives read
+## as one weapon with different colours. `_sprite` rotates the art to face its
+## travel, so a fish swims round the cat and a mouse points where it is going.
 func _draw() -> void:
 	if not Run.alive or _player == null:
 		return
 	var at := to_local(_player.global_position)
+
+	# Puddles first: everything else stands on top of them.
 	for z in zones:
 		var fade: float = clampf(zone_life[z] / Tuning.ZONE_FADE_TIME, 0.0, 1.0)
+		var here := to_local(zone_pos[z])
 		var c := Tuning.ZONE_COLOUR
-		draw_circle(to_local(zone_pos[z]), zone_radius[z], Color(c.r, c.g, c.b, c.a * fade))
+		draw_circle(here, zone_radius[z], Color(c.r, c.g, c.b, c.a * fade))
+		# A rim, so the edge of the slow is visible rather than a soft blob.
+		var rim: Color = Tuning.ZONE_RIM_COLOUR
+		draw_arc(
+			here,
+			zone_radius[z],
+			0.0,
+			TAU,
+			32,
+			Color(rim.r, rim.g, rim.b, rim.a * fade),
+			Tuning.ZONE_RIM_WIDTH,
+			true,
+		)
+
 	if Run.level_of("purr") > 0:
-		var r := _radius("purr", Run.level_of("purr"))
-		draw_arc(at, r, 0.0, TAU, 48, Tuning.AURA_COLOUR, Tuning.AURA_WIDTH, true)
+		_draw_purr(at, _radius("purr", Run.level_of("purr")))
+
 	if Run.level_of("fish") > 0:
 		var level := Run.level_of("fish")
 		var count := int(Tuning.weapon_stat("fish", "count", level))
 		var r := _radius("fish", level)
 		for n in count:
 			var a := orbit_angle + TAU * float(n) / float(count)
-			draw_circle(at + Vector2.from_angle(a) * r, Tuning.ORBIT_DRAW_RADIUS, Tuning.ORBIT_COLOUR)
+			var here := at + Vector2.from_angle(a) * r
+			# A fish swims nose-first along the ring, so it faces the tangent,
+			# not the radius. The art points +x, and the fish travels
+			# anticlockwise as `orbit_angle` grows, so the heading is a quarter
+			# turn PAST its position; drawn a quarter turn back it swam
+			# backwards through the whole orbit.
+			var heading := a + PI * 0.5
+			# Sprites are drawn upright, so a fish on the left half would be
+			# upside down. Mirroring vertically there keeps it belly-down all
+			# the way round, which is what `_sprite`'s flip argument is for.
+			var upside_down := absf(wrapf(heading, -PI, PI)) > PI * 0.5
+			_sprite(
+				_fish_art,
+				here,
+				heading,
+				Tuning.ORBIT_DRAW_SIZE,
+				Color.WHITE,
+				upside_down,
+			)
+
 	for s in shots:
-		draw_circle(to_local(shot_pos[s]), Tuning.SHOT_DRAW_RADIUS, Tuning.SHOT_COLOURS[shot_kind[s]])
+		var here := to_local(shot_pos[s])
+		var art: Texture2D = _shot_art[shot_kind[s]]
+		# A short trail, so a fast yarn ball reads as thrown rather than as a
+		# dot that teleports between frames.
+		var back: Vector2 = here - shot_vel[s].normalized() * Tuning.SHOT_TRAIL
+		var t: Color = Tuning.SHOT_TRAIL_COLOUR
+		draw_line(back, here, t, Tuning.SHOT_TRAIL_WIDTH, true)
+		# Yarn tumbles as it flies; the mouse points where it is running.
+		var spin: float = (
+			Run.clock * Tuning.SHOT_SPIN
+			if shot_kind[s] == 0
+			else shot_vel[s].angle()
+		)
+		_sprite(art, here, spin, Tuning.SHOT_DRAW_SIZE, Color.WHITE)
+
 	_draw_fx()
+
+
+## The purr ring: a dotted circle of paw-pink pips that turns, rather than a
+## thin outline. A static arc read as a UI element drawn over the game.
+func _draw_purr(at: Vector2, r: float) -> void:
+	var pips: int = Tuning.AURA_PIPS
+	var turn: float = Run.clock * Tuning.AURA_SPIN
+	var c: Color = Tuning.AURA_COLOUR
+	draw_arc(at, r, 0.0, TAU, 48, Color(c.r, c.g, c.b, c.a * 0.5), Tuning.AURA_WIDTH, true)
+	for n in pips:
+		var a := turn + TAU * float(n) / float(pips)
+		# Each pip breathes on its own phase, so the ring shimmers instead of
+		# pulsing as one solid band.
+		var size: float = Tuning.AURA_PIP_SIZE * (
+			1.0 + Tuning.AURA_PIP_BREATHE * sin(Run.clock * Tuning.AURA_PIP_RATE + float(n))
+		)
+		draw_circle(at + Vector2.from_angle(a) * r, size, c)
+
+
+## One sprite, centred, rotated, at a size in world units. Drawing a texture
+## takes a rect rather than a centre, so this is the only place that maths
+## lives.
+func _sprite(
+	art: Texture2D,
+	centre: Vector2,
+	turn: float,
+	size: float,
+	tint: Color,
+	flip_v := false,
+) -> void:
+	if art == null:
+		return
+	# A negative y scale mirrors about the sprite's own axis, which is what
+	# keeps a rotated fish belly-down rather than rolling over.
+	draw_set_transform(centre, turn, Vector2(1.0, -1.0 if flip_v else 1.0))
+	draw_texture_rect(art, Rect2(-size * 0.5, -size * 0.5, size, size), false, tint)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## Instant weapons, drawn from the record `_add_fx` left. Each fades over its
@@ -439,40 +538,83 @@ func _draw_fx() -> void:
 		var here := to_local(fx_pos[f])
 		match fx_kind[f]:
 			Tuning.FX_ARC:
-				# The wedge the paw actually swept, so what was hit and what
-				# was missed is on screen.
-				var half: float = float(Tuning.WEAPONS["paw"]["arc"]) * 0.5
-				var mid := fx_to[f].angle()
-				var c := Tuning.FX_ARC_COLOUR
-				draw_arc(
-					here,
-					fx_radius[f] * (1.0 - 0.15 * (1.0 - t)),
-					mid - half,
-					mid + half,
-					24,
-					Color(c.r, c.g, c.b, c.a * t),
-					Tuning.FX_ARC_WIDTH * t,
-					true,
-				)
+				_draw_swipe(here, fx_to[f].angle(), fx_radius[f], t)
 			Tuning.FX_RING:
-				# A yawn: a ring expanding to the radius it hit.
-				var c2 := Tuning.FX_RING_COLOUR
-				draw_arc(
-					here,
-					fx_radius[f] * (1.0 - t),
-					0.0,
-					TAU,
-					40,
-					Color(c2.r, c2.g, c2.b, c2.a * t),
-					Tuning.FX_RING_WIDTH,
-					true,
-				)
+				_draw_yawn(here, fx_radius[f], t)
 			Tuning.FX_BOLT:
-				var c3 := Tuning.FX_BOLT_COLOUR
-				draw_line(
-					here,
-					to_local(fx_to[f]),
-					Color(c3.r, c3.g, c3.b, c3.a * t),
-					Tuning.FX_BOLT_WIDTH,
-					true,
-				)
+				_draw_bolt(here, to_local(fx_to[f]), t)
+
+
+## The paw swipe: three tapering crescents sweeping through the wedge that was
+## hit, brightest at the leading edge. A single thin arc read as a UI outline
+## and gave no sense of a paw moving through anything.
+func _draw_swipe(at: Vector2, facing: float, r: float, t: float) -> void:
+	var half: float = float(Tuning.WEAPONS["paw"]["arc"]) * 0.5
+	var c: Color = Tuning.FX_ARC_COLOUR
+	for n in Tuning.FX_ARC_BANDS:
+		# Each band trails the one in front, so the swipe reads as sweeping
+		# rather than as a shape appearing all at once.
+		var lag := float(n) * Tuning.FX_ARC_BAND_LAG
+		var swept: float = clampf(1.0 - t - lag, 0.0, 1.0)
+		if swept <= 0.0:
+			continue
+		var band_r: float = r * (1.0 - float(n) * Tuning.FX_ARC_BAND_STEP)
+		var from := facing - half
+		draw_arc(
+			at,
+			band_r,
+			from,
+			from + half * 2.0 * swept,
+			20,
+			Color(c.r, c.g, c.b, c.a * t),
+			Tuning.FX_ARC_WIDTH * (1.0 - float(n) * 0.25),
+			true,
+		)
+	# Sparks along the leading edge, so the tip of the swipe has weight.
+	var tip: float = facing - half + half * 2.0 * clampf(1.0 - t, 0.0, 1.0)
+	for n in Tuning.FX_ARC_SPARKS:
+		var spread: float = (float(n) / float(Tuning.FX_ARC_SPARKS) - 0.5) * Tuning.FX_ARC_SPARK_SPREAD
+		var p := at + Vector2.from_angle(tip + spread) * r
+		draw_circle(p, Tuning.FX_ARC_SPARK_SIZE * t, Color(1.0, 1.0, 1.0, t))
+
+
+## The sleepy yawn: two rings expanding out of the cat at different rates, so
+## the blast has depth rather than being one hoop.
+func _draw_yawn(at: Vector2, r: float, t: float) -> void:
+	var c: Color = Tuning.FX_RING_COLOUR
+	for n in 2:
+		var lead: float = 1.0 - t + float(n) * Tuning.FX_RING_LAG
+		if lead <= 0.0 or lead > 1.0:
+			continue
+		draw_arc(
+			at,
+			r * lead,
+			0.0,
+			TAU,
+			40,
+			Color(c.r, c.g, c.b, c.a * t * (1.0 - float(n) * 0.4)),
+			Tuning.FX_RING_WIDTH,
+			true,
+		)
+
+
+## Static fur: a jagged bolt rather than a straight line, because a straight
+## line between the cat and a bug reads as a tether.
+func _draw_bolt(from: Vector2, to: Vector2, t: float) -> void:
+	var c: Color = Tuning.FX_BOLT_COLOUR
+	var alpha := Color(c.r, c.g, c.b, c.a * t)
+	var span := to - from
+	var side := span.orthogonal().normalized()
+	var last := from
+	for n in range(1, Tuning.FX_BOLT_STEPS + 1):
+		var along: float = float(n) / float(Tuning.FX_BOLT_STEPS)
+		var next := from + span * along
+		# Zigzag, pinched to nothing at both ends so the bolt still starts at
+		# the cat and lands on the bug.
+		if n < Tuning.FX_BOLT_STEPS:
+			var wobble: float = sin(along * PI) * Tuning.FX_BOLT_JAG
+			next += side * wobble * (1.0 if n % 2 == 0 else -1.0)
+		draw_line(last, next, alpha, Tuning.FX_BOLT_WIDTH, true)
+		last = next
+	# A flash where it lands, so the hit is where the eye goes.
+	draw_circle(to, Tuning.FX_BOLT_FLASH * t, Color(1.0, 1.0, 1.0, t))

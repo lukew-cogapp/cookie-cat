@@ -19,6 +19,10 @@ const HEART_EMPTY := "♡"
 @onready var _over: Control = $Over
 @onready var _over_text: Label = $Over/Panel/Pad/Col/Text
 @onready var _again: Button = $Over/Panel/Pad/Col/Again
+@onready var _loadout: VBoxContainer = $Loadout/Pad/Rows
+@onready var _paused: Control = $Paused
+@onready var _resume: Button = $Paused/Panel/Pad/Col/Resume
+@onready var _quit: Button = $Paused/Panel/Pad/Col/Quit
 
 var _pending: Array = []
 ## True while the slow-mo ramp runs, so a second level in that window queues
@@ -36,7 +40,37 @@ func _ready() -> void:
 	Run.levelled.connect(_offer)
 	Run.ended.connect(_finish)
 	_again.pressed.connect(_restart)
+	_paused.visible = false
+	_resume.pressed.connect(_unpause)
+	_quit.pressed.connect(_restart)
 	_refresh()
+
+
+## Escape and Start pause. Read as an unhandled input so a button holding focus
+## on the pick screen cannot swallow it, and refused while the picker or the end
+## screen is up: both already pause the tree, and unpausing under them would let
+## the run continue behind a modal.
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("pause"):
+		return
+	if not Run.alive or _picker.visible or _over.visible:
+		return
+	get_viewport().set_input_as_handled()
+	if _paused.visible:
+		_unpause()
+	else:
+		_pause()
+
+
+func _pause() -> void:
+	_paused.visible = true
+	get_tree().paused = true
+	_resume.grab_focus()
+
+
+func _unpause() -> void:
+	_paused.visible = false
+	get_tree().paused = false
 
 
 func _process(_delta: float) -> void:
@@ -67,8 +101,53 @@ func flash(text: String) -> void:
 
 func _refresh() -> void:
 	_level.text = "Lv %d" % Run.level
+	_refresh_loadout()
 	var frac := float(Run.xp) / float(maxi(Run.xp_needed, 1))
 	_xp_fill.anchor_right = clampf(frac, 0.0, 1.0)
+
+
+## What the cat is carrying, top right, as an icon and a row of pips per toy.
+## Rows are reused rather than rebuilt: `Run.changed` fires on every gem, and
+## rebuilding a dozen rows that often was the one avoidable cost in the HUD.
+func _refresh_loadout() -> void:
+	var owned: Array[String] = []
+	for id: String in Run.weapons:
+		owned.append(id)
+	for id: String in Run.passives:
+		owned.append(id)
+	while _loadout.get_child_count() < owned.size():
+		_loadout.add_child(_loadout_row())
+	for n in _loadout.get_child_count():
+		var row: Control = _loadout.get_child(n)
+		row.visible = n < owned.size()
+		if not row.visible:
+			continue
+		var id := owned[n]
+		var art: TextureRect = row.get_node("Art")
+		var pips: Label = row.get_node("Pips")
+		if Tuning.ICONS.has(id):
+			art.texture = load(Tuning.ICONS[id])
+		# Pips, not a number: a level is a quantity a child reads by counting.
+		pips.text = "●".repeat(Run.level_of(id))
+
+
+func _loadout_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	var art := TextureRect.new()
+	art.name = "Art"
+	art.custom_minimum_size = Tuning.LOADOUT_ICON_SIZE
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	row.add_child(art)
+	var pips := Label.new()
+	pips.name = "Pips"
+	pips.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	pips.add_theme_font_size_override("font_size", Tuning.LOADOUT_PIP_SIZE)
+	pips.add_theme_color_override("font_color", Tuning.LOADOUT_PIP_COLOUR)
+	row.add_child(pips)
+	return row
 
 
 ## A level-up pauses the game until a card is chosen. Two levels at once queue,
@@ -153,8 +232,18 @@ func _pop_cards() -> void:
 ## rather than as a scene because every part is driven by the id, and a scene
 ## would need each one wired by path anyway.
 func _card(id: String) -> Button:
+	var is_consumable := Tuning.CONSUMABLES.has(id)
 	var is_passive := Tuning.PASSIVES.has(id)
-	var data: Dictionary = Tuning.PASSIVES[id] if is_passive else Tuning.WEAPONS[id]
+	# Looked up in the table the id actually belongs to. Seeding this from
+	# WEAPONS and correcting it below crashed on every passive and snack: the
+	# initialiser is evaluated before the branch can redirect it.
+	var data: Dictionary = {}
+	if is_consumable:
+		data = Tuning.CONSUMABLES[id]
+	elif is_passive:
+		data = Tuning.PASSIVES[id]
+	else:
+		data = Tuning.WEAPONS[id]
 	var level := Run.level_of(id)
 
 	var b := Button.new()
@@ -179,7 +268,11 @@ func _card(id: String) -> Button:
 	b.add_child(col)
 
 	var head := Label.new()
-	head.text = "NEW!" if level == 0 else "★".repeat(level + 1)
+	head.text = "★".repeat(level + 1)
+	if is_consumable:
+		head.text = "YUM!"
+	elif level == 0:
+		head.text = "NEW!"
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	head.add_theme_font_size_override("font_size", 22)
 	head.add_theme_color_override(

@@ -42,7 +42,7 @@ func _ready() -> void:
 		_sprite.texture,
 		load(Tuning.CAT_STEP_B),
 	]
-	max_hp = Tuning.PLAYER_MAX_HP * Run.passive("vest")
+	max_hp = Tuning.PLAYER_MAX_HP
 	hp = max_hp
 	health_changed.emit(hp, max_hp)
 

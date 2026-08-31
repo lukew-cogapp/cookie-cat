@@ -76,6 +76,13 @@ const PASSIVE_LEVEL_MAX := 5
 ## opens with a different weapon, which is the whole difference between them:
 ## a starting weapon changes how a run has to be played from the first second,
 ## where a stat bonus is a number a child cannot see.
+## Picks that are used at once rather than levelled. `Run.take` applies them
+## and they never appear in `weapons` or `passives`, so a snack cannot be
+## "levelled" and cannot fill a slot.
+const CONSUMABLES := {
+	"snack": {"name": "Tasty Snack", "heals": 1.0},
+}
+
 const STARTER_CAT := "cookie"
 const CATS := {
 	"cookie": {"name": "Cookie Cat", "weapon": "paw", "cost": 0, "art": "res://assets/cat.png"},
@@ -87,12 +94,12 @@ const CATS := {
 
 ## Cookies are the currency between runs. Bugs drop them rarely; a boss always
 ## does, so a child who reaches one is paid for it.
-const COOKIE_EVERY := 140
-const COOKIE_PER_BOSS := 8
+const COOKIE_EVERY := 12
+const COOKIE_PER_BOSS := 10
 const COOKIE_VALUE := 1
 ## Paid at the end for surviving, so a full run is worth more than quitting at
 ## nine minutes with the same kills.
-const COOKIE_FINISH_BONUS := 15
+const COOKIE_FINISH_BONUS := 30
 ## Cookies from a boss are scattered rather than stacked, so they read as a
 ## pile to walk through and not as one pickup.
 const BOSS_DROP_SPREAD := 20.0
@@ -216,7 +223,6 @@ const PASSIVES := {
 	"claw": {"name": "Sharp Claws", "per_level": 0.13},
 	"bell": {"name": "Jingle Bell", "per_level": -0.09},
 	"magnet": {"name": "Whisker Sense", "per_level": 0.32},
-	"vest": {"name": "Extra Snack", "per_level": 0.34},
 	"bowl": {"name": "Big Bowl", "per_level": 0.11},
 }
 
@@ -239,19 +245,41 @@ const WEAPON_COOLDOWN_FLOOR := 0.12
 const SHOT_SEEK_RANGE := 300.0
 const SHOT_LIFE := 2.4
 const SHOT_HIT_RADIUS := 14.0
-const SHOT_DRAW_RADIUS := 8.0
 ## Index order for shot_kind, which picks the draw colour.
 const SHOT_KINDS := ["yarn", "mouse"]
-const SHOT_COLOURS := [Color(1.0, 0.62, 0.75), Color(0.72, 0.66, 0.6)]
+## Shots are drawn as their own art, in SHOT_KINDS order.
+const SHOT_ART := ["res://assets/yarn.png", "res://assets/mouse.png"]
+const SHOT_DRAW_SIZE := 20.0
+## Yarn tumbles as it flies; the mouse points along its travel instead.
+const SHOT_SPIN := 7.0
+## A short streak behind a shot, so a fast ball reads as thrown rather than as
+## a dot teleporting between frames.
+const SHOT_TRAIL := 16.0
+const SHOT_TRAIL_WIDTH := 4.0
+const SHOT_TRAIL_COLOUR := Color(1.0, 0.85, 0.92, 0.4)
 ## Orbiting fish sweep every frame rather than on a cooldown, so their listed
 ## damage is scaled down to a per-second rate.
 const ORBIT_DAMAGE_RATE := 0.12
 const ORBIT_HIT_RADIUS := 18.0
-const ORBIT_DRAW_RADIUS := 10.0
-const ORBIT_COLOUR := Color(0.62, 0.84, 1.0)
-const AURA_COLOUR := Color(1.0, 0.85, 0.5, 0.55)
-const AURA_WIDTH := 3.0
+const ORBIT_DRAW_SIZE := 22.0
+## Fish are drawn as fish. A blue circle orbiting the cat read as a bubble.
+const ORBIT_ART := "res://assets/fish.png"
+const AURA_COLOUR := Color(1.0, 0.72, 0.84, 0.85)
+const AURA_WIDTH := 2.0
+## The purr ring is a turning circle of pips, not a thin outline: an outline
+## reads as a UI element drawn over the game.
+const AURA_PIPS := 14
+const AURA_SPIN := 0.9
+const AURA_PIP_SIZE := 4.0
+## Each pip breathes on its own phase, so the ring shimmers rather than
+## pulsing as one solid band.
+const AURA_PIP_BREATHE := 0.3
+const AURA_PIP_RATE := 4.0
 const ZONE_COLOUR := Color(0.95, 0.95, 1.0, 0.5)
+## A rim on the puddle, so the edge of the slow is visible rather than a soft
+## blob with no boundary.
+const ZONE_RIM_COLOUR := Color(0.75, 0.9, 1.0, 0.8)
+const ZONE_RIM_WIDTH := 3.0
 ## A puddle fades over its last seconds rather than blinking out.
 const ZONE_FADE_TIME := 1.0
 ## How long a bug keeps walking slowly after leaving a puddle. Long enough that
@@ -362,11 +390,25 @@ const FX_TIME_ARC := 0.16
 const FX_TIME_RING := 0.28
 const FX_TIME_BOLT := 0.12
 const FX_ARC_COLOUR := Color(1.0, 0.98, 0.82, 0.9)
-const FX_ARC_WIDTH := 5.0
+const FX_ARC_WIDTH := 6.0
+## The swipe is several tapering crescents, each trailing the one in front, so
+## it reads as a paw sweeping rather than a shape appearing all at once.
+const FX_ARC_BANDS := 3
+const FX_ARC_BAND_LAG := 0.12
+const FX_ARC_BAND_STEP := 0.13
+const FX_ARC_SPARKS := 4
+const FX_ARC_SPARK_SPREAD := 0.5
+const FX_ARC_SPARK_SIZE := 4.0
 const FX_RING_COLOUR := Color(0.72, 0.92, 1.0, 0.85)
-const FX_RING_WIDTH := 4.0
+const FX_RING_WIDTH := 5.0
+## The second ring of a yawn trails the first by this much of its life.
+const FX_RING_LAG := 0.35
 const FX_BOLT_COLOUR := Color(1.0, 0.94, 0.5, 0.95)
-const FX_BOLT_WIDTH := 2.5
+const FX_BOLT_WIDTH := 3.0
+## A straight line between cat and bug reads as a tether, so the bolt zigzags.
+const FX_BOLT_STEPS := 6
+const FX_BOLT_JAG := 11.0
+const FX_BOLT_FLASH := 9.0
 ## Popped bugs within this window count towards the cheer.
 const COMBO_WINDOW := 4.0
 const COMBO_EVERY := 25
@@ -460,6 +502,11 @@ const TOUCH_KNOB_COLOUR := Color(1.0, 0.72, 0.82, 0.75)
 # --- HUD ---
 const BANNER_TIME := 1.6
 const CARD_SIZE := Vector2(200, 250)
+## The loadout list, top right. Pips rather than a number: a level is a
+## quantity a child reads by counting.
+const LOADOUT_ICON_SIZE := Vector2(26, 26)
+const LOADOUT_PIP_SIZE := 15
+const LOADOUT_PIP_COLOUR := Color(1.0, 0.86, 0.42)
 ## Card art, by weapon or passive id. A missing entry draws no picture rather
 ## than erroring, so a new weapon works before its icon is drawn.
 const ICONS := {
@@ -475,7 +522,7 @@ const ICONS := {
 	"claw": "res://assets/icon_claw.png",
 	"bell": "res://assets/icon_bell.png",
 	"magnet": "res://assets/icon_magnet.png",
-	"vest": "res://assets/icon_vest.png",
+	"snack": "res://assets/icon_vest.png",
 	"bowl": "res://assets/icon_bowl.png",
 }
 ## What each toy and helper does, in words for the adult reading over a
@@ -493,7 +540,7 @@ const BLURBS := {
 	"claw": "Hit harder",
 	"bell": "Attack more often",
 	"magnet": "Pick things up further away",
-	"vest": "One more heart",
+	"snack": "Get a heart back",
 	"bowl": "Everything gets bigger",
 }
 ## The card art is 16x16, so it is drawn at this size with no filtering.
@@ -533,6 +580,38 @@ const START_HOP_TIME := 0.3
 const START_WOBBLE := 7.0
 const START_WOBBLE_TIME := 0.07
 
+
+# --- Ground decals ---
+## Mud, worn grass, flowers and stones, scattered under everything. Decoration
+## only: nothing here is collided with or broken.
+##
+## The cat is pinned to the middle of the screen, so the ground is the only
+## thing that shows the garden going past. A flat green field gave no sense of
+## moving and no sense of having been anywhere.
+const GROUND_ART := [
+	"res://assets/ground_mud.png",
+	"res://assets/ground_patch.png",
+	"res://assets/ground_flowers.png",
+	"res://assets/ground_stones.png",
+]
+## Per kind, in GROUND_ART order. Mud and worn patches are the common ground;
+## flowers and stones are the treats. A flat roll read as even speckling rather
+## than a garden with features in it.
+const GROUND_WEIGHTS := [0.22, 0.36, 0.28, 0.14]
+## Mud reads as a puddle, so it is drawn bigger than a clump of flowers.
+const GROUND_SCALE := [1.7, 1.5, 0.9, 0.55]
+## Patches are translucent, so the lawn shows through and nothing on the ground
+## competes with the bugs standing on it.
+const GROUND_ALPHA := [0.82, 0.45, 1.0, 0.9]
+const GROUND_COUNT := 460
+const GROUND_SIZE_MIN := 44.0
+const GROUND_SIZE_MAX := 84.0
+## A little tone variation per patch, so a field of mud is not one stamp
+## repeated across the screen.
+const GROUND_SHADE_MIN := 0.82
+const GROUND_SEED := 20260902
+const GROUND_FIELD_HALF := Vector2(1300, 1300)
+const GROUND_REFILL_DISTANCE := 1100.0
 
 # --- Breakable props ---
 ## Things on the lawn to knock over. An empty lawn makes every direction

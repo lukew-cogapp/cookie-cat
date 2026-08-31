@@ -135,6 +135,85 @@ size_flags_vertical = 3
 alignment = 1
 theme_override_constants/separation = 16
 
+[node name="Loadout" type="PanelContainer" parent="."]
+theme_override_styles/panel = ExtResource("2")
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -168.0
+offset_top = 92.0
+offset_right = -14.0
+offset_bottom = 96.0
+grow_horizontal = 0
+
+[node name="Pad" type="MarginContainer" parent="Loadout"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Rows" type="VBoxContainer" parent="Loadout/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Paused" type="Control" parent="."]
+process_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Paused"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.1, 0.05, 0.72)
+
+[node name="Panel" type="PanelContainer" parent="Paused"]
+theme_override_styles/panel = ExtResource("2")
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -150.0
+offset_right = 220.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Pad" type="MarginContainer" parent="Paused/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Col" type="VBoxContainer" parent="Paused/Panel/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="Paused/Panel/Pad/Col"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Paused"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 40
+
+[node name="Resume" type="Button" parent="Paused/Panel/Pad/Col"]
+layout_mode = 2
+text = "Keep playing"
+theme_override_font_sizes/font_size = 30
+
+[node name="Quit" type="Button" parent="Paused/Panel/Pad/Col"]
+layout_mode = 2
+text = "Give up"
+theme_override_font_sizes/font_size = 22
+
 [node name="Over" type="Control" parent="."]
 process_mode = 2
 anchors_preset = 15

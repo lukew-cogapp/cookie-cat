@@ -6,6 +6,8 @@ extends Node
 signal changed
 signal levelled(choices: Array)
 signal ended(won: bool)
+## A consumable was picked. `world.gd` applies it, since `Run` holds no nodes.
+signal consumed(id: String)
 
 ## Seconds survived. The wave table and every spawn rate read this, so it is
 ## the one clock in the game.
@@ -28,6 +30,10 @@ var kills := 0
 var cookies := 0
 ## Which cat is playing. Set by the start screen before the world loads.
 var cat := Tuning.STARTER_CAT
+## Set by `world.gd` each time the player's health changes. `_choices` reads it
+## rather than the player, which `Run` cannot reach, and a snack is only worth
+## offering when there is a heart missing.
+var hurt := false
 
 
 func _ready() -> void:
@@ -76,15 +82,23 @@ func add_xp(amount: int) -> void:
 	changed.emit()
 
 
-## Levels up a weapon or passive by id, or adds it at level 1.
+## Levels up a weapon or passive by id, or adds it at level 1. A consumable is
+## used at once instead, so it never enters either pool.
 func take(id: String) -> void:
+	if Tuning.CONSUMABLES.has(id):
+		Audio.play("choose")
+		consumed.emit(id)
+		return
 	var pool := passives if Tuning.PASSIVES.has(id) else weapons
 	pool[id] = int(pool.get(id, 0)) + 1
 	Audio.play("choose")
 	changed.emit()
 
 
+## A consumable is never owned, so it always reports 0.
 func level_of(id: String) -> int:
+	if Tuning.CONSUMABLES.has(id):
+		return 0
 	if Tuning.PASSIVES.has(id):
 		return int(passives.get(id, 0))
 	return int(weapons.get(id, 0))
@@ -127,6 +141,11 @@ func _choices() -> Array:
 		if lv == 0 and passives.size() >= Tuning.PASSIVE_SLOTS:
 			continue
 		if lv < Tuning.PASSIVE_LEVEL_MAX:
+			pool.append(id)
+	# A snack at full health is a wasted card, and the one pick a child would
+	# resent, so it is only in the pool while a heart is missing.
+	if hurt:
+		for id: String in Tuning.CONSUMABLES:
 			pool.append(id)
 	pool.shuffle()
 	# Everything maxed: the level still has to resolve, and the caller draws
