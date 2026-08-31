@@ -129,7 +129,10 @@ func can_afford(id: String) -> bool:
 	return Tuning.CATS.has(id) and cookies >= int(Tuning.CATS[id]["cost"])
 
 
+## A cat costing nothing is always available, whatever an older save recorded.
 func is_unlocked(id: String) -> bool:
+	if Tuning.CATS.has(id) and int(Tuning.CATS[id]["cost"]) == 0:
+		return true
 	return id in unlocked
 
 

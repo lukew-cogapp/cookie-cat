@@ -52,6 +52,10 @@ PALETTE = {
     "M": (188, 176, 200, 255),  # toy mouse grey
     "L": (140, 200, 246, 255),  # water / milk blue
     "l": (214, 240, 255, 255),
+    "E": (110, 216, 128, 255),  # green xp gem
+    "e": (176, 244, 186, 255),
+    "F": (240, 96, 110, 255),  # red xp gem
+    "f": (255, 168, 176, 255),
     "T": (126, 186, 108, 255),  # lawn
     "t": (134, 194, 116, 255),  # lawn, a shade lighter
     "d": (116, 176, 100, 255),  # lawn, a shade darker
@@ -247,6 +251,42 @@ GEM = [
     "......oo........",
     "................",
     "................",
+    "................",
+    "................",
+    "................",
+]
+GEM_GREEN = [
+    "................",
+    "................",
+    "......oo........",
+    ".....oEEo.......",
+    "....oEeeEo......",
+    "...oEeEEeEo.....",
+    "..oEEEEEEEEo....",
+    "..oEEEEEEEEo....",
+    "...oEEEEEEo.....",
+    "....oEEEEo......",
+    ".....oEEo.......",
+    "......oo........",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+GEM_RED = [
+    "................",
+    "......oo........",
+    ".....oFFo.......",
+    "....oFffFo......",
+    "...oFfFFfFo.....",
+    "..oFfFFFFfFo....",
+    ".oFFFFFFFFFFo...",
+    ".oFFFFFFFFFFo...",
+    "..oFFFFFFFFo....",
+    "...oFFFFFFo.....",
+    "....oFFFFo......",
+    ".....oFFo.......",
+    "......oo........",
     "................",
     "................",
     "................",
@@ -797,6 +837,8 @@ SPRITES = {
     "slime": SLIME,
     "big": BIG,
     "gem": GEM,
+    "gem_green": GEM_GREEN,
+    "gem_red": GEM_RED,
     "heart": HEART,
     "cookie": COOKIE,
     "yarn": YARN,
@@ -864,10 +906,17 @@ def main():
         w, h = write_png(OUT / f"{name}.png", grid)
         print(f"{name}.png {w}x{h}", flush=True)
     for name, swap in CAT_FLAVOURS.items():
-        grid, extra = recolour(CAT_STAND, swap)
-        PALETTE.update(extra)
-        w, h = write_png(OUT / f"{name}.png", grid)
-        print(f"{name}.png {w}x{h}", flush=True)
+        # Stand and both step frames, or a walking cat flickers back to the
+        # base cat's pink on every other frame.
+        for suffix, source in (
+            ("", CAT_STAND),
+            ("_step_a", CAT_STEP_A),
+            ("_step_b", CAT_STEP_B),
+        ):
+            grid, extra = recolour(source, swap)
+            PALETTE.update(extra)
+            w, h = write_png(OUT / f"{name}{suffix}.png", grid)
+            print(f"{name}{suffix}.png {w}x{h}", flush=True)
     # The lawn is a tile, not a sprite: two greens in a soft check so movement
     # over open ground is visible without drawing grass.
     # Four tones in a fixed pseudo-random scatter, so the ground has texture

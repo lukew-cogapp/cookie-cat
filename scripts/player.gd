@@ -36,11 +36,14 @@ func _ready() -> void:
 	var grow := Tuning.PLAYER_DRAW_SIZE / 16.0
 	_sprite.scale = Vector2(grow, grow)
 	_sprite.texture = load(String(Tuning.CATS[Run.cat]["art"]))
+	# Each flavour has its own step frames: sharing the base cat's made Minty
+	# flicker pink every other frame while walking.
+	var art := String(Tuning.CATS[Run.cat]["art"])
 	_walk = [
 		_sprite.texture,
-		load(Tuning.CAT_STEP_A),
+		load(art.replace(".png", "_step_a.png")),
 		_sprite.texture,
-		load(Tuning.CAT_STEP_B),
+		load(art.replace(".png", "_step_b.png")),
 	]
 	max_hp = Tuning.PLAYER_MAX_HP
 	hp = max_hp

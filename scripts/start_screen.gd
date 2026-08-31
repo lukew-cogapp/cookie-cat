@@ -122,7 +122,7 @@ func _card(id: String) -> Button:
 	else:
 		art.modulate = Tuning.START_LOCKED_TINT
 		cat_name.modulate = Tuning.START_LOCKED_TINT
-		row.add_child(_pixel_icon(Tuning.GEM_TEXTURES[2]))
+		row.add_child(_pixel_icon(Tuning.pickup_art("cookie")))
 		var cost := Label.new()
 		cost.text = str(int(cat["cost"]))
 		cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

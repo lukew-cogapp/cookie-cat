@@ -170,10 +170,14 @@ code here can prevent; it is worth knowing before wondering where a save went.
 and the edge was about eight seconds of walking away. Being cornered against an
 invisible edge with bugs closing in is the one situation a child cannot escape,
 and the whole difficulty rests on running away always working, so the clamp is
-gone. The lawn is one tiling sprite snapped to the cat in whole `LAWN_TILE`
-steps, and `Props` re-scatters its field around the cat past
-`PROP_REFILL_DISTANCE`, seeded off the field's own position so walking back
-finds the same garden.
+gone. The lawn sprite rides the camera and scrolls its own `region_rect` instead, and
+`Props` re-scatters its field around the cat past `PROP_REFILL_DISTANCE`,
+seeded off the field's own position so walking back finds the same garden.
+
+Snapping the lawn's POSITION to a tile is what a player twice reported as
+being "transported": the region is drawn at the sprite's scale, so one texture
+tile is not one tile on screen and the ground jumped by the remainder at every
+boundary. Scroll the region, never the sprite.
 
 **`is_touchscreen_available()` reports true on desktops with no touchscreen**
 (godot#84235), so `touch_stick.gd` does not gate on it. Nothing is drawn until

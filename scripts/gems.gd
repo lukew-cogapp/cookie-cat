@@ -7,7 +7,9 @@ extends Node2D
 ## more than the gem is worth. Rows here are simpler than a swarm row because
 ## a gem does nothing but sit still and then fly at the player.
 
-enum Kind { GEM, HEART, COOKIE }
+## Three xp tiers, then the pickups. GEM is what most bugs drop; the better
+## tiers are rolled from the bug's own `gem_up` chance.
+enum Kind { GEM, GEM_GREEN, GEM_RED, HEART, COOKIE }
 
 ## Fired on collect, so the world can sparkle and show numbers without this
 ## layer knowing what a particle is.
@@ -34,7 +36,7 @@ var _streak_until := 0.0
 func _ready() -> void:
 	var q := QuadMesh.new()
 	q.size = Vector2.ONE
-	for k in Tuning.GEM_TEXTURES.size():
+	for k in Tuning.GEM_ORDER.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_2D
 		mm.mesh = q
@@ -42,7 +44,7 @@ func _ready() -> void:
 		mm.visible_instance_count = 0
 		var node := MultiMeshInstance2D.new()
 		node.multimesh = mm
-		node.texture = load(Tuning.GEM_TEXTURES[k])
+		node.texture = load(Tuning.pickup_art(Tuning.GEM_ORDER[k]))
 		add_child(node)
 		_mm.append(mm)
 		_by_kind.append([])
@@ -147,7 +149,7 @@ func _redraw() -> void:
 		var rows: Array = _by_kind[k]
 		var mm := _mm[k]
 		mm.visible_instance_count = rows.size()
-		var s: float = Tuning.GEM_SIZES[k]
+		var s: float = Tuning.pickup_size(Tuning.GEM_ORDER[k])
 		for n in rows.size():
 			var i: int = rows[n]
 			# A slow bob rather than a spin: a spinning heart reads as damage,

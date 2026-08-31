@@ -62,7 +62,8 @@ func _physics_process(delta: float) -> void:
 ## Every kill: a gem, sometimes a heart, and a cheer on every 25th in a row.
 func _on_killed(at: Vector2, kind: int) -> void:
 	Run.kills += 1
-	var worth := Tuning.enemy_xp(kind)
+	var tier := _gem_tier(kind)
+	var worth := int(round(Tuning.enemy_xp(kind) * Tuning.gem_worth(tier)))
 	# The kill pop. A bug bursting into stars is the whole reward loop made
 	# visible; the boss gets a send-off worth the fight.
 	var stars := Tuning.PUFF_BOSS_COUNT if kind == Swarm.Kind.BIG else Tuning.PUFF_KILL_COUNT
@@ -71,7 +72,7 @@ func _on_killed(at: Vector2, kind: int) -> void:
 		_puffs.number(at, "+%d" % worth)
 	# Bigger bugs drop a bigger gem, so the field reads as where the good
 	# fighting was without any number on screen.
-	_gems.drop(at, Gems.Kind.GEM, worth)
+	_gems.drop(at, tier, worth)
 	# A boss always pays cookies, so reaching one is worth something even in a
 	# run that ends badly straight after.
 	if kind == Swarm.Kind.BIG:
@@ -110,9 +111,27 @@ func _on_hurt() -> void:
 ## There is no wall in this garden, so a fixed sprite would eventually be walked
 ## off the edge of; snapping by the tile size means the seam never shows.
 func _follow_lawn() -> void:
-	var tile := Tuning.LAWN_TILE
+	# The sprite stays on the camera and its REGION scrolls, rather than the
+	# sprite moving and being snapped to a tile. Snapping the position was the
+	# "teleport": the region is drawn at the sprite's scale, so a snap of one
+	# texture tile is not a whole tile on screen, and the ground jumped by the
+	# remainder every time it crossed a boundary.
 	var at := _player.global_position
-	_lawn.position = Vector2(snappedf(at.x, tile), snappedf(at.y, tile))
+	_lawn.position = at
+	var r := _lawn.region_rect
+	_lawn.region_rect = Rect2(at / _lawn.scale, r.size)
+
+
+## Which xp gem a bug leaves. Rolled twice off the bug's own chance, so a grub
+## almost always drops blue and never red, while a boss usually drops red: the
+## tier is the reward for taking on something harder.
+func _gem_tier(kind: int) -> int:
+	var up := float(Tuning.ENEMIES[kind]["gem_up"])
+	var tier := 0
+	for _roll in 2:
+		if randf() < up:
+			tier += 1
+	return mini(tier, Gems.Kind.GEM_RED)
 
 
 ## `Run` decides what to offer and cannot reach the player, so whether a heart

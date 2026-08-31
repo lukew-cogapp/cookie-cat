@@ -16,9 +16,6 @@ const PROP_FIELD_HALF := Vector2(1600, 1600)
 ## Props are re-scattered ahead of the cat once it walks this far from the
 ## middle of the current field, so the garden never runs out.
 const PROP_REFILL_DISTANCE := 1100.0
-## The lawn sprite's tile size on screen, which is what its position is snapped
-## to as it follows the cat. The art is 16px drawn at 2x.
-const LAWN_TILE := 32.0
 ## The camera zoom. Art is 16x16, so at 2.5 a bug is 40 screen pixels and the
 ## cat 64: big enough to read at a glance. Rendered at 1.0 the cat was a speck
 ## and no weapon effect could be made out at all.
@@ -48,8 +45,8 @@ const PLAYER_HIT_PUSH := 200.0
 const PLAYER_HURT_COLOUR := Color(1.0, 0.45, 0.45)
 const PLAYER_BOB := 1.5
 const PLAYER_BOB_RATE := 11.0
-## Walk frames per second. The step frames are shared by every flavour, so a
-## new cat is one sprite rather than three.
+## Walk frames per second. Each cat has its own step frames, generated from its
+## standing sprite by `make_art.py`.
 const PLAYER_STEP_RATE := 8.0
 ## The slowest a stick push may move the cat, as a fraction of full speed.
 ## Keyboard input is always 1.0; this only floors a light analogue push. It has
@@ -72,10 +69,15 @@ const WEAPON_LEVEL_MAX := 6
 const PASSIVE_LEVEL_MAX := 5
 
 # --- Cats ---
-## One cat to start; the rest are bought with cookies earned by playing. Each
-## opens with a different weapon, which is the whole difference between them:
-## a starting weapon changes how a run has to be played from the first second,
-## where a stat bonus is a number a child cannot see.
+## Every cat is free, and each opens with a different weapon: that is the whole
+## difference between them, and a starting weapon changes how a run has to be
+## played from the first second where a stat bonus is a number a child cannot
+## see. Choosing one is the first decision of a run, not a reward to grind for.
+##
+## `cost` stays in the table at zero rather than being removed, so the shop and
+## the save's unlocked list keep working. Cookies are for cosmetics instead:
+## hats and the like, which change nothing about how a run plays. Gating a
+## weapon behind a grind punishes the child who most needs the help.
 ## Picks that are used at once rather than levelled. `Run.take` applies them
 ## and they never appear in `weapons` or `passives`, so a snack cannot be
 ## "levelled" and cannot fill a slot.
@@ -86,10 +88,10 @@ const CONSUMABLES := {
 const STARTER_CAT := "cookie"
 const CATS := {
 	"cookie": {"name": "Cookie Cat", "weapon": "paw", "cost": 0, "art": "res://assets/cat.png"},
-	"mint": {"name": "Minty", "weapon": "yarn", "cost": 30, "art": "res://assets/cat_mint.png"},
-	"berry": {"name": "Berry", "weapon": "fish", "cost": 60, "art": "res://assets/cat_berry.png"},
-	"choc": {"name": "Choccy", "weapon": "purr", "cost": 100, "art": "res://assets/cat_choc.png"},
-	"lion": {"name": "Lion", "weapon": "zap", "cost": 150, "art": "res://assets/cat_lion.png"},
+	"mint": {"name": "Minty", "weapon": "yarn", "cost": 0, "art": "res://assets/cat_mint.png"},
+	"berry": {"name": "Berry", "weapon": "fish", "cost": 0, "art": "res://assets/cat_berry.png"},
+	"choc": {"name": "Choccy", "weapon": "purr", "cost": 0, "art": "res://assets/cat_choc.png"},
+	"lion": {"name": "Lion", "weapon": "zap", "cost": 0, "art": "res://assets/cat_lion.png"},
 }
 
 ## Cookies are the currency between runs. Bugs drop them rarely; a boss always
@@ -118,18 +120,18 @@ const WEAPONS := {
 	"paw":
 	{
 		"name": "Paw Swipe",
-		"kind": "arc",
+		## A full circle, not a wedge. A wedge only defends the way the cat
+		## faces, and a child under pressure runs away: a probe fleeing a crowd
+		## for thirty seconds landed ONE kill, swiping at empty grass the whole
+		## time while bugs ate it from behind. The starting weapon has to
+		## protect a retreating player, so it swipes all round.
+		"kind": "sweep",
 		"damage": 5.0,
-		"cooldown": 0.7,
-		"radius": 74.0,
-		## Two and a half radians, a bit over 140 degrees, so a bug anywhere in
-		## front is hit. A narrow arc asks a child to aim, and they cannot: the
-		## first playtest of a 1.5 arc killed the cat with three kills in twenty
-		## seconds because bugs walked in at 45 degrees untouched.
-		"arc": 2.5,
+		"cooldown": 0.95,
+		"radius": 52.0,
 		"damage_gain": 2.5,
-		"cooldown_gain": -0.06,
-		"radius_gain": 6.0,
+		"cooldown_gain": -0.07,
+		"radius_gain": 5.0,
 	},
 	"yarn":
 	{
@@ -291,12 +293,12 @@ const SLOW_LINGER := 0.35
 ## HP is flat per kind and grows with the clock, not with player level: a
 ## child who levels fast should feel stronger, not meet tougher bugs.
 const ENEMIES := [
-	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 1.0, "radius": 9.0, "xp": 1, "knock": 46.0},
-	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 1.0, "radius": 10.0, "xp": 2, "knock": 38.0},
-	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 1.0, "radius": 12.0, "xp": 4, "knock": 22.0},
-	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 1.0, "radius": 8.5, "xp": 3, "knock": 60.0},
-	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 1.0, "radius": 11.0, "xp": 3, "knock": 34.0},
-	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 1.0, "radius": 26.0, "xp": 60, "knock": 6.0},
+	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 1.0, "radius": 9.0, "xp": 1, "gem_up": 0.02, "knock": 46.0},
+	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 1.0, "radius": 10.0, "xp": 2, "gem_up": 0.06, "knock": 38.0},
+	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 1.0, "radius": 12.0, "xp": 4, "gem_up": 0.14, "knock": 22.0},
+	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 1.0, "radius": 8.5, "xp": 3, "gem_up": 0.1, "knock": 60.0},
+	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 1.0, "radius": 11.0, "xp": 3, "gem_up": 0.12, "knock": 34.0},
+	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 1.0, "radius": 26.0, "xp": 60, "gem_up": 0.8, "knock": 6.0},
 ]
 const ENEMY_MAX := 220
 ## Past this from the player an enemy is forgotten. Over a screen and a half,
@@ -323,36 +325,66 @@ const SWARM_SEED := 20260831
 ## decides how lumpy the filling is. Peaks at 150, not VS's 300: a child needs
 ## to see their cat.
 const WAVES := [
-	{"kinds": [0], "interval": 1.1, "min_alive": 12},
-	{"kinds": [0, 1], "interval": 1.0, "min_alive": 22},
-	{"kinds": [0, 1], "interval": 0.9, "min_alive": 34},
-	{"kinds": [1, 3], "interval": 0.85, "min_alive": 46},
-	{"kinds": [1, 2, 3], "interval": 0.8, "min_alive": 58},
-	{"kinds": [0, 3, 4], "interval": 0.7, "min_alive": 72},
-	{"kinds": [1, 2, 4], "interval": 0.65, "min_alive": 88},
-	{"kinds": [3, 4], "interval": 0.6, "min_alive": 104},
-	{"kinds": [1, 2, 3, 4], "interval": 0.55, "min_alive": 122},
-	{"kinds": [0, 1, 2, 3, 4], "interval": 0.5, "min_alive": 150},
+	{"kinds": [0], "interval": 1.6, "min_alive": 6},
+	{"kinds": [0], "interval": 1.4, "min_alive": 11},
+	{"kinds": [0, 1], "interval": 1.2, "min_alive": 17},
+	{"kinds": [0, 1], "interval": 1.0, "min_alive": 25},
+	{"kinds": [1, 3], "interval": 0.9, "min_alive": 34},
+	{"kinds": [1, 2, 3], "interval": 0.8, "min_alive": 46},
+	{"kinds": [0, 3, 4], "interval": 0.7, "min_alive": 60},
+	{"kinds": [1, 2, 4], "interval": 0.65, "min_alive": 78},
+	{"kinds": [1, 2, 3, 4], "interval": 0.6, "min_alive": 98},
+	{"kinds": [0, 1, 2, 3, 4], "interval": 0.55, "min_alive": 124},
 ]
 ## Spawns land on a ring just off screen. Slightly wider than the corner of a
 ## 1280x720 viewport, so nothing appears in front of the player.
 const SPAWN_RING := 330.0
 ## How many the quota top-up may add in one physics frame. A whole quota at
 ## once on the first frame of a minute arrives as a visible wall.
-const SPAWN_BURST_MAX := 4
-const SPAWN_PER_TICK := 2
+const SPAWN_BURST_MAX := 1
+const SPAWN_PER_TICK := 1
+## And how fast the quota may refill, in bugs per second. Without this the
+## quota replaces every kill instantly, so a child mowing a crowd sees no
+## reward for it and the screen stays exactly as full. A probe died at 32
+## seconds against an unthrottled quota.
+const SPAWN_REFILL_RATE := 3.0
 ## Minutes at which one Big Bug arrives. Each drops a present.
 const BOSS_MINUTES := [4, 7, 9]
 
 # --- Pickups ---
 const GEM_MAX := 300
-## In Gems.Kind order: xp gem, heart, cookie.
-const GEM_TEXTURES := [
-	"res://assets/gem.png",
-	"res://assets/heart.png",
-	"res://assets/cookie.png",
-]
-const GEM_SIZES := [12.0, 15.0, 17.0]
+## Pickups, keyed by name. `GEM_ORDER` is what fixes them to the indices in
+## `Gems.Kind`, so the enum and this table cannot drift: a positional lookup
+## here silently became the red xp gem the moment the xp tiers were added, and
+## the cat shop started pricing cats in gems.
+const PICKUPS := {
+	"gem": {"art": "res://assets/gem.png", "size": 12.0, "worth": 1.0},
+	"gem_green": {"art": "res://assets/gem_green.png", "size": 14.0, "worth": 3.0},
+	"gem_red": {"art": "res://assets/gem_red.png", "size": 16.0, "worth": 9.0},
+	"heart": {"art": "res://assets/heart.png", "size": 15.0},
+	"cookie": {"art": "res://assets/cookie.png", "size": 17.0},
+}
+## The order `Gems.Kind` numbers them in. `test/tuning_test.gd` asserts the two
+## agree, so adding a pickup in the wrong place fails a test rather than
+## quietly redrawing something else.
+const GEM_ORDER := ["gem", "gem_green", "gem_red", "heart", "cookie"]
+
+## One pickup's art or size, by name. Nothing outside `gems.gd` should index
+## `GEM_ORDER`: ask for what you want.
+func pickup_art(name: String) -> String:
+	return String(PICKUPS[name]["art"])
+
+
+func pickup_size(name: String) -> float:
+	return float(PICKUPS[name]["size"])
+
+
+## What an xp tier is worth, as a multiple of the bug's own xp. A red gem has
+## to be worth crossing the screen for.
+func gem_worth(tier: int) -> float:
+	return float(PICKUPS[GEM_ORDER[tier]]["worth"])
+
+
 ## A bob, not a spin: a flat sprite turned edge-on vanishes.
 const GEM_BOB := 2.5
 const GEM_BOB_RATE := 3.0
@@ -399,6 +431,9 @@ const FX_ARC_BAND_STEP := 0.13
 const FX_ARC_SPARKS := 4
 const FX_ARC_SPARK_SPREAD := 0.5
 const FX_ARC_SPARK_SIZE := 4.0
+## Each sweep starts this far round from the last, so repeated swipes read as
+## the cat batting round itself rather than one animation restarting.
+const FX_ARC_TURN := 1.9
 const FX_RING_COLOUR := Color(0.72, 0.92, 1.0, 0.85)
 const FX_RING_WIDTH := 5.0
 ## The second ring of a yawn trails the first by this much of its life.
@@ -466,10 +501,6 @@ const HIT_SQUASH := 0.3
 ## Spawns scale in over this long, so nothing appears at full size and bites.
 const SPAWN_GROW_TIME := 0.35
 
-## The world slows to this for a beat before the level-up pause, so the
-## moment lands rather than the screen just stopping.
-const LEVELUP_SLOWMO := 0.3
-const LEVELUP_SLOWMO_TIME := 0.45
 ## Pick cards pop in one after another.
 const CARD_POP_FROM := 0.5
 const CARD_STAGGER := 0.09
@@ -528,7 +559,7 @@ const ICONS := {
 ## What each toy and helper does, in words for the adult reading over a
 ## shoulder. The icon is what the child picks by.
 const BLURBS := {
-	"paw": "Swipe in front of you",
+	"paw": "Swipes all around you",
 	"yarn": "Throws yarn at bugs",
 	"purr": "Hurts bugs that come close",
 	"fish": "Fish circle around you",

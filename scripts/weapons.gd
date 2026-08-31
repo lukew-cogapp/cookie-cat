@@ -49,6 +49,9 @@ var orbit_angle := 0.0
 
 ## Loaded once in `_ready`: a load() per shot per frame would hit the cache and
 ## still cost a lookup for every ball on screen.
+## Where the next paw sweep begins, so consecutive swipes do not restart from
+## the same angle.
+var _paw_from := 0.0
 var _fish_art: Texture2D
 var _shot_art: Array[Texture2D] = []
 
@@ -145,7 +148,7 @@ func _fire(id: String, level: int) -> void:
 	match String(Tuning.WEAPONS[id]["kind"]):
 		"arc":
 			_fire_arc(id, level, at)
-		"aura", "burst":
+		"aura", "burst", "sweep":
 			_fire_circle(id, level, at)
 		"shot":
 			_fire_shot(id, level, at)
@@ -185,7 +188,14 @@ func _fire_circle(id: String, level: int, at: Vector2) -> void:
 	# The purr ring is drawn every frame as a standing circle, so only the
 	# yawn needs a burst of its own.
 	_break_props(at, r, _damage(id, level))
-	if String(Tuning.WEAPONS[id]["kind"]) == "burst":
+	# The paw sweeps; the yawn bursts. Both are circles, and this is what tells
+	# them apart on screen.
+	if String(Tuning.WEAPONS[id]["kind"]) == "sweep":
+		# Each swipe starts where the last finished, so repeated swipes read as
+		# the cat batting round itself rather than one animation restarting.
+		_paw_from = wrapf(_paw_from + Tuning.FX_ARC_TURN, 0.0, TAU)
+		_add_fx(at, Vector2.from_angle(_paw_from), r, Tuning.FX_ARC, Tuning.FX_TIME_ARC)
+	elif String(Tuning.WEAPONS[id]["kind"]) == "burst":
 		_add_fx(at, Vector2.ZERO, r, Tuning.FX_RING, Tuning.FX_TIME_RING)
 	if not _hits.is_empty():
 		Audio.play("hit")
@@ -549,31 +559,31 @@ func _draw_fx() -> void:
 ## hit, brightest at the leading edge. A single thin arc read as a UI outline
 ## and gave no sense of a paw moving through anything.
 func _draw_swipe(at: Vector2, facing: float, r: float, t: float) -> void:
-	var half: float = float(Tuning.WEAPONS["paw"]["arc"]) * 0.5
 	var c: Color = Tuning.FX_ARC_COLOUR
 	for n in Tuning.FX_ARC_BANDS:
 		# Each band trails the one in front, so the swipe reads as sweeping
-		# rather than as a shape appearing all at once.
+		# round rather than as a ring appearing all at once.
 		var lag := float(n) * Tuning.FX_ARC_BAND_LAG
 		var swept: float = clampf(1.0 - t - lag, 0.0, 1.0)
 		if swept <= 0.0:
 			continue
 		var band_r: float = r * (1.0 - float(n) * Tuning.FX_ARC_BAND_STEP)
-		var from := facing - half
 		draw_arc(
 			at,
 			band_r,
-			from,
-			from + half * 2.0 * swept,
-			20,
+			facing,
+			facing + TAU * swept,
+			32,
 			Color(c.r, c.g, c.b, c.a * t),
 			Tuning.FX_ARC_WIDTH * (1.0 - float(n) * 0.25),
 			true,
 		)
-	# Sparks along the leading edge, so the tip of the swipe has weight.
-	var tip: float = facing - half + half * 2.0 * clampf(1.0 - t, 0.0, 1.0)
+	# Sparks at the leading edge, so the tip of the sweep has weight.
+	var tip: float = facing + TAU * clampf(1.0 - t, 0.0, 1.0)
 	for n in Tuning.FX_ARC_SPARKS:
-		var spread: float = (float(n) / float(Tuning.FX_ARC_SPARKS) - 0.5) * Tuning.FX_ARC_SPARK_SPREAD
+		var spread: float = (
+			(float(n) / float(Tuning.FX_ARC_SPARKS) - 0.5) * Tuning.FX_ARC_SPARK_SPREAD
+		)
 		var p := at + Vector2.from_angle(tip + spread) * r
 		draw_circle(p, Tuning.FX_ARC_SPARK_SIZE * t, Color(1.0, 1.0, 1.0, t))
 

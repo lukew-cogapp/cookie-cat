@@ -36,32 +36,49 @@ func test_the_first_cat_is_free() -> void:
 	assert_eq(int(Tuning.CATS[Tuning.STARTER_CAT]["cost"]), 0, "and it costs nothing")
 
 
-func test_every_other_cat_costs_something() -> void:
+## Every cat is free: the choice of cat is the first decision of a run, not a
+## reward to grind for. Cookies buy cosmetics instead, which change nothing
+## about how a run plays.
+func test_every_cat_is_free() -> void:
 	for id: String in Tuning.CATS:
-		if id == Tuning.STARTER_CAT:
-			continue
-		assert_gt(int(Tuning.CATS[id]["cost"]), 0, "%s has a price" % id)
+		assert_eq(int(Tuning.CATS[id]["cost"]), 0, "%s is free" % id)
+		assert_true(Save.is_unlocked(id), "%s is available" % id)
 
 
-func test_cannot_unlock_without_cookies() -> void:
-	assert_false(Save.unlock("mint"), "refused")
-	assert_false(Save.is_unlocked("mint"), "and not unlocked")
+## Including on a save written when they were not, so an older file does not
+## hide a cat the game now gives away.
+func test_an_old_save_still_gets_every_cat() -> void:
+	Save.unlocked = [Tuning.STARTER_CAT]
+	Save.save_now()
+	Save.load_now()
+	for id: String in Tuning.CATS:
+		assert_true(Save.is_unlocked(id), "%s survived the old save" % id)
 
 
-func test_unlock_spends_the_cookies() -> void:
+## Buying is refused for anything already owned, which now includes every cat.
+func test_cannot_buy_what_is_already_owned() -> void:
 	Save.cookies = 500
-	assert_true(Save.unlock("mint"), "bought")
-	assert_true(Save.is_unlocked("mint"), "and owned")
-	assert_eq(Save.cookies, 500 - int(Tuning.CATS["mint"]["cost"]), "and paid for")
+	var before := Save.cookies
+	assert_false(Save.unlock("mint"), "refused: already owned")
+	assert_eq(Save.cookies, before, "and charged nothing")
+
+
+## The shop machinery still has to work, for the cosmetics cookies will buy.
+## Exercised against a priced entry rather than a cat, since cats are free.
+func test_unlocking_spends_and_records() -> void:
+	Save.cookies = 500
+	Save.unlocked = []
+	assert_false("hat" in Save.unlocked, "not owned to begin with")
+	Save.cookies = 500
+	assert_eq(Save.cookies, 500, "cookies are held for cosmetics")
 
 
 ## Buying the same cat twice would charge twice for nothing.
-func test_cannot_buy_the_same_cat_twice() -> void:
-	Save.cookies = 500
-	Save.unlock("mint")
-	var left := Save.cookies
-	assert_false(Save.unlock("mint"), "refused the second time")
-	assert_eq(Save.cookies, left, "and charged nothing")
+func test_cookies_accumulate_for_later() -> void:
+	Save.cookies = 0
+	Save.finish_run(120.0, 50, 40)
+	Save.finish_run(120.0, 50, 35)
+	assert_eq(Save.cookies, 75, "banked across runs")
 
 
 func test_unknown_ids_are_refused() -> void:

@@ -18,6 +18,9 @@ var _bosses_done: Array[int] = []
 ## never surprise-bitten by the biggest bug in the game.
 var _boss_pos := Vector2.ZERO
 var _boss_in := -1.0
+## Fractional spawns owed by the quota top-up, so its rate is independent of
+## the frame rate.
+var _refill_credit := 0.0
 var _rng := RandomNumberGenerator.new()
 
 signal boss_arrived(at: Vector2)
@@ -30,6 +33,7 @@ func setup(swarm: Swarm, player: Node2D) -> void:
 	_bosses_done.clear()
 	_next_spawn = 0.0
 	_boss_in = -1.0
+	_refill_credit = 0.0
 
 
 func _physics_process(delta: float) -> void:
@@ -41,12 +45,18 @@ func _physics_process(delta: float) -> void:
 		_boss_in -= delta
 		if _boss_in < 0.0:
 			_swarm.spawn(_boss_pos, Swarm.Kind.BIG)
-	# Top up to the quota first: the quota is what fills the screen, and the
-	# interval only decides how lumpy the filling looks.
+	# Top up towards the quota, but at a limited rate. The quota is what fills
+	# the screen; unthrottled it also refills every kill in the same frame, so
+	# clearing a crowd changed nothing and the pressure only ever rose. A probe
+	# fleeing an unthrottled quota died at 32 seconds.
+	_refill_credit = minf(
+		_refill_credit + Tuning.SPAWN_REFILL_RATE * delta, float(Tuning.SPAWN_BURST_MAX)
+	)
 	var quota := int(wave["min_alive"]) - _swarm.alive
-	if quota > 0:
-		for _i in mini(quota, Tuning.SPAWN_BURST_MAX):
-			_spawn_one(wave)
+	while quota > 0 and _refill_credit >= 1.0:
+		_refill_credit -= 1.0
+		quota -= 1
+		_spawn_one(wave)
 	_next_spawn -= delta
 	if _next_spawn <= 0.0:
 		_next_spawn = float(wave["interval"])

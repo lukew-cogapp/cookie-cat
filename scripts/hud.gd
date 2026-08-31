@@ -27,7 +27,6 @@ const HEART_EMPTY := "♡"
 var _pending: Array = []
 ## True while the slow-mo ramp runs, so a second level in that window queues
 ## rather than restarting the ramp.
-var _slowing := false
 var _card_style := load("res://ui/card.tres")
 var _card_hover := load("res://ui/card_hover.tres")
 
@@ -156,24 +155,11 @@ func _offer(choices: Array) -> void:
 	if choices.is_empty():
 		return
 	_pending.append(choices)
-	if not _picker.visible and not _slowing:
-		_slow_into_pick()
-
-
-## A beat of slow motion before the pause, so the level-up is a moment the
-## whole screen leans into rather than a stop.
-func _slow_into_pick() -> void:
-	_slowing = true
-	Engine.time_scale = Tuning.LEVELUP_SLOWMO
-	# Real seconds, unpaused: the timer must outlive the slow-mo it measures.
-	await get_tree().create_timer(Tuning.LEVELUP_SLOWMO_TIME, true, false, true).timeout
-	_slowing = false
-	Engine.time_scale = 1.0
-	# Died mid-ramp: _finish cleared the queue, and _show_next's empty branch
-	# would unpause the game-over screen.
-	if not Run.alive:
-		return
-	_show_next()
+	# Instantly, with no ramp. A beat of slow motion was tried and is worse than
+	# nothing: it slows the cat as well as the bugs, so a level earned while
+	# surrounded handed the crowd the ground the player was using to escape.
+	if not _picker.visible:
+		_show_next()
 
 
 func _show_next() -> void:
@@ -183,13 +169,15 @@ func _show_next() -> void:
 		return
 	var choices: Array = _pending.pop_front()
 	for c in _cards.get_children():
+		# Removed as well as freed: `queue_free` leaves the node in the tree
+		# until the end of the frame, so `_pop_cards` would find the old cards
+		# alongside the new ones and pop both.
+		_cards.remove_child(c)
 		c.queue_free()
 	for id: String in choices:
 		_cards.add_child(_card(id))
 	_picker.visible = true
 	get_tree().paused = true
-	# In case the ramp was skipped or interrupted; the pause replaces it.
-	Engine.time_scale = 1.0
 	_pop_in()
 	# So mashing the confirm button always works, and a child who cannot yet
 	# read a card still progresses.
@@ -221,7 +209,15 @@ func _pop_cards() -> void:
 		c.scale = Vector2(Tuning.CARD_POP_FROM, Tuning.CARD_POP_FROM)
 		var t := create_tween()
 		t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		t.tween_callback(func() -> void: c.pivot_offset = c.size * 0.5)
+		# Bound to the card, so answering one level while the next is queued
+		# kills the tween with the card it belongs to. Without this the
+		# deferred callback below fired on a card `_show_next` had already
+		# freed, and every frame logged a freed lambda capture.
+		t.bind_node(c)
+		t.tween_callback(func() -> void:
+			if is_instance_valid(c):
+				c.pivot_offset = c.size * 0.5
+		)
 		t.tween_interval(Tuning.CARD_STAGGER * float(n))
 		t.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 		t.tween_property(c, "scale", Vector2.ONE, Tuning.CARD_POP_TIME)
@@ -318,8 +314,6 @@ func _restart() -> void:
 
 
 func _finish(won: bool) -> void:
-	# A death mid-ramp must not leave the whole game slow.
-	Engine.time_scale = 1.0
 	_over.visible = true
 	_picker.visible = false
 	_pending.clear()

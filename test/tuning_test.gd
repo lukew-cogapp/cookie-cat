@@ -81,7 +81,7 @@ func test_bosses_arrive_during_the_run() -> void:
 
 ## Every weapon needs firing code, or it deals no damage and reads as broken.
 func test_every_weapon_has_a_known_kind() -> void:
-	var known := ["arc", "shot", "aura", "orbit", "chaser", "zone", "strike", "burst"]
+	var known := ["sweep", "shot", "aura", "orbit", "chaser", "zone", "strike", "burst"]
 	for id: String in Tuning.WEAPONS:
 		assert_true(
 			String(Tuning.WEAPONS[id]["kind"]) in known,
@@ -127,8 +127,10 @@ func test_every_icon_file_exists() -> void:
 func test_every_enemy_and_gem_texture_exists() -> void:
 	for path: String in Tuning.ENEMY_TEXTURES:
 		assert_true(ResourceLoader.exists(path), "%s loads" % path)
-	for path: String in Tuning.GEM_TEXTURES:
-		assert_true(ResourceLoader.exists(path), "%s loads" % path)
+	for name: String in Tuning.PICKUPS:
+		assert_true(
+			ResourceLoader.exists(Tuning.pickup_art(name)), "%s art loads" % name
+		)
 
 
 func test_every_cat_has_art_and_a_real_weapon() -> void:
@@ -146,8 +148,31 @@ func test_a_texture_per_enemy_kind() -> void:
 	assert_eq(Tuning.ENEMY_TEXTURES.size(), Tuning.ENEMIES.size(), "one texture per kind")
 
 
-func test_a_size_and_texture_per_gem_kind() -> void:
-	assert_eq(Tuning.GEM_SIZES.size(), Tuning.GEM_TEXTURES.size(), "sizes match kinds")
+## The enum and the table must agree, in order. They are two lists of the same
+## thing, and when they drifted the cat shop priced cats in red xp gems.
+func test_the_pickup_order_matches_the_enum() -> void:
+	assert_eq(Tuning.GEM_ORDER.size(), Tuning.PICKUPS.size(), "every pickup is ordered")
+	assert_eq(Tuning.GEM_ORDER[Gems.Kind.GEM], "gem", "gem is first")
+	assert_eq(Tuning.GEM_ORDER[Gems.Kind.GEM_GREEN], "gem_green", "then green")
+	assert_eq(Tuning.GEM_ORDER[Gems.Kind.GEM_RED], "gem_red", "then red")
+	assert_eq(Tuning.GEM_ORDER[Gems.Kind.HEART], "heart", "then the heart")
+	assert_eq(Tuning.GEM_ORDER[Gems.Kind.COOKIE], "cookie", "then the cookie")
+
+
+func test_every_ordered_pickup_is_in_the_table() -> void:
+	for name: String in Tuning.GEM_ORDER:
+		assert_true(Tuning.PICKUPS.has(name), "%s is a real pickup" % name)
+		assert_gt(Tuning.pickup_size(name), 0.0, "%s has a size" % name)
+
+
+## Each xp tier must be worth more than the one below, or a better gem is a
+## worse pickup and the colours lie about the reward.
+func test_the_xp_tiers_are_worth_more_going_up() -> void:
+	var last := 0.0
+	for tier in 3:
+		var worth := Tuning.gem_worth(tier)
+		assert_gt(worth, last, "tier %d beats the one below" % tier)
+		last = worth
 
 
 ## An evolution has to name a weapon and a passive that exist.
@@ -217,32 +242,13 @@ func test_playing_well_pays_better() -> void:
 	)
 
 
-## The first new cat should arrive after about one run, or the shop is a wall
-## rather than a reward.
-func test_the_first_cat_costs_about_one_run() -> void:
-	var cheapest := 999999
-	for id: String in Tuning.CATS:
-		var cost := int(Tuning.CATS[id]["cost"])
-		if cost > 0:
-			cheapest = mini(cheapest, cost)
-	@warning_ignore("integer_division")
+## Cookies must still be worth earning, even though nothing costs them yet:
+## they are the currency for the cosmetics to come, and a run that pays
+## nothing makes the counter on the start screen a decoration.
+func test_a_run_pays_cookies() -> void:
 	var a_run := (
-		(400 / Tuning.COOKIE_EVERY) * Tuning.COOKIE_VALUE
-		+ Tuning.COOKIE_PER_BOSS * Tuning.BOSS_MINUTES.size() * Tuning.COOKIE_VALUE
+		Tuning.COOKIE_PER_BOSS * Tuning.BOSS_MINUTES.size() * Tuning.COOKIE_VALUE
 		+ Tuning.COOKIE_FINISH_BONUS
 	)
-	assert_lte(cheapest, a_run, "one run buys the first new cat")
-
-
-## A cat has to be affordable within a few runs, or the shop is decoration.
-func test_the_cheapest_cat_is_reachable() -> void:
-	var cheapest := 999999
-	for id: String in Tuning.CATS:
-		var cost := int(Tuning.CATS[id]["cost"])
-		if cost > 0:
-			cheapest = mini(cheapest, cost)
-	var per_run := (
-		Tuning.COOKIE_FINISH_BONUS
-		+ Tuning.COOKIE_PER_BOSS * Tuning.BOSS_MINUTES.size()
-	)
-	assert_lt(cheapest, per_run * 3, "a few runs buy the first new cat")
+	assert_gt(a_run, 0, "finishing a run pays something")
+	assert_gt(Tuning.COOKIE_EVERY, 0, "and so does killing bugs")
