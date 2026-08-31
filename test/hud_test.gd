@@ -179,6 +179,50 @@ func test_spare_loadout_rows_are_hidden() -> void:
 	Run.alive = false
 
 
+## The point of pausing mid-run is to see how it is going, so the tally has to
+## be there and has to be current: it is rebuilt on every pause because all
+## three numbers move while playing.
+func test_the_pause_screen_tallies_the_run() -> void:
+	Run.cat = Tuning.STARTER_CAT
+	Run.start()
+	Run.kills = 12
+	Run.cookies = 4
+	_hud._pause()
+	var found := _labels(_hud._stats)
+	assert_true("12" in found, "the kills are shown")
+	assert_true("4" in found, "and the cookies")
+	assert_eq(_stat_lines(), 3, "three lines")
+	# Rebuilt, not stale: the numbers move while the run is playing.
+	Run.kills = 30
+	_hud._unpause()
+	_hud._pause()
+	assert_true("30" in _labels(_hud._stats), "a second pause shows the new count")
+	assert_eq(_stat_lines(), 3, "and still three lines")
+	_hud._unpause()
+	Run.alive = false
+
+
+## Icons, not words: three of the four numbers are readable by a child who
+## cannot read, and a missing sprite would silently take that away.
+func test_the_pause_tally_has_its_pictures() -> void:
+	assert_true(
+		ResourceLoader.exists(Tuning.PAUSE_KILL_ICON),
+		"the kill icon exists",
+	)
+	assert_true(
+		ResourceLoader.exists(Tuning.PAUSE_COOKIE_ICON),
+		"the cookie icon exists",
+	)
+
+
+## The tally is one two-column grid, so a line is a pair of cells.
+func _stat_lines() -> int:
+	if _hud._stats.get_child_count() == 0:
+		return 0
+	var grid: GridContainer = _hud._stats.get_child(0)
+	return grid.get_child_count() / grid.columns
+
+
 func _find_pips(node: Node) -> HBoxContainer:
 	for child: Node in node.get_children():
 		if child.name == "Pips" and child is HBoxContainer:

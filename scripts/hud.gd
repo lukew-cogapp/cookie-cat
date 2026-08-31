@@ -17,6 +17,7 @@ extends CanvasLayer
 @onready var _again: Button = $Over/Panel/Pad/Col/Again
 @onready var _loadout: VBoxContainer = $Loadout/Pad/Rows
 @onready var _paused: Control = $Paused
+@onready var _stats: VBoxContainer = $Paused/Panel/Pad/Col/Stats
 @onready var _resume: Button = $Paused/Panel/Pad/Col/Resume
 @onready var _quit: Button = $Paused/Panel/Pad/Col/Quit
 
@@ -59,8 +60,57 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _pause() -> void:
 	_paused.visible = true
+	_fill_stats()
 	get_tree().paused = true
 	_resume.grab_focus()
+
+
+## How the run is going: kills, cookies, and the time left. A picture per line
+## where one exists, because the audience reads pictures and not labels.
+##
+## Rebuilt on every pause rather than kept in step with `Run.changed`: all three
+## numbers move while playing, and a frame of work costs nothing on a screen
+## that has stopped the game.
+func _fill_stats() -> void:
+	for c in _stats.get_children():
+		_stats.remove_child(c)
+		c.queue_free()
+	# One grid, not a row per line: an HBox centred per row re-centres it on its
+	# own width, which left the iconless clock out of line with the rows above.
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 10)
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var left := int(maxf(Tuning.RUN_SECONDS - Run.clock, 0.0))
+	_add_stat(grid, Tuning.PAUSE_KILL_ICON, str(Run.kills))
+	_add_stat(grid, Tuning.PAUSE_COOKIE_ICON, str(Run.cookies))
+	_add_stat(grid, "", "%d:%02d" % [left / 60, left % 60])
+	_stats.add_child(grid)
+
+
+## One line of the tally: a picture, then the number.
+func _add_stat(grid: GridContainer, art: String, value: String) -> void:
+	# The clock has no sprite of its own, and borrowing another would lie about
+	# what the number means, so its cell is left empty. The grid still holds the
+	# column, which is what keeps the time under the numbers above it.
+	if art == "":
+		var gap := Control.new()
+		gap.custom_minimum_size = Tuning.PAUSE_ICON_SIZE
+		grid.add_child(gap)
+	else:
+		var pic := TextureRect.new()
+		pic.custom_minimum_size = Tuning.PAUSE_ICON_SIZE
+		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		pic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		pic.texture = load(art)
+		grid.add_child(pic)
+	var label := Label.new()
+	label.text = value
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", Tuning.PAUSE_STAT_SIZE)
+	grid.add_child(label)
 
 
 func _unpause() -> void:

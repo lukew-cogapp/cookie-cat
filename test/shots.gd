@@ -159,6 +159,17 @@ func _init() -> void:
 	await _wait(30)
 	await _shoot("06_level_up")
 
+	# The pause screen, which is where a child checks how the run is going.
+	# Given some numbers to show, or the tally reads as three zeroes.
+	hud._pending.clear()
+	hud._picker.visible = false
+	run.kills = 137
+	run.cookies = 8
+	hud._pause()
+	await process_frame
+	await process_frame
+	await _shoot("19_paused")
+
 	quit(0)
 
 

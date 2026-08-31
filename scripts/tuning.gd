@@ -799,6 +799,17 @@ const HEALTH_LOW_BELOW := 0.3
 
 const BANNER_TIME := 1.6
 const CARD_SIZE := Vector2(200, 250)
+## The pause screen's tally. A picture per line, because the point of pausing
+## mid-run is to see how it is going and the audience cannot read a label.
+const PAUSE_ICON_SIZE := Vector2(34, 34)
+const PAUSE_STAT_SIZE := 30
+## Wide enough for the biggest number a run produces, so a 3-digit kill count
+## and a 1-digit cookie count still share a left edge.
+const PAUSE_VALUE_WIDTH := 96.0
+## The bug stands for kills and the cookie for cookies. Both are things the
+## child has already seen hundreds of by the time they pause.
+const PAUSE_KILL_ICON := "res://assets/grub.png"
+const PAUSE_COOKIE_ICON := "res://assets/cookie.png"
 ## The loadout list, top right. Pips rather than a number: a level is a
 ## quantity a child reads by counting.
 const LOADOUT_ICON_SIZE := Vector2(26, 26)
