@@ -153,6 +153,41 @@ crossing out does not flicker.
 
 ## Godot facts worth not relearning
 
+**A `QuadMesh` draws a texture upside down in 2D.** Its UVs map `uv.y=0`, the
+top of the image, to `y=+0.5`, which on screen is DOWN, so every MultiMesh
+sprite is vertically mirrored. It hid for a long time because most of the art
+is near-symmetric and the start screen uses `TextureRect`, which is correct:
+the same sprite looked right in the menu and wrong in the game. `Tuning`
+`sprite_quad()` builds the quad with explicit UVs; use it, never `QuadMesh`.
+
+**Mercy time caps damage, so damage per hit is the only lever.** A hit can only
+land every `PLAYER_MERCY_TIME` however many bugs are touching, so raising the
+crowd size does not make a run deadlier. At 4 damage against 100 health a swarm
+of grubs took forty seconds to finish the cat and the bar looked stuck.
+`test_standing_in_a_crowd_kills_you` pins the relationship.
+
+**A flash that may restart the moment it ends reads as permanent.** An aura or
+a puddle damages every frame, so a hit flash needs an enforced quiet gap
+(`HIT_FLASH_GAP`) rather than merely refusing to refresh: without it a pot was
+white about half the time, which looks solid white. The same rule silences the
+hit cue, which otherwise fires once per bug per frame.
+
+**A field that follows the cat teleports the world.** Props and ground decals
+were re-scattered whenever the cat walked far enough, which replaced every pot
+on screen at once and reads as being transported. They sit on a fixed grid of
+cells seeded by cell coordinates, so walking into new ground fills it in and
+walking back finds the same garden.
+
+**Overlapping circles read as clouds from above.** The milk puddle was drawn
+three ways as clusters of blobs (evenly spaced, jittered, then flattened) and
+every one read as a cloud or a flower. A spill is ONE outline: it is a single
+polygon with a wobbly edge, squashed vertically so it lies on the grass.
+
+**A passive has to reach what its card claims.** Big Bowl says every toy gets
+bigger; it silently did nothing for the two weapons with no radius of their
+own, and for the fish it widened the orbit while the sprite stayed the same
+size. Both the reach and the drawn size follow it now.
+
 **Web saves use `localStorage`, not `user://`.** On a web export `user://` is
 an in-memory filesystem synced to IndexedDB asynchronously, so `close()` only
 queues the write: a tab closed straight after a run loses its cookies

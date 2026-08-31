@@ -19,8 +19,9 @@ offers three cards. Pick a new toy or make one you have stronger. Repeat until
 the clock runs out.
 
 - **Ten minutes.** Surviving to the end is a win and pays a cookie bonus.
-- **Five hearts.** Being touched costs one, then the cat flashes for a second
-  and a half and shoves every bug clear, so being surrounded is survivable.
+- **A health bar.** A boss's hit takes far more than a grub's. Being touched
+  costs health, then the cat flashes for a second and a half and shoves every
+  bug clear, so being surrounded is survivable.
 - **Nothing dies badly.** Bugs pop into sparkles, and a run that ends early
   still ends on a tally rather than a failure.
 
@@ -60,7 +61,7 @@ scripts/save_state.gd    cookies and what they have bought, autoloaded as `Save`
 scripts/run_state.gd     one run's clock, xp and picks, autoloaded as `Run`
 scripts/swarm.gd         every enemy, as rows in arrays and one MultiMesh
 scripts/weapons.gd       every toy, fired on its own cooldown
-scripts/gems.gd          xp, hearts and cookies, same array pattern
+scripts/gems.gd          xp gems, hearts and cookies, same array pattern
 scripts/director.gd      what spawns when, from the wave table
 scripts/ground.gd        scattered ground decals
 scripts/props.gd         breakable pots, bushes and boxes
