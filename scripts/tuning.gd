@@ -350,14 +350,14 @@ const SLOW_LINGER := 0.35
 ## HP is flat per kind and grows with the clock, not with player level: a
 ## child who levels fast should feel stronger, not meet tougher bugs.
 const ENEMIES := [
-	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 4.0, "radius": 9.0, "xp": 1, "gem_up": 0.02, "knock": 46.0},
-	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 6.0, "radius": 10.0, "xp": 2, "gem_up": 0.06, "knock": 38.0},
-	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 10.0, "radius": 12.0, "xp": 4, "gem_up": 0.14, "knock": 22.0},
-	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 7.0, "radius": 8.5, "xp": 3, "gem_up": 0.1, "knock": 60.0},
-	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 8.0, "radius": 11.0, "xp": 3, "gem_up": 0.12, "knock": 34.0},
-	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 30.0, "radius": 26.0, "xp": 60, "gem_up": 0.8, "knock": 6.0},
-	{"name": "Spider", "hp": 12.0, "speed": 92.0, "damage": 7.0, "radius": 9.0, "xp": 3, "gem_up": 0.1, "knock": 42.0},
-	{"name": "Dung Beetle", "hp": 26.0, "speed": 40.0, "damage": 9.0, "radius": 11.0, "xp": 5, "gem_up": 0.16, "knock": 18.0},
+	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 9.0, "radius": 9.0, "xp": 1, "gem_up": 0.02, "knock": 46.0},
+	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 13.0, "radius": 10.0, "xp": 2, "gem_up": 0.06, "knock": 38.0},
+	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 20.0, "radius": 12.0, "xp": 4, "gem_up": 0.14, "knock": 22.0},
+	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 15.0, "radius": 8.5, "xp": 3, "gem_up": 0.1, "knock": 60.0},
+	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 16.0, "radius": 11.0, "xp": 3, "gem_up": 0.12, "knock": 34.0},
+	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 45.0, "radius": 26.0, "xp": 60, "gem_up": 0.8, "knock": 6.0},
+	{"name": "Spider", "hp": 12.0, "speed": 92.0, "damage": 15.0, "radius": 9.0, "xp": 3, "gem_up": 0.1, "knock": 42.0},
+	{"name": "Dung Beetle", "hp": 26.0, "speed": 40.0, "damage": 18.0, "radius": 11.0, "xp": 5, "gem_up": 0.16, "knock": 18.0},
 ]
 const ENEMY_MAX := 220
 ## Past this from the player an enemy is forgotten. Over a screen and a half,
@@ -826,6 +826,11 @@ const BLURBS := {
 	"bowl": "Everything gets bigger",
 }
 ## The card art is 16x16, so it is drawn at this size with no filtering.
+## Inset from a card's border. Without it a wrapped blurb touches the outline.
+const CARD_PAD := 12
+## Breathing room under a card's last line of text.
+const CARD_TAIL := 6
+
 const CARD_ICON_SIZE := Vector2(96, 96)
 const CARD_NEW_COLOUR := Color(1.0, 0.86, 0.36)
 const CARD_UP_COLOUR := Color(0.72, 0.92, 1.0)

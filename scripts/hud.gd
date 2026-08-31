@@ -259,12 +259,20 @@ func _card(id: String) -> Button:
 		_show_next()
 	)
 
+	# Inset from the card's own border, or wrapped text touches it. The column
+	# filled the card edge to edge, so a two-line blurb ran into the outline.
+	var pad := MarginContainer.new()
+	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "top", "right", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, Tuning.CARD_PAD)
+	b.add_child(pad)
+
 	var col := VBoxContainer.new()
-	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	col.add_theme_constant_override("separation", 6)
 	# So the click lands on the button, not on the labels sitting over it.
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(col)
+	pad.add_child(col)
 
 	var head := Label.new()
 	head.text = "★".repeat(level + 1)
@@ -308,6 +316,12 @@ func _card(id: String) -> Button:
 	blurb.add_theme_font_size_override("font_size", 14)
 	blurb.add_theme_color_override("font_color", Tuning.CARD_BLURB_COLOUR)
 	col.add_child(blurb)
+
+	# A spacer under the blurb, so the last line is not against the border.
+	var tail := Control.new()
+	tail.custom_minimum_size = Vector2(0, Tuning.CARD_TAIL)
+	tail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(tail)
 
 	return b
 

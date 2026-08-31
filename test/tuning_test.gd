@@ -81,7 +81,10 @@ func test_bosses_arrive_during_the_run() -> void:
 
 ## Every weapon needs firing code, or it deals no damage and reads as broken.
 func test_every_weapon_has_a_known_kind() -> void:
-	var known := ["sweep", "shot", "aura", "orbit", "chaser", "zone", "strike", "burst"]
+	var known := [
+		"sweep", "shot", "aura", "orbit", "chaser", "zone", "strike", "burst",
+		"boomer", "trail",
+	]
 	for id: String in Tuning.WEAPONS:
 		assert_true(
 			String(Tuning.WEAPONS[id]["kind"]) in known,
@@ -289,3 +292,37 @@ func test_every_fish_level_adds_a_fish() -> void:
 		var was := int(Tuning.weapon_stat("fish", "count", level))
 		var now := int(Tuning.weapon_stat("fish", "count", level + 1))
 		assert_eq(now, was + 1, "fish level %d adds one" % (level + 1))
+
+
+## Mercy caps hits at one per `PLAYER_MERCY_TIME` however many bugs are
+## touching, so damage per hit is the ONLY lever on how fast a run can end.
+## At 4 damage a grub swarm took forty seconds to finish the cat and the bar
+## looked stuck; standing in a crowd has to cost something a child notices.
+func test_standing_in_a_crowd_kills_you() -> void:
+	for kind in Tuning.ENEMIES.size():
+		var hits := Tuning.PLAYER_MAX_HP / Tuning.enemy_damage(kind)
+		var seconds := hits * Tuning.PLAYER_MERCY_TIME
+		assert_lt(
+			seconds,
+			25.0,
+			"%s kills a standing cat in %.0fs" % [Tuning.ENEMIES[kind]["name"], seconds],
+		)
+
+
+## And a boss must hurt more than a first-minute bug, which is the whole point
+## of per-kind damage: they all dealt exactly 1.0 before.
+func test_a_boss_hits_harder_than_a_grub() -> void:
+	var grub := Tuning.enemy_damage(0)
+	var boss := Tuning.enemy_damage(5)
+	assert_gt(boss, grub * 3.0, "a boss hit is worth several grub hits")
+
+
+## But nothing may one-shot a full-health cat: a run that ends in a single
+## touch reads as the game cheating.
+func test_nothing_one_shots_the_cat() -> void:
+	for kind in Tuning.ENEMIES.size():
+		assert_lt(
+			Tuning.enemy_damage(kind),
+			Tuning.PLAYER_MAX_HP,
+			"%s does not end a run in one touch" % Tuning.ENEMIES[kind]["name"],
+		)

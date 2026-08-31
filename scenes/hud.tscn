@@ -19,10 +19,12 @@ theme_override_constants/margin_right = 18
 
 [node name="Row" type="HBoxContainer" parent="Top"]
 layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="Health" type="PanelContainer" parent="Top/Row"]
-custom_minimum_size = Vector2(280, 34)
+custom_minimum_size = Vector2(300, 34)
 layout_mode = 2
+size_flags_vertical = 4
 theme_override_styles/panel = ExtResource("3")
 
 [node name="Pad" type="MarginContainer" parent="Top/Row/Health"]
@@ -40,16 +42,6 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.42, 0.85, 0.42, 1)
-
-[node name="Heart" type="TextureRect" parent="Top/Row/Health"]
-custom_minimum_size = Vector2(30, 30)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 4
-texture = ExtResource("4")
-expand_mode = 1
-stretch_mode = 5
-texture_filter = 1
 
 [node name="Spacer" type="Control" parent="Top/Row"]
 layout_mode = 2
