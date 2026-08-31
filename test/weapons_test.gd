@@ -76,14 +76,30 @@ func test_a_boomerang_turns_round() -> void:
 	assert_false(flying_out, "it turned round or was caught")
 
 
-## Crumbs are dropped where the cat is, so a cat that never moves leaves them
-## in a heap. That is the weapon's point, not a bug: what matters is that a
-## crumb is left at all.
-func test_crumbs_are_left_behind() -> void:
+## Crumbs pay for MOVING: a walking cat leaves a trail, a standing one leaves
+## nothing. Dropping them while still made a heap under a stationary cat and
+## cost the weapon its whole point.
+func test_crumbs_are_left_behind_while_walking() -> void:
 	Run.weapons = {"trail": 1}
 	var before := _weapons.zones
+	# Two drops a good stride apart, as a walking cat would.
+	_weapons._last_crumb = Vector2.ZERO
+	_player.global_position = Vector2(500.0, 0.0)
 	_weapons._fire("trail", 1)
-	assert_gt(_weapons.zones, before, "a crumb was dropped")
+	_player.global_position = Vector2(500.0 + Tuning.TRAIL_MIN_STEP * 2.0, 0.0)
+	_weapons._fire("trail", 1)
+	assert_eq(_weapons.zones, before + 2, "a walking cat leaves crumbs")
+
+
+func test_a_standing_cat_leaves_no_crumbs() -> void:
+	Run.weapons = {"trail": 1}
+	_player.global_position = Vector2(900.0, 0.0)
+	_weapons._fire("trail", 1)
+	var after_first := _weapons.zones
+	# Fired again from exactly the same spot, as a standing cat would.
+	for _n in 5:
+		_weapons._fire("trail", 1)
+	assert_eq(_weapons.zones, after_first, "standing still drops nothing more")
 
 
 ## With nothing to shoot at, a weapon should break a pot rather than fire at

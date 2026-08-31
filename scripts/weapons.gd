@@ -64,6 +64,8 @@ var orbit_angle := 0.0
 ## Where the next paw sweep begins, so consecutive swipes do not restart from
 ## the same angle.
 var _paw_from := 0.0
+## Where the last crumb went, so a standing cat drops none.
+var _last_crumb := Vector2.ZERO
 var _fish_art: Texture2D
 var _shot_art: Array[Texture2D] = []
 
@@ -313,6 +315,11 @@ func _fire_boomer(id: String, level: int, at: Vector2) -> void:
 func _fire_trail(id: String, level: int, at: Vector2) -> void:
 	if zones >= SHOT_MAX:
 		return
+	# Only while walking. A cat standing still leaves nothing, which is the
+	# whole point of the weapon: it pays for moving.
+	if at.distance_to(_last_crumb) < Tuning.TRAIL_MIN_STEP:
+		return
+	_last_crumb = at
 	var z := zones
 	zones += 1
 	zone_pos[z] = at
@@ -636,20 +643,7 @@ func _draw() -> void:
 			_draw_crumbs(z, here)
 			continue
 		var fade: float = clampf(zone_life[z] / Tuning.ZONE_FADE_TIME, 0.0, 1.0)
-		var c := Tuning.ZONE_COLOUR
-		draw_circle(here, zone_radius[z], Color(c.r, c.g, c.b, c.a * fade))
-		# A rim, so the edge of the slow is visible rather than a soft blob.
-		var rim: Color = Tuning.ZONE_RIM_COLOUR
-		draw_arc(
-			here,
-			zone_radius[z],
-			0.0,
-			TAU,
-			32,
-			Color(rim.r, rim.g, rim.b, rim.a * fade),
-			Tuning.ZONE_RIM_WIDTH,
-			true,
-		)
+		_draw_puddle(z, here, fade)
 
 	if Run.level_of("purr") > 0:
 		_draw_purr(at, _radius("purr", Run.level_of("purr")))
@@ -695,6 +689,36 @@ func _draw() -> void:
 		_sprite(art, here, spin, Tuning.SHOT_DRAW_SIZE, Color.WHITE)
 
 	_draw_fx(at)
+
+
+## Spilt milk, not a disc. A circle with a rim read as a coloured plate, so the
+## outline wobbles: a handful of overlapping blobs round the edge, at fixed
+## offsets per puddle so it does not shimmer, plus a highlight off centre the
+## way liquid catches light.
+func _draw_puddle(z: int, at: Vector2, fade: float) -> void:
+	var r := zone_radius[z]
+	var c := Tuning.ZONE_COLOUR
+	var body := Color(c.r, c.g, c.b, c.a * fade)
+	# ONE closed shape with a wobbly edge, not a cluster of circles. Three
+	# attempts at overlapping blobs all read as clouds from above, however they
+	# were spaced or squashed: a spill is a single outline, so it is drawn as
+	# one, flattened so it lies on the grass rather than floating over it.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(absf(zone_pos[z].x) * 31.0 + absf(zone_pos[z].y) * 17.0)
+	var edge := PackedVector2Array()
+	edge.resize(Tuning.ZONE_EDGE_POINTS)
+	for n in Tuning.ZONE_EDGE_POINTS:
+		var a := TAU * float(n) / float(Tuning.ZONE_EDGE_POINTS)
+		var reach := r * rng.randf_range(Tuning.ZONE_EDGE_MIN, 1.0)
+		edge[n] = at + Vector2(cos(a) * reach, sin(a) * reach * Tuning.ZONE_SQUASH)
+	draw_colored_polygon(edge, body)
+	# A bright fleck off centre, which is what makes a flat shape read as wet.
+	var gleam: Color = Tuning.ZONE_GLEAM_COLOUR
+	draw_circle(
+		at + Vector2(-r * 0.26, -r * 0.16),
+		r * Tuning.ZONE_GLEAM,
+		Color(gleam.r, gleam.g, gleam.b, gleam.a * fade),
+	)
 
 
 ## The purr ring: a dotted circle of paw-pink pips that turns, rather than a

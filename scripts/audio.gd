@@ -52,7 +52,7 @@ func _ready() -> void:
 	_bank["shoot"] = _tone(700.0, 940.0, 0.07, "sine", 0.22)
 	# A shot connecting. Lower than the shot itself, which is what makes the
 	# pair read as cause and effect rather than as two clicks.
-	_bank["hit"] = _tone(300.0, 140.0, 0.07, "square", 0.26)
+	_bank["hit"] = _tone(300.0, 140.0, 0.06, "square", 0.16)
 	# A bug bursting. Rounder and lower than a hit, so a kill is audible over
 	# the hits that led to it.
 	_bank["pop"] = _tone(420.0, 90.0, 0.13, "sine", 0.34)

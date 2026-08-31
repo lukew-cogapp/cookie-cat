@@ -315,6 +315,8 @@ const SHOT_TRAIL_COLOURS := [
 ## A boomerang within this of the cat has been caught.
 const BOOMER_CATCH_RADIUS := 22.0
 ## Crumbs hurt over time like a puddle, so their listed damage is a rate.
+## How far the cat must walk between crumbs. Standing still drops none.
+const TRAIL_MIN_STEP := 26.0
 const TRAIL_DAMAGE_RATE := 0.9
 ## Orbiting fish sweep every frame rather than on a cooldown, so their listed
 ## damage is scaled down to a per-second rate.
@@ -334,9 +336,21 @@ const AURA_PIP_SIZE := 4.0
 ## pulsing as one solid band.
 const AURA_PIP_BREATHE := 0.3
 const AURA_PIP_RATE := 4.0
-const ZONE_COLOUR := Color(0.95, 0.95, 1.0, 0.5)
+const ZONE_COLOUR := Color(0.93, 0.95, 1.0, 0.34)
 ## A rim on the puddle, so the edge of the slow is visible rather than a soft
 ## blob with no boundary.
+## A puddle is drawn as overlapping blobs, not a disc: a rimmed circle read as
+## a coloured plate rather than something spilt.
+## A puddle is ONE polygon with a wobbly edge. Clusters of circles were tried
+## three ways and all read as clouds from above.
+const ZONE_EDGE_POINTS := 16
+const ZONE_EDGE_MIN := 0.72
+## Flattened vertically, so a spill lies on the grass. Round puffs read as
+## clouds floating over it.
+const ZONE_SQUASH := 0.55
+## The wet-looking fleck, off centre the way liquid catches light.
+const ZONE_GLEAM := 0.16
+const ZONE_GLEAM_COLOUR := Color(1.0, 1.0, 1.0, 0.35)
 const ZONE_RIM_COLOUR := Color(0.75, 0.9, 1.0, 0.8)
 const ZONE_RIM_WIDTH := 3.0
 ## A puddle fades over its last seconds rather than blinking out.

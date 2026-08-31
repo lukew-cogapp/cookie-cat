@@ -230,12 +230,16 @@ func damage(i: int, amount: float, from: Vector2) -> bool:
 	# every frame, and refreshing the timer each time held a tanky bug solid
 	# white for as long as it stood there, which loses the silhouette that
 	# tells the kinds apart.
-	if flash[i] <= -Tuning.HIT_FLASH_GAP:
+	var fresh := flash[i] <= -Tuning.HIT_FLASH_GAP
+	if fresh:
 		flash[i] = Tuning.HIT_FLASH_TIME
 	var away := (pos[i] - from).normalized()
 	knock[i] = away * Tuning.enemy_knockback(kind[i])
 	if hp[i] > 0.0:
-		Audio.play("hit")
+		# Only on a fresh flash: a bug sitting in a puddle is damaged every
+		# frame, and a cue per frame per bug is a drone.
+		if fresh:
+			Audio.play("hit")
 		return false
 	Audio.play("pop")
 	_dead.append(i)
