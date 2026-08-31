@@ -79,6 +79,26 @@ func _physics_process(delta: float) -> void:
 		_step = 0.0
 		if _walk[0] != null:
 			_sprite.texture = _walk[0]
+	# The halo pulses, so the marker under the cat needs a redraw per frame.
+	queue_redraw()
+
+
+## A ground shadow and a soft halo, drawn under the cat (a parent draws below
+## its children). In a minute-nine crowd the cat's own pixels are covered by
+## bugs half the time; the pale pool of light under it is what stays findable,
+## and it costs two circles a frame rather than anything per bug.
+func _draw() -> void:
+	var pulse := 1.0 + Tuning.PLAYER_HALO_PULSE * sin(Run.clock * Tuning.PLAYER_HALO_RATE)
+	# Layered translucent discs: alpha stacks towards the centre, faking a
+	# radial glow without a texture.
+	for n in Tuning.PLAYER_HALO_RINGS:
+		var r: float = Tuning.PLAYER_HALO_RADIUS * pulse * (1.0 - float(n) * Tuning.PLAYER_HALO_STEP)
+		draw_circle(Vector2.ZERO, r, Tuning.PLAYER_HALO_COLOUR)
+	draw_set_transform(
+		Vector2(0.0, Tuning.PLAYER_SHADOW_DROP), 0.0, Vector2(1.0, Tuning.PLAYER_SHADOW_SQUASH)
+	)
+	draw_circle(Vector2.ZERO, Tuning.PLAYER_SHADOW_RADIUS, Tuning.PLAYER_SHADOW_COLOUR)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func hurt(amount: float) -> void:

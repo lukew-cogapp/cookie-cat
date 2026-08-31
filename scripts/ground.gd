@@ -1,6 +1,8 @@
 class_name Ground
 extends Node2D
-## Mud, flowers, worn patches and stones scattered across the lawn.
+## Decals scattered across the floor: mud and flowers in the garden, shells
+## and tide pools on the beach, ice and drifts in the arctic. Which set is
+## drawn comes from `Tuning.MAPS[Run.map]`.
 ##
 ## Decoration only: nothing here is walked around, damaged or picked up. It
 ## exists because a flat green field gives no sense of moving, and no sense of
@@ -25,11 +27,22 @@ var _rng := RandomNumberGenerator.new()
 var _centre := Vector2.ZERO
 var _player: Node2D
 
+## The map's decal tables, read once at load: a map cannot change mid-run.
+var _art: Array = []
+var _weights: Array = []
+var _scale: Array = []
+var _alpha: Array = []
+
 
 func _ready() -> void:
+	var m := Tuning.map_info(Run.map)
+	_art = m["ground_art"]
+	_weights = m["ground_weights"]
+	_scale = m["ground_scale"]
+	_alpha = m["ground_alpha"]
 	var q := QuadMesh.new()
 	q.size = Vector2.ONE
-	for k in Tuning.GROUND_ART.size():
+	for k in _art.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_2D
 		mm.use_colors = true
@@ -38,7 +51,7 @@ func _ready() -> void:
 		mm.visible_instance_count = 0
 		var node := MultiMeshInstance2D.new()
 		node.multimesh = mm
-		node.texture = load(String(Tuning.GROUND_ART[k]))
+		node.texture = load(String(_art[k]))
 		add_child(node)
 		_mm.append(mm)
 		_by_kind.append([])
@@ -71,14 +84,14 @@ func scatter(around: Vector2) -> void:
 		kind[i] = _weighted_kind()
 		size[i] = _rng.randf_range(
 			Tuning.GROUND_SIZE_MIN, Tuning.GROUND_SIZE_MAX
-		) * float(Tuning.GROUND_SCALE[kind[i]])
+		) * float(_scale[kind[i]])
 		# Quarter turns only. A patch rotated off the pixel grid blurs, and the
 		# whole look depends on the pixels staying square.
 		turn[i] = float(_rng.randi_range(0, 3)) * PI * 0.5
 		# A little tone variation per patch, so a field of mud is not one
 		# stamp repeated.
 		var shade := _rng.randf_range(Tuning.GROUND_SHADE_MIN, 1.0)
-		tint[i] = Color(shade, shade, shade, Tuning.GROUND_ALPHA[kind[i]])
+		tint[i] = Color(shade, shade, shade, _alpha[kind[i]])
 	_redraw()
 
 
@@ -88,8 +101,8 @@ func scatter(around: Vector2) -> void:
 func _weighted_kind() -> int:
 	var roll := _rng.randf()
 	var seen := 0.0
-	for k in Tuning.GROUND_WEIGHTS.size():
-		seen += float(Tuning.GROUND_WEIGHTS[k])
+	for k in _weights.size():
+		seen += float(_weights[k])
 		if roll <= seen:
 			return k
 	return 0

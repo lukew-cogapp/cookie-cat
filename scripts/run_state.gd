@@ -30,6 +30,8 @@ var kills := 0
 var cookies := 0
 ## Which cat is playing. Set by the start screen before the world loads.
 var cat := Tuning.STARTER_CAT
+## And where: the map decides the floor and the props, never the bugs.
+var map := Tuning.STARTER_MAP
 ## Set by `world.gd` each time the player's health changes. `_choices` reads it
 ## rather than the player, which `Run` cannot reach, and a snack is only worth
 ## offering when there is a heart missing.

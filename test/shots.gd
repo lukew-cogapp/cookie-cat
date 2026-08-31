@@ -105,7 +105,56 @@ func _init() -> void:
 	await _wait(6)
 	await _shoot("11_spawn_grow")
 
+	# The boomerang, alone, so both legs and the catch can be judged. Clearing
+	# the loadout also stops the other toys popping the target bugs first.
+	run.weapons = {"boomer": 3}
+	weapons._ready_in.clear()
+	weapons.shots = 0
+	weapons.zones = 0
+	for i in 8:
+		swarm.spawn(player.global_position + Vector2(190, -70 + 20.0 * float(i)), i % 5)
+	await _wait(10)
+	await _shoot("12_boomer_out")
+	await _wait(28)
+	await _shoot("13_boomer_return")
+	await _wait(20)
+	await _shoot("14_boomer_catch")
+
+	# The crumb trail: walk the cat so a line of crumbs drops, then let bugs
+	# reach it and eat.
+	run.weapons = {"trail": 3}
+	weapons._ready_in.clear()
+	weapons.shots = 0
+	for _step in 6:
+		player.position += Vector2(28, 0)
+		await _wait(14)
+	await _shoot("15_crumbs")
+	for i in 6:
+		swarm.spawn(player.global_position + Vector2(-80.0 - 20.0 * float(i), 40), 0)
+	await _wait(40)
+	await _shoot("16_crumb_eaten")
+
+	# Minute-eight density: the full quota of bugs and a full loadout, which is
+	# where the cat historically vanished. The one shot legibility is judged on.
+	hud._pending.clear()
+	hud._picker.visible = false
+	run.weapons = {
+		"paw": 4, "yarn": 3, "purr": 3, "fish": 3, "mouse": 2,
+		"milk": 2, "zap": 2, "nap": 2, "boomer": 2, "trail": 2,
+	}
+	weapons._ready_in.clear()
+	for i in 120:
+		var a := TAU * float(i) * 7.0 / 120.0
+		var d := 70.0 + float((i * 37) % 210)
+		swarm.spawn(player.global_position + Vector2.from_angle(a) * d, i % 5)
+	await _wait(25)
+	await _shoot("17_minute8_crowd")
+	await _wait(15)
+	await _shoot("18_minute8_crowd_later")
+
 	# The pick screen, which is the one piece of UI a child has to use.
+	hud._pending.clear()
+	hud._picker.visible = false
 	run.add_xp(run.xp_needed)
 	await _wait(30)
 	await _shoot("06_level_up")

@@ -188,7 +188,7 @@ Godot 4.7 ships no analogue virtual joystick: `TouchScreenButton` is boolean,
 and the `emulate_*` settings only translate between mouse and touch. The stick
 feeds `Input.action_press(action, strength)`, which `Input.get_vector` reads
 back through `get_action_raw_strength`, so the cat's movement code stays one
-`get_vector` call and the touch input is genuinely analogue.
+`get_vector` call and the touch input keeps the stick's magnitude.
 
 Most of these are inherited from `../godot-world` and still true here.
 

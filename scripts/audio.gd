@@ -17,7 +17,9 @@ const MUSIC_VOLUME_DB := -12.0
 const PLAYED_LOG := 48
 ## Cues this common are throttled: a hundred bugs popping in one frame is one
 ## sound to a listener, and sixteen voices of it is a wall of noise.
-const THROTTLED := {"hit": 0.05, "pop": 0.06, "pickup": 0.04, "shoot": 0.07}
+const THROTTLED := {
+	"hit": 0.05, "pop": 0.06, "pickup": 0.04, "shoot": 0.07, "crumb": 0.2, "catch": 0.1
+}
 
 var _bank: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
@@ -25,6 +27,14 @@ var _next := 0
 var _music_player: AudioStreamPlayer
 ## Cue name -> the time it last played, for THROTTLED.
 var _last: Dictionary = {}
+## Pops the throttle swallowed since the last big pop, and when that was.
+## Enough swallowed pops earn one deep pop that cuts through: mowing a crowd
+## should sound bigger, not busier.
+var _pops_banked := 0
+var _big_pop_at := -100.0
+## Until when the common cues are held down, so a fanfare owns its moment.
+var _duck_until := 0.0
+var _rng := RandomNumberGenerator.new()
 
 ## Names played, newest last, kept only so headless tests can assert that a
 ## cue fired. Sound is the one kind of feedback a screenshot cannot show.
@@ -56,7 +66,15 @@ func _ready() -> void:
 	_bank["win"] = _chime([523.0, 659.0, 784.0, 1047.0, 1319.0, 1568.0], 1.1)
 	# A big one is coming: low but major, an announcement rather than a scare.
 	_bank["boss"] = _chime([130.8, 164.8, 196.0, 261.6], 0.8)
-	# C-major bass under a sparse melody; loops seamlessly (see _music).
+	# Many pops at once, as one sound: deeper and longer than a pop, so a
+	# mown crowd reads as one big burst rather than a buzz.
+	_bank["pop_big"] = _tone(300.0, 70.0, 0.24, "sine", 0.42)
+	# The boomerang landing back in the paw: a falling thwip, quieter than a
+	# pickup so ten catches a minute stay background.
+	_bank["catch"] = _tone(900.0, 300.0, 0.08, "sine", 0.2)
+	# A bug nibbling a crumb: the smallest sound in the bank.
+	_bank["crumb"] = _tone(240.0, 180.0, 0.05, "sine", 0.14)
+	# C-major bass under a sparse melody. The loop point never clicks: see _music.
 	_bank["music"] = _music(
 		[65.41, 65.41, 87.31, 65.41, 73.42, 73.42, 98.0, 87.31],
 		[261.63, 0.0, 329.63, 392.0, 0.0, 329.63, 293.66, 0.0],
@@ -78,20 +96,41 @@ func _ready() -> void:
 func play(sound: String, pitch := 1.0) -> void:
 	if not _bank.has(sound):
 		return
-	if THROTTLED.has(sound):
-		var now := Time.get_ticks_msec() / 1000.0
+	var now := Time.get_ticks_msec() / 1000.0
+	var throttled: bool = THROTTLED.has(sound)
+	if throttled:
 		if now - float(_last.get(sound, -1.0)) < float(THROTTLED[sound]):
+			if sound == "pop":
+				_bank_pop(now)
 			return
 		_last[sound] = now
+		# The spammy cues wander in pitch, or ten a second machine-gun. The
+		# jingles stay fixed on purpose, like an alarm.
+		pitch *= 1.0 + _rng.randf_range(-Tuning.AUDIO_VARY, Tuning.AUDIO_VARY)
+	elif Tuning.AUDIO_BIG_CUES.has(sound):
+		_duck_until = now + Tuning.AUDIO_DUCK_TIME
 	played.append(sound)
 	if played.size() > PLAYED_LOG:
 		played.pop_front()
 	var p := _players[_next]
 	_next = (_next + 1) % VOICES
 	p.stream = _bank[sound]
-	# Always set: voices are recycled, and a stale pitch would carry over.
+	# Always set: voices are recycled, and a stale pitch or duck would carry
+	# over.
 	p.pitch_scale = pitch
+	p.volume_db = Tuning.AUDIO_DUCK_DB if throttled and now < _duck_until else 0.0
 	p.play()
+
+
+## A pop the throttle swallowed still counts: enough of them inside the gap
+## earn one deep pop that cuts through the wall of small ones.
+func _bank_pop(now: float) -> void:
+	_pops_banked += 1
+	if _pops_banked < Tuning.POP_BIG_EVERY or now - _big_pop_at < Tuning.POP_BIG_GAP:
+		return
+	_pops_banked = 0
+	_big_pop_at = now
+	play("pop_big")
 
 
 func play_music(sound: String) -> void:

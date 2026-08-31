@@ -1,6 +1,8 @@
 class_name Props
 extends Node2D
-## Breakable garden things: pots, bushes and boxes scattered on the lawn.
+## Breakable things scattered on the ground: pots, bushes and boxes in the
+## garden; sandcastles, driftwood and buckets on the beach; snowmen, firs and
+## ice blocks in the arctic. Which set comes from `Tuning.MAPS[Run.map]`.
 ##
 ## They exist to give the ground a reason to be walked across. An empty lawn
 ## makes every direction identical, so a child has nothing to aim at between
@@ -10,9 +12,6 @@ extends Node2D
 ## and they are hit by the same weapon queries: `world.gd` passes each weapon's
 ## damage through `damage_near`, so anything that hurts a bug breaks a pot
 ## without a single weapon knowing props exist.
-
-## Prop kinds, indices into Tuning.PROPS.
-enum Kind { POT, BUSH, BOX }
 
 signal broke(at: Vector2, kind: int)
 
@@ -32,13 +31,16 @@ var _hits: Array[int] = []
 ## field is re-scattered around it once it walks far enough from this.
 var _centre := Vector2.ZERO
 var _player: Node2D
+## The map's prop table, read once at load: a map cannot change mid-run.
+var _table: Array = []
 
 
 func _ready() -> void:
+	_table = Tuning.map_info(Run.map)["props"]
 	_rng.seed = Tuning.PROP_SEED
 	var q := QuadMesh.new()
 	q.size = Vector2.ONE
-	for k in Tuning.PROPS.size():
+	for k in _table.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_2D
 		mm.use_colors = true
@@ -47,7 +49,7 @@ func _ready() -> void:
 		mm.visible_instance_count = 0
 		var node := MultiMeshInstance2D.new()
 		node.multimesh = mm
-		node.texture = load(String(Tuning.PROPS[k]["art"]))
+		node.texture = load(String(_table[k]["art"]))
 		add_child(node)
 		_mm.append(mm)
 		_by_kind.append([])
@@ -79,12 +81,12 @@ func scatter(clear_around: Vector2) -> void:
 			continue
 		if _too_close(p):
 			continue
-		var k := _rng.randi_range(0, Tuning.PROPS.size() - 1)
+		var k := _rng.randi_range(0, _table.size() - 1)
 		var i := alive
 		alive += 1
 		pos[i] = p
 		kind[i] = k
-		hp[i] = float(Tuning.PROPS[k]["hp"])
+		hp[i] = float(_table[k]["hp"])
 		flash[i] = 0.0
 	_redraw()
 
@@ -151,7 +153,7 @@ func damage_near(point: Vector2, radius: float, amount: float) -> void:
 ## What a prop drops, as a Gems.Kind. Mostly nothing: a heart from every pot
 ## would make the hearts meaningless and the run trivial.
 func roll_drop(k: int) -> int:
-	var d: Dictionary = Tuning.PROPS[k]
+	var d: Dictionary = _table[k]
 	var r := _rng.randf()
 	if r < float(d["heart_chance"]):
 		return Gems.Kind.HEART
@@ -161,7 +163,11 @@ func roll_drop(k: int) -> int:
 
 
 func radius_of(k: int) -> float:
-	return float(Tuning.PROPS[k]["radius"])
+	return float(_table[k]["radius"])
+
+
+func xp_of(k: int) -> int:
+	return int(_table[k]["xp"])
 
 
 func _compact() -> void:

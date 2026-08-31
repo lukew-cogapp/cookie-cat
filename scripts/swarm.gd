@@ -14,7 +14,7 @@ extends Node2D
 ## `_draw` is not used; a MultiMesh survives a moving camera without redrawing.
 
 ## Enemy kinds, indices into Tuning.ENEMIES.
-enum Kind { GRUB, BEETLE, SNAIL, WASP, SLIME, BIG }
+enum Kind { GRUB, BEETLE, SNAIL, WASP, SLIME, BIG, SPIDER, DUNG }
 
 var alive := 0
 var pos: Array[Vector2] = []
@@ -34,6 +34,21 @@ var _facing_left: Array[bool] = []
 ## over SLOW_LINGER instead of snapping to full speed at the edge.
 var slow_for: Array[float] = []
 var slow_by: Array[float] = []
+## Per-row phase for the spider's scuttle, so a pack does not stop and start
+## in unison.
+var gait: Array[float] = []
+## Seconds until a dung beetle's next lob. Meaningless on other kinds.
+var aim: Array[float] = []
+
+## Poop balls in flight, pooled like the rows above. The dung beetle is the
+## first enemy that hurts the cat without touching it, so its shots live here
+## rather than growing a node apiece.
+var poop_pos: Array[Vector2] = []
+var poop_vel: Array[Vector2] = []
+var poop_life: Array[float] = []
+var poops := 0
+var _poop_dead: Array[int] = []
+var _poop_mm: MultiMesh
 
 ## One MultiMesh per kind, so each kind draws its own texture in its own
 ## draw call. Six calls for any number of bugs, and a kind is told apart by
@@ -62,10 +77,26 @@ func _ready() -> void:
 		var node := MultiMeshInstance2D.new()
 		node.multimesh = mm
 		node.texture = load(Tuning.ENEMY_TEXTURES[k])
+		# One property per kind, not per bug: the cat keeps the brightest pixels
+		# on screen. The hit flash still blows past this to white.
+		node.modulate = Tuning.ENEMY_DIM
 		add_child(node)
 		_mm.append(mm)
 		_by_kind.append([])
 	_grow(Tuning.ENEMY_MAX)
+	# The poop pool: one more MultiMesh, sized once like the rows.
+	_poop_mm = MultiMesh.new()
+	_poop_mm.transform_format = MultiMesh.TRANSFORM_2D
+	_poop_mm.mesh = quad
+	_poop_mm.instance_count = Tuning.POOP_MAX
+	_poop_mm.visible_instance_count = 0
+	var poop_node := MultiMeshInstance2D.new()
+	poop_node.multimesh = _poop_mm
+	poop_node.texture = load(Tuning.POOP_ART)
+	add_child(poop_node)
+	poop_pos.resize(Tuning.POOP_MAX)
+	poop_vel.resize(Tuning.POOP_MAX)
+	poop_life.resize(Tuning.POOP_MAX)
 
 
 ## The arrays are sized once and reused for the whole run: a spawn writes into
@@ -81,6 +112,8 @@ func _grow(to: int) -> void:
 	_facing_left.resize(to)
 	slow_for.resize(to)
 	slow_by.resize(to)
+	gait.resize(to)
+	aim.resize(to)
 
 
 func set_player(p: Node2D) -> void:
@@ -102,6 +135,8 @@ func spawn(at: Vector2, of_kind: int) -> void:
 	_facing_left[i] = false
 	slow_for[i] = 0.0
 	slow_by[i] = 1.0
+	gait[i] = _rng.randf() * Tuning.SPIDER_SCUTTLE_CYCLE
+	aim[i] = Tuning.DUNG_FIRE_COOLDOWN
 
 
 func _physics_process(delta: float) -> void:
@@ -119,6 +154,14 @@ func _physics_process(delta: float) -> void:
 			_dead.append(i)
 			continue
 		var speed := Tuning.enemy_speed(k)
+		# The two flavoured walkers. The spider advances in bursts; the dung
+		# beetle stands off and lobs. Both still obey knockback and slows.
+		if k == Kind.SPIDER:
+			speed *= Tuning.spider_pace(Run.clock + gait[i])
+		elif k == Kind.DUNG:
+			if d < Tuning.DUNG_STAND_RANGE:
+				speed = 0.0
+			_dung_attack(i, d, target, delta)
 		if slow_for[i] > 0.0:
 			slow_for[i] = maxf(slow_for[i] - delta, 0.0)
 			speed *= slow_by[i]
@@ -142,6 +185,7 @@ func _physics_process(delta: float) -> void:
 		if d < Tuning.enemy_radius(k) + Tuning.PLAYER_RADIUS and touch[i] <= 0.0:
 			touch[i] = Tuning.ENEMY_TOUCH_COOLDOWN
 			_player.hurt(Tuning.enemy_damage(k))
+	_tick_poops(delta)
 	_compact()
 	_redraw()
 
@@ -177,6 +221,71 @@ func push_from(point: Vector2, radius: float, force: float) -> void:
 		# It may not touch again until it has been pushed clear, or it lands a
 		# second hit the moment mercy ends and the push bought nothing.
 		touch[i] = Tuning.ENEMY_TOUCH_COOLDOWN
+
+
+## One dung beetle's countdown to a lob. Out of range the timer is held at the
+## wind-up, so walking into range always shows a full telegraph before
+## anything flies.
+func _dung_attack(i: int, d: float, target: Vector2, delta: float) -> void:
+	if d > Tuning.DUNG_FIRE_RANGE:
+		aim[i] = maxf(aim[i], Tuning.DUNG_TELEGRAPH)
+		return
+	aim[i] -= delta
+	if aim[i] > 0.0:
+		return
+	aim[i] = Tuning.DUNG_FIRE_COOLDOWN
+	spawn_poop(pos[i], (target - pos[i]).normalized() * Tuning.POOP_SPEED)
+
+
+## Fired at where the cat was, never homing: a ball that turns cannot be
+## dodged by walking, and walking away is the one skill the game asks for.
+func spawn_poop(at: Vector2, vel: Vector2) -> void:
+	if poops >= Tuning.POOP_MAX:
+		return
+	var p := poops
+	poops += 1
+	poop_pos[p] = at
+	poop_vel[p] = vel
+	poop_life[p] = Tuning.POOP_LIFE
+
+
+func _tick_poops(delta: float) -> void:
+	for p in poops:
+		poop_pos[p] += poop_vel[p] * delta
+		poop_life[p] -= delta
+		if poop_life[p] <= 0.0:
+			_poop_dead.append(p)
+			continue
+		# A hit goes through `hurt`, so mercy time gates it like a touch. The
+		# ball still splats either way: one that sails through a blinking cat
+		# would read as a miss the game refused to count.
+		if (
+			_player != null
+			and poop_pos[p].distance_to(_player.global_position)
+			< Tuning.POOP_HIT_RADIUS + Tuning.PLAYER_RADIUS
+		):
+			_player.hurt(Tuning.POOP_DAMAGE)
+			_poop_dead.append(p)
+	_compact_poops()
+
+
+## Swap-removal, under the same two rules as `_compact`.
+func _compact_poops() -> void:
+	if _poop_dead.is_empty():
+		return
+	_poop_dead.sort()
+	_poop_dead.reverse()
+	var last := -1
+	for p in _poop_dead:
+		if p == last:
+			continue
+		last = p
+		poops -= 1
+		if p != poops:
+			poop_pos[p] = poop_pos[poops]
+			poop_vel[p] = poop_vel[poops]
+			poop_life[p] = poop_life[poops]
+	_poop_dead.clear()
 
 
 ## Slows one row, for as long as the puddle keeps refreshing it. The strongest
@@ -239,6 +348,8 @@ func _compact() -> void:
 			_facing_left[i] = _facing_left[alive]
 			slow_for[i] = slow_for[alive]
 			slow_by[i] = slow_by[alive]
+			gait[i] = gait[alive]
+			aim[i] = aim[alive]
 	_dead.clear()
 
 
@@ -267,6 +378,10 @@ func _redraw() -> void:
 			if flash[i] > 0.0:
 				c = Tuning.HIT_FLASH_COLOUR
 				squash = flash[i] / Tuning.HIT_FLASH_TIME * Tuning.HIT_SQUASH
+			elif k == Kind.DUNG and aim[i] < Tuning.DUNG_TELEGRAPH:
+				# The wind-up shiver: the lob is announced before anything
+				# flies, because a child cannot dodge a surprise.
+				squash = sin(Run.clock * Tuning.DUNG_WOBBLE_RATE) * Tuning.DUNG_WOBBLE
 			var g := 1.0 - grow[i] / Tuning.SPAWN_GROW_TIME
 			mm.set_instance_transform_2d(
 				n,
@@ -275,6 +390,21 @@ func _redraw() -> void:
 				)
 			)
 			mm.set_instance_color(n, c)
+	_poop_mm.visible_instance_count = poops
+	for p in poops:
+		# Rolls along its direction of travel, so the ball reads as bowled.
+		var roll := (Tuning.POOP_LIFE - poop_life[p]) * Tuning.POOP_SPIN
+		if poop_vel[p].x < 0.0:
+			roll = -roll
+		_poop_mm.set_instance_transform_2d(
+			p,
+			Transform2D(
+				roll,
+				Vector2(Tuning.POOP_DRAW_SIZE, Tuning.POOP_DRAW_SIZE),
+				0.0,
+				poop_pos[p]
+			)
+		)
 
 
 ## A unit quad centred on the origin. The texture supplies the shape; every

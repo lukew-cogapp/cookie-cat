@@ -23,6 +23,9 @@ var _shake := 0.0
 
 func _ready() -> void:
 	Run.start()
+	# The map's floor. Ground and props read their own tables off `Run.map`;
+	# the lawn sprite is the one piece of scenery the world owns.
+	_lawn.texture = load(String(Tuning.map_info(Run.map)["lawn"]))
 	_swarm.set_player(_player)
 	_gems.set_player(_player)
 	_weapons.setup(_swarm, _gems, _player)
@@ -33,6 +36,7 @@ func _ready() -> void:
 	_ground.scatter(_player.global_position)
 	_props.broke.connect(_on_prop_broke)
 	_weapons.set_props(_props)
+	_weapons.set_puffs(_puffs)
 	_weapons.killed.connect(_on_killed)
 	_gems.collected.connect(_on_collected)
 	_director.boss_arrived.connect(_on_boss)
@@ -151,7 +155,7 @@ func _on_consumed(id: String) -> void:
 ## sometimes a heart, sometimes cookies.
 func _on_prop_broke(at: Vector2, kind: int) -> void:
 	var drop := _props.roll_drop(kind)
-	var worth := int(Tuning.PROPS[kind]["xp"])
+	var worth := _props.xp_of(kind)
 	if drop == Gems.Kind.HEART:
 		worth = int(Tuning.HEART_HEAL)
 	elif drop == Gems.Kind.COOKIE:

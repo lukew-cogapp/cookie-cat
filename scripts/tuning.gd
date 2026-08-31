@@ -458,7 +458,7 @@ const PICKUPS := {
 }
 ## The order `Gems.Kind` numbers them in. `test/tuning_test.gd` asserts the two
 ## agree, so adding a pickup in the wrong place fails a test rather than
-## quietly redrawing something else.
+## redrawing something else with nothing to show for it.
 const GEM_ORDER := ["gem", "gem_green", "gem_red", "heart", "cookie"]
 
 ## One pickup's art or size, by name. Nothing outside `gems.gd` should index
@@ -903,6 +903,9 @@ const PROP_SPACING := 78.0
 ## Weights, scales and alphas follow the garden's rules: the big patches stay
 ## translucent so nothing on the ground competes with the bugs standing on it.
 const STARTER_MAP := "garden"
+## Every map is free, like every cat. `cost` stays in the table at zero so the
+## picker and the save's unlocked list keep working, and a price could return
+## without a save-format change. Cookies buy cosmetics instead.
 const MAPS := {
 	"garden":
 	{
@@ -919,8 +922,7 @@ const MAPS := {
 	"beach":
 	{
 		"name": "Beach",
-		## About one finished run, so the first new place arrives quickly.
-		"cost": 60,
+		"cost": 0,
 		"art": "res://assets/map_beach.png",
 		"lawn": "res://assets/lawn_beach.png",
 		## Wet sand and tide pools are the common ground; shells and seaweed
@@ -970,8 +972,7 @@ const MAPS := {
 	"arctic":
 	{
 		"name": "Arctic",
-		## About two runs after the beach, so there is always a next thing.
-		"cost": 120,
+		"cost": 0,
 		"art": "res://assets/map_arctic.png",
 		"lawn": "res://assets/lawn_arctic.png",
 		## Ice sheets and drifts are the common ground; cracks and rocks are

@@ -1,13 +1,14 @@
 extends Control
-## The front door: pick a cat, see the cookie jar, press Play.
+## The front door: pick a cat and a place, see the cookie jar, press Play.
 ##
-## Cards are built in code from `Tuning.CATS`, the way the HUD builds level-up
-## cards: every part is driven by the id. The words here are for the adult;
-## the child plays this screen by pictures alone, so Play holds focus from the
-## first frame and one confirm press starts a run.
+## Cards are built in code from `Tuning.CATS` and `Tuning.MAPS`, the way the
+## HUD builds level-up cards: every part is driven by the id. The words here
+## are for the adult; the child plays this screen by pictures alone, so Play
+## holds focus from the first frame and one confirm press starts a run.
 
 @onready var _title: Label = $Title
 @onready var _cards: HBoxContainer = $Cards
+@onready var _maps: HBoxContainer = $Maps
 @onready var _play: Button = $Play
 @onready var _cookies: Label = $Cookies/Pad/Row/Count
 @onready var _stats: Label = $Stats
@@ -20,18 +21,26 @@ var _card_selected := load("res://ui/card_selected.tres")
 ## Cat id -> its card, and -> its portrait, for selection and the hop.
 var _buttons: Dictionary = {}
 var _arts: Dictionary = {}
+## The same pair for the map row.
+var _map_buttons: Dictionary = {}
+var _map_arts: Dictionary = {}
 var _hop: Tween
 
 
 func _ready() -> void:
 	_title.text = ProjectSettings.get_setting("application/config/name")
-	# An edited save or a version bump can orphan the remembered cat.
+	# An edited save or a version bump can orphan the remembered cat or map.
 	if not Save.is_unlocked(Run.cat):
 		Run.cat = Tuning.STARTER_CAT
+	if not Save.is_map_unlocked(Run.map):
+		Run.map = Tuning.STARTER_MAP
 	_play.pressed.connect(_start)
 	Save.changed.connect(_refresh)
 	_build_cards()
+	_build_map_cards()
+	_wire_focus()
 	_select(Run.cat)
+	_select_map(Run.map)
 	_refresh()
 	_bob_title()
 	_pulse_play()
@@ -65,13 +74,19 @@ func _build_cards() -> void:
 		var b := _card(id)
 		_buttons[id] = b
 		_cards.add_child(b)
-	_wire_focus()
 
 
-## A card: the cat, its name, then its starting weapon or its price.
+func _build_map_cards() -> void:
+	for id: String in Tuning.MAPS:
+		var b := _map_card(id)
+		_map_buttons[id] = b
+		_maps.add_child(b)
+
+
+## A card: the cat, its name, and the toy it starts with. Nothing is locked, so
+## there is no price row and no greyed state to draw.
 func _card(id: String) -> Button:
 	var cat: Dictionary = Tuning.CATS[id]
-	var owned := Save.is_unlocked(id)
 
 	var b := Button.new()
 	b.custom_minimum_size = Tuning.START_CARD_SIZE
@@ -109,26 +124,54 @@ func _card(id: String) -> Button:
 	row.add_theme_constant_override("separation", 6)
 	col.add_child(row)
 
-	if owned:
-		var weapon := String(cat["weapon"])
-		if Tuning.ICONS.has(weapon):
-			row.add_child(_pixel_icon(String(Tuning.ICONS[weapon])))
-		var wname := Label.new()
-		wname.text = String(Tuning.WEAPONS[weapon]["name"])
-		wname.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		wname.add_theme_font_size_override("font_size", 14)
-		wname.add_theme_color_override("font_color", Tuning.CARD_BLURB_COLOUR)
-		row.add_child(wname)
-	else:
-		art.modulate = Tuning.START_LOCKED_TINT
-		cat_name.modulate = Tuning.START_LOCKED_TINT
-		row.add_child(_pixel_icon(Tuning.pickup_art("cookie")))
-		var cost := Label.new()
-		cost.text = str(int(cat["cost"]))
-		cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		cost.add_theme_font_size_override("font_size", 22)
-		cost.add_theme_color_override("font_color", Tuning.START_COST_COLOUR)
-		row.add_child(cost)
+	var weapon := String(cat["weapon"])
+	if Tuning.ICONS.has(weapon):
+		row.add_child(_pixel_icon(String(Tuning.ICONS[weapon])))
+	var wname := Label.new()
+	wname.text = String(Tuning.WEAPONS[weapon]["name"])
+	wname.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	wname.add_theme_font_size_override("font_size", 14)
+	wname.add_theme_color_override("font_color", Tuning.CARD_BLURB_COLOUR)
+	row.add_child(wname)
+
+	return b
+
+
+## A map card: a postcard of the place and its name. Nothing is locked, so the
+## picture is the whole promise.
+func _map_card(id: String) -> Button:
+	var info: Dictionary = Tuning.MAPS[id]
+
+	var b := Button.new()
+	b.custom_minimum_size = Tuning.START_MAP_CARD_SIZE
+	b.add_theme_stylebox_override("normal", _card_style)
+	b.add_theme_stylebox_override("hover", _card_hover)
+	b.add_theme_stylebox_override("focus", _card_hover)
+	b.add_theme_stylebox_override("pressed", _card_hover)
+	b.pressed.connect(_press_map.bind(id))
+
+	var col := VBoxContainer.new()
+	col.set_anchors_preset(Control.PRESET_FULL_RECT)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 2)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(col)
+
+	var art := TextureRect.new()
+	art.texture = load(String(info["art"]))
+	art.custom_minimum_size = Tuning.START_MAP_ART_SIZE
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_map_arts[id] = art
+	col.add_child(art)
+
+	var map_name := Label.new()
+	map_name.text = String(info["name"])
+	map_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	map_name.add_theme_font_size_override("font_size", 16)
+	col.add_child(map_name)
+
 
 	return b
 
@@ -143,31 +186,32 @@ func _pixel_icon(path: String) -> TextureRect:
 	return icon
 
 
-## Left and right wrap around the row, and up and down always land somewhere,
-## so a gamepad can never park focus in a dead end.
+## Left and right wrap around each row; up and down cycle cats, maps and Play,
+## so a gamepad can never park focus in a dead end. Rebuilt rows leave their
+## old cards dying until the frame ends, so those are filtered out.
 func _wire_focus() -> void:
-	var list := _cards.get_children()
-	for i in list.size():
-		var b: Button = list[i]
-		b.focus_neighbor_left = b.get_path_to(list[(i - 1 + list.size()) % list.size()])
-		b.focus_neighbor_right = b.get_path_to(list[(i + 1) % list.size()])
+	var alive := func(c: Node) -> bool: return not c.is_queued_for_deletion()
+	var cats: Array = _cards.get_children().filter(alive)
+	var maps: Array = _maps.get_children().filter(alive)
+	for i in cats.size():
+		var b: Button = cats[i]
+		b.focus_neighbor_left = b.get_path_to(cats[(i - 1 + cats.size()) % cats.size()])
+		b.focus_neighbor_right = b.get_path_to(cats[(i + 1) % cats.size()])
 		b.focus_neighbor_top = b.get_path_to(_play)
+		b.focus_neighbor_bottom = b.get_path_to(maps[mini(i, maps.size() - 1)])
+	for i in maps.size():
+		var b: Button = maps[i]
+		b.focus_neighbor_left = b.get_path_to(maps[(i - 1 + maps.size()) % maps.size()])
+		b.focus_neighbor_right = b.get_path_to(maps[(i + 1) % maps.size()])
+		b.focus_neighbor_top = b.get_path_to(cats[mini(i, cats.size() - 1)])
 		b.focus_neighbor_bottom = b.get_path_to(_play)
-	_play.focus_neighbor_top = _play.get_path_to(list[0])
-	_play.focus_neighbor_bottom = _play.get_path_to(list[0])
+	_play.focus_neighbor_top = _play.get_path_to(maps[0])
+	_play.focus_neighbor_bottom = _play.get_path_to(cats[0])
 
 
 func _press(id: String) -> void:
-	if Save.is_unlocked(id):
-		Audio.play("choose")
-		_select(id)
-	elif Save.unlock(id):
-		# The fanfare, and the card redrawn as owned: buying is also choosing.
-		Audio.play("chest")
-		_rebuild(id)
-	else:
-		Audio.play("hit")
-		_wobble(_buttons[id])
+	Audio.play("choose")
+	_select(id)
 
 
 func _select(id: String) -> void:
@@ -175,41 +219,31 @@ func _select(id: String) -> void:
 	for cid: String in _buttons:
 		var style: StyleBox = _card_selected if cid == id else _card_style
 		_buttons[cid].add_theme_stylebox_override("normal", style)
-	_hop_art(id)
+	_hop_art(_arts[id])
 
 
-## Unlocking changes a card's whole footer, so the row is rebuilt rather than
-## patched, and focus is handed back to the cat just bought.
-func _rebuild(id: String) -> void:
-	for c in _cards.get_children():
-		c.queue_free()
-	_buttons.clear()
-	_arts.clear()
-	_build_cards()
-	_select(id)
-	await get_tree().process_frame
-	if _buttons.has(id):
-		_buttons[id].grab_focus()
+func _press_map(id: String) -> void:
+	Audio.play("choose")
+	_select_map(id)
 
 
-func _hop_art(id: String) -> void:
+func _select_map(id: String) -> void:
+	Run.map = id
+	for mid: String in _map_buttons:
+		var style: StyleBox = _card_selected if mid == id else _card_style
+		_map_buttons[mid].add_theme_stylebox_override("normal", style)
+	_hop_art(_map_arts[id])
+
+
+func _hop_art(art: TextureRect) -> void:
 	# Mid-hop the portrait is off its resting spot; a second hop from there
 	# would walk it up the card.
 	if _hop and _hop.is_running():
 		return
-	var art: TextureRect = _arts[id]
 	var half := Tuning.START_HOP_TIME * 0.5
 	_hop = create_tween().set_trans(Tween.TRANS_SINE)
 	_hop.tween_property(art, "position:y", -Tuning.START_HOP, half).as_relative().set_ease(Tween.EASE_OUT)
 	_hop.tween_property(art, "position:y", Tuning.START_HOP, half).as_relative().set_ease(Tween.EASE_IN)
-
-
-func _wobble(b: Button) -> void:
-	var t := create_tween()
-	t.tween_property(b, "position:x", Tuning.START_WOBBLE, Tuning.START_WOBBLE_TIME).as_relative()
-	var back := -2.0 * Tuning.START_WOBBLE
-	t.tween_property(b, "position:x", back, Tuning.START_WOBBLE_TIME).as_relative()
-	t.tween_property(b, "position:x", Tuning.START_WOBBLE, Tuning.START_WOBBLE_TIME).as_relative()
 
 
 func _bob_title() -> void:

@@ -28,6 +28,8 @@ signal changed
 
 var cookies := 0
 var unlocked: Array[String] = []
+## Maps bought, kept apart from the cats so neither list can price the other.
+var maps: Array[String] = []
 var best_time := 0.0
 var best_kills := 0
 var runs := 0
@@ -78,6 +80,7 @@ func _write_raw(text: String) -> void:
 
 func load_now() -> void:
 	unlocked = [Tuning.STARTER_CAT]
+	maps = []
 	cookies = 0
 	best_time = 0.0
 	best_kills = 0
@@ -101,6 +104,12 @@ func load_now() -> void:
 		var name := String(id)
 		if Tuning.CATS.has(name) and name not in unlocked:
 			unlocked.append(name)
+	# Same guard for maps. A save from before maps existed has no key, which
+	# reads as none bought rather than a discarded file.
+	for id: Variant in d.get("maps", []):
+		var name := String(id)
+		if Tuning.MAPS.has(name) and name not in maps:
+			maps.append(name)
 	changed.emit()
 
 
@@ -111,6 +120,7 @@ func save_now() -> void:
 				"version": VERSION,
 				"cookies": cookies,
 				"unlocked": unlocked,
+				"maps": maps,
 				"best_time": best_time,
 				"best_kills": best_kills,
 				"runs": runs,
@@ -143,6 +153,28 @@ func unlock(id: String) -> bool:
 		return false
 	cookies -= int(Tuning.CATS[id]["cost"])
 	unlocked.append(id)
+	save_now()
+	changed.emit()
+	return true
+
+
+# --- Maps: the same shop, over Tuning.MAPS ---
+func can_afford_map(id: String) -> bool:
+	return Tuning.MAPS.has(id) and cookies >= int(Tuning.MAPS[id]["cost"])
+
+
+## A free map is always open, whatever an older save recorded.
+func is_map_unlocked(id: String) -> bool:
+	if Tuning.MAPS.has(id) and int(Tuning.MAPS[id]["cost"]) == 0:
+		return true
+	return id in maps
+
+
+func unlock_map(id: String) -> bool:
+	if is_map_unlocked(id) or not can_afford_map(id):
+		return false
+	cookies -= int(Tuning.MAPS[id]["cost"])
+	maps.append(id)
 	save_now()
 	changed.emit()
 	return true

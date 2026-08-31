@@ -46,8 +46,15 @@ var zone_radius: Array[float] = []
 var zone_damage: Array[float] = []
 var zone_life: Array[float] = []
 var zone_slow: Array[float] = []
+## Tuning.ZONE_MILK or ZONE_CRUMB: a puddle and a crumb pile share the tick
+## but must not share a look.
+var zone_kind: Array[int] = []
+## Seconds of nibble jiggle left on a crumb pile, set while a bug is on it.
+var zone_bite: Array[float] = []
 var zones := 0
 var _zone_dead: Array[int] = []
+## Cools between nibble puffs, or a crowd on a trail is a blizzard.
+var _crumb_puff_in := 0.0
 
 ## Where the orbiting fish are this frame, for the drawing code.
 var orbit_angle := 0.0
@@ -70,7 +77,12 @@ var fx_radius: Array[float] = []
 var fx_life: Array[float] = []
 var fx_full: Array[float] = []
 var fx_kind: Array[int] = []
+var fx_tint: Array[Color] = []
 var fx := 0
+
+## Set by the world so hits can throw pooled particles. Optional: tests build
+## a Weapons with no puff layer, and everything here degrades to no sparkle.
+var _puffs: Puffs
 
 ## Kills this frame, so the world can drop gems and count combos in one place
 ## rather than every weapon knowing about pickups.
@@ -94,16 +106,23 @@ func _ready() -> void:
 	zone_damage.resize(SHOT_MAX)
 	zone_life.resize(SHOT_MAX)
 	zone_slow.resize(SHOT_MAX)
+	zone_kind.resize(SHOT_MAX)
+	zone_bite.resize(SHOT_MAX)
 	fx_pos.resize(SHOT_MAX)
 	fx_to.resize(SHOT_MAX)
 	fx_radius.resize(SHOT_MAX)
 	fx_life.resize(SHOT_MAX)
 	fx_full.resize(SHOT_MAX)
 	fx_kind.resize(SHOT_MAX)
+	fx_tint.resize(SHOT_MAX)
 
 
 func set_props(props: Props) -> void:
 	_props = props
+
+
+func set_puffs(puffs: Puffs) -> void:
+	_puffs = puffs
 
 
 func setup(swarm: Swarm, gems: Gems, player: Node2D) -> void:
@@ -187,14 +206,27 @@ func _fire_arc(id: String, level: int, at: Vector2) -> void:
 	_break_props(at, r, _damage(id, level))
 	_add_fx(at, facing, r, Tuning.FX_ARC, Tuning.FX_TIME_ARC)
 	if dealt:
-		Audio.play("shoot")
+		Audio.play("shoot", _voice(id))
 
 
 ## Purr Ring and Sleepy Yawn: everything inside a circle.
 func _fire_circle(id: String, level: int, at: Vector2) -> void:
 	var r := _radius(id, level)
+	var sweep := String(Tuning.WEAPONS[id]["kind"]) == "sweep"
 	_swarm.near(at, r, _hits)
+	var stars := 0
 	for i in _hits:
+		# A star where the paw lands, capped so a crowd cannot flood the pool.
+		if sweep and stars < Tuning.HIT_FX_PER_SWIPE:
+			stars += 1
+			_add_fx(
+				_swarm.pos[i],
+				Vector2.ZERO,
+				Tuning.HIT_FX_SIZE,
+				Tuning.FX_HIT,
+				Tuning.FX_TIME_HIT,
+				Tuning.HIT_TINTS["paw"],
+			)
 		_hit(i, _damage(id, level), at)
 	# The purr ring is drawn every frame as a standing circle, so only the
 	# yawn needs a burst of its own.
@@ -209,7 +241,7 @@ func _fire_circle(id: String, level: int, at: Vector2) -> void:
 	elif String(Tuning.WEAPONS[id]["kind"]) == "burst":
 		_add_fx(at, Vector2.ZERO, r, Tuning.FX_RING, Tuning.FX_TIME_RING)
 	if not _hits.is_empty():
-		Audio.play("hit")
+		Audio.play("hit", _voice(id))
 
 
 ## Yarn Ball: one shot per `count` at the nearest enemies, so two yarn balls
@@ -240,7 +272,7 @@ func _fire_shot(id: String, level: int, at: Vector2) -> void:
 		if target != at:
 			dir = (target - at).normalized()
 		_add_shot(at, dir * speed, id, level)
-	Audio.play("shoot")
+	Audio.play("shoot", _voice(id))
 
 
 ## Toy Mouse: a slow chaser that keeps going through a crowd. Same array as a
@@ -254,7 +286,7 @@ func _fire_chaser(id: String, level: int, at: Vector2) -> void:
 		if target != at:
 			dir = (target - at).normalized().rotated(0.4 * float(n))
 		_add_shot(at, dir * speed, id, level)
-	Audio.play("shoot")
+	Audio.play("shoot", _voice(id))
 
 
 ## Boomerang Fish: out to `range`, then back to the cat, hitting on both legs.
@@ -273,7 +305,7 @@ func _fire_boomer(id: String, level: int, at: Vector2) -> void:
 		_add_shot(at, dir * speed, id, level)
 		# Marked as a returner, with the distance it may travel before turning.
 		shot_out[shots - 1] = float(Tuning.WEAPONS[id]["range"])
-	Audio.play("shoot")
+	Audio.play("shoot", _voice(id))
 
 
 ## Crumb Trail: a crumb dropped where the cat is standing, which waits for a
@@ -288,6 +320,8 @@ func _fire_trail(id: String, level: int, at: Vector2) -> void:
 	zone_damage[z] = _damage(id, level) * Tuning.TRAIL_DAMAGE_RATE
 	zone_life[z] = float(Tuning.WEAPONS[id]["life"])
 	zone_slow[z] = 1.0
+	zone_kind[z] = Tuning.ZONE_CRUMB
+	zone_bite[z] = 0.0
 
 
 ## Milk Puddle: drops a lasting circle on the nearest crowd, or underfoot.
@@ -302,6 +336,8 @@ func _fire_zone(id: String, level: int, at: Vector2) -> void:
 	zone_damage[z] = _damage(id, level)
 	zone_life[z] = float(Tuning.WEAPONS[id]["life"])
 	zone_slow[z] = float(Tuning.WEAPONS[id].get("slow", 1.0))
+	zone_kind[z] = Tuning.ZONE_MILK
+	zone_bite[z] = 0.0
 
 
 ## Static Fur: hits `count` bugs anywhere on screen at once, no travel. The
@@ -318,7 +354,7 @@ func _fire_strike(id: String, level: int, at: Vector2) -> void:
 		# bug dying for no visible reason.
 		_add_fx(at, _swarm.pos[i], 0.0, Tuning.FX_BOLT, Tuning.FX_TIME_BOLT)
 		_hit(i, _damage(id, level), _swarm.pos[i])
-	Audio.play("hit")
+	Audio.play("hit", _voice(id))
 
 
 ## Fish Friends: `count` fish on a ring, sweeping whatever they pass through.
@@ -362,10 +398,19 @@ func _tick_shots(delta: float) -> void:
 			if shot_out[s] <= 0.0:
 				shot_out[s] = 0.0
 				shot_return[s] = true
+				# A bloom at the far point, so the turn reads as deliberate.
+				_add_fx(
+					shot_pos[s],
+					Vector2.ZERO,
+					Tuning.TWIRL_RADIUS,
+					Tuning.FX_TWIRL,
+					Tuning.FX_TIME_TWIRL,
+				)
 		elif shot_return[s] and _player != null:
 			var home := _player.global_position - shot_pos[s]
 			# Caught. A boomerang that reaches the cat has done its work.
 			if home.length() < Tuning.BOOMER_CATCH_RADIUS:
+				_catch()
 				_shot_dead.append(s)
 				continue
 			shot_vel[s] = home.normalized() * shot_vel[s].length()
@@ -376,10 +421,23 @@ func _tick_shots(delta: float) -> void:
 			_shot_dead.append(s)
 			continue
 		_swarm.near(shot_pos[s], Tuning.SHOT_HIT_RADIUS, _hits)
+		var landed := false
 		for i in _hits:
 			if shot_pierce[s] <= 0:
 				break
 			shot_pierce[s] -= 1
+			# One impact star per shot per frame: the touch reads without a
+			# pierce through a crowd flooding the fx pool.
+			if not landed:
+				landed = true
+				_add_fx(
+					_swarm.pos[i],
+					Vector2.ZERO,
+					Tuning.HIT_FX_SIZE,
+					Tuning.FX_HIT,
+					Tuning.FX_TIME_HIT,
+					_shot_tint(s),
+				)
 			_hit(i, shot_damage[s], shot_pos[s])
 		_break_props(shot_pos[s], Tuning.SHOT_HIT_RADIUS, shot_damage[s])
 		if shot_pierce[s] <= 0:
@@ -388,22 +446,74 @@ func _tick_shots(delta: float) -> void:
 
 
 func _tick_zones(delta: float) -> void:
+	_crumb_puff_in = maxf(_crumb_puff_in - delta, 0.0)
 	for z in zones:
 		zone_life[z] -= delta
 		if zone_life[z] <= 0.0:
 			_zone_dead.append(z)
 			continue
+		if zone_bite[z] > 0.0:
+			zone_bite[z] = maxf(zone_bite[z] - delta, 0.0)
 		_swarm.near(zone_pos[z], zone_radius[z], _hits)
 		_break_props(zone_pos[z], zone_radius[z], zone_damage[z] * delta)
+		if zone_kind[z] == Tuning.ZONE_CRUMB and not _hits.is_empty():
+			_nibble(z)
 		for i in _hits:
 			_swarm.slow(i, zone_slow[z], Tuning.SLOW_LINGER)
 			_hit(i, zone_damage[z] * delta, zone_pos[z])
 	_compact_zones()
 
 
+## A bug on a crumb pile: the pile jiggles, and now and then throws biscuit
+## specks and a soft nibble. The puff is throttled across every pile at once.
+func _nibble(z: int) -> void:
+	zone_bite[z] = Tuning.CRUMB_BITE_TIME
+	if _crumb_puff_in > 0.0:
+		return
+	_crumb_puff_in = Tuning.CRUMB_PUFF_GAP
+	if _puffs != null:
+		_puffs.burst(
+			zone_pos[z],
+			Puffs.Kind.POOF,
+			Tuning.CRUMB_PUFF_COUNT,
+			Tuning.CRUMB_COLOUR,
+			Tuning.CRUMB_PUFF_SPEED,
+		)
+	Audio.play("crumb")
+
+
+## The boomerang comes home: a gold ring closes onto the cat, a sparkle, and
+## a soft thwip. Without these the fish blinked out and the catch read as a
+## miss.
+func _catch() -> void:
+	var at := _player.global_position
+	_add_fx(at, Vector2.ZERO, Tuning.CATCH_RADIUS, Tuning.FX_CATCH, Tuning.FX_TIME_CATCH)
+	if _puffs != null:
+		_puffs.burst(
+			at,
+			Puffs.Kind.SPARKLE,
+			Tuning.CATCH_PUFFS,
+			Tuning.PUFF_GOLD,
+			Tuning.PUFF_PICKUP_SPEED,
+		)
+	Audio.play("catch")
+
+
+## The weapon's pitch over the shared cues, so ten toys are not one click.
+func _voice(id: String) -> float:
+	return float(Tuning.WEAPON_VOICE.get(id, 1.0))
+
+
+## The impact-star tint for a live shot, from the weapon it came from.
+func _shot_tint(s: int) -> Color:
+	var id: String = Tuning.SHOT_KINDS[shot_kind[s]]
+	var tint: Color = Tuning.HIT_TINTS.get(id, Color.WHITE)
+	return tint
+
+
 ## Records an effect to draw. `secs` is how long it stays up: long enough to
 ## be seen at 60fps, short enough not to smear across the next shot.
-func _add_fx(at: Vector2, to: Vector2, radius: float, kind: int, secs: float) -> void:
+func _add_fx(at: Vector2, to: Vector2, radius: float, kind: int, secs: float, tint := Color.WHITE) -> void:
 	if fx >= SHOT_MAX:
 		return
 	var f := fx
@@ -414,6 +524,7 @@ func _add_fx(at: Vector2, to: Vector2, radius: float, kind: int, secs: float) ->
 	fx_life[f] = secs
 	fx_full[f] = secs
 	fx_kind[f] = kind
+	fx_tint[f] = tint
 
 
 func _tick_fx(delta: float) -> void:
@@ -429,6 +540,7 @@ func _tick_fx(delta: float) -> void:
 				fx_life[f] = fx_life[fx]
 				fx_full[f] = fx_full[fx]
 				fx_kind[f] = fx_kind[fx]
+				fx_tint[f] = fx_tint[fx]
 			continue
 		f += 1
 
@@ -500,6 +612,8 @@ func _compact_zones() -> void:
 			zone_damage[z] = zone_damage[zones]
 			zone_life[z] = zone_life[zones]
 			zone_slow[z] = zone_slow[zones]
+			zone_kind[z] = zone_kind[zones]
+			zone_bite[z] = zone_bite[zones]
 	_zone_dead.clear()
 
 
@@ -515,10 +629,13 @@ func _draw() -> void:
 		return
 	var at := to_local(_player.global_position)
 
-	# Puddles first: everything else stands on top of them.
+	# Puddles and crumb piles first: everything else stands on top of them.
 	for z in zones:
-		var fade: float = clampf(zone_life[z] / Tuning.ZONE_FADE_TIME, 0.0, 1.0)
 		var here := to_local(zone_pos[z])
+		if zone_kind[z] == Tuning.ZONE_CRUMB:
+			_draw_crumbs(z, here)
+			continue
+		var fade: float = clampf(zone_life[z] / Tuning.ZONE_FADE_TIME, 0.0, 1.0)
 		var c := Tuning.ZONE_COLOUR
 		draw_circle(here, zone_radius[z], Color(c.r, c.g, c.b, c.a * fade))
 		# A rim, so the edge of the slow is visible rather than a soft blob.
@@ -567,19 +684,25 @@ func _draw() -> void:
 		var here := to_local(shot_pos[s])
 		var art: Texture2D = _shot_art[shot_kind[s]]
 		# A short trail, so a fast yarn ball reads as thrown rather than as a
-		# dot that teleports between frames.
-		var back: Vector2 = here - shot_vel[s].normalized() * Tuning.SHOT_TRAIL
-		var t: Color = Tuning.SHOT_TRAIL_COLOUR
+		# dot that teleports between frames. The boomerang's is longer, and
+		# warms to gold on the return: that is the leg that pays twice.
+		var length: float = Tuning.SHOT_TRAIL
+		var t: Color = Tuning.SHOT_TRAIL_COLOURS[shot_kind[s]]
+		if shot_kind[s] == 2:
+			length = Tuning.BOOMER_TRAIL
+			t = Tuning.BOOMER_TRAIL_BACK if shot_return[s] else Tuning.BOOMER_TRAIL_OUT
+		var back: Vector2 = here - shot_vel[s].normalized() * length
 		draw_line(back, here, t, Tuning.SHOT_TRAIL_WIDTH, true)
-		# Yarn tumbles as it flies; the mouse points where it is running.
-		var spin: float = (
-			Run.clock * Tuning.SHOT_SPIN
-			if shot_kind[s] == 0
-			else shot_vel[s].angle()
-		)
+		# Yarn tumbles as it flies; the boomerang spins hard, each on its own
+		# phase; the mouse points where it is running.
+		var spin: float = shot_vel[s].angle()
+		if shot_kind[s] == 0:
+			spin = Run.clock * Tuning.SHOT_SPIN
+		elif shot_kind[s] == 2:
+			spin = Run.clock * Tuning.BOOMER_SPIN + float(s)
 		_sprite(art, here, spin, Tuning.SHOT_DRAW_SIZE, Color.WHITE)
 
-	_draw_fx()
+	_draw_fx(at)
 
 
 ## The purr ring: a dotted circle of paw-pink pips that turns, rather than a
@@ -620,8 +743,9 @@ func _sprite(
 
 
 ## Instant weapons, drawn from the record `_add_fx` left. Each fades over its
-## life so a swipe reads as a swipe rather than a flicker.
-func _draw_fx() -> void:
+## life so a swipe reads as a swipe rather than a flicker. `cat` is the
+## player's local position: the catch ring tracks the cat, not where it was.
+func _draw_fx(cat: Vector2) -> void:
 	for f in fx:
 		var t: float = clampf(fx_life[f] / maxf(fx_full[f], 0.001), 0.0, 1.0)
 		var here := to_local(fx_pos[f])
@@ -632,6 +756,60 @@ func _draw_fx() -> void:
 				_draw_yawn(here, fx_radius[f], t)
 			Tuning.FX_BOLT:
 				_draw_bolt(here, to_local(fx_to[f]), t)
+			Tuning.FX_HIT:
+				_draw_hit_star(here, fx_radius[f], t, fx_tint[f])
+			Tuning.FX_TWIRL:
+				_draw_twirl(here, fx_radius[f], t)
+			Tuning.FX_CATCH:
+				_draw_catch(cat, t)
+
+
+## An impact star: short spokes flaring out of the hit point in the weapon's
+## own tint, so each toy connecting reads as its own touch.
+func _draw_hit_star(at: Vector2, size: float, t: float, tint: Color) -> void:
+	var reach: float = size * (1.4 - 0.4 * t)
+	var c := Color(tint.r, tint.g, tint.b, t)
+	for n in Tuning.HIT_FX_SPOKES:
+		var dir := Vector2.from_angle(TAU * float(n) / float(Tuning.HIT_FX_SPOKES) + 0.5)
+		draw_line(at + dir * size * 0.3, at + dir * reach, c, Tuning.HIT_FX_WIDTH, true)
+	draw_circle(at, size * 0.35 * t, Color(1.0, 1.0, 1.0, t))
+
+
+## The boomerang's turn: a ring blooming at the far point of the throw.
+func _draw_twirl(at: Vector2, r: float, t: float) -> void:
+	var c := Tuning.BOOMER_TRAIL_OUT
+	draw_arc(at, r * (1.0 - t), 0.0, TAU, 20, Color(c.r, c.g, c.b, t), Tuning.FX_RING_WIDTH, true)
+
+
+## The catch: a gold ring closing onto the cat wherever it now stands, so it
+## reads as taken into the paw rather than as another blast.
+func _draw_catch(at: Vector2, t: float) -> void:
+	var c := Tuning.BOOMER_TRAIL_BACK
+	var alpha: float = 1.0 - t * 0.5
+	draw_arc(at, Tuning.CATCH_RADIUS * t, 0.0, TAU, 24, Color(c.r, c.g, c.b, alpha), Tuning.FX_RING_WIDTH, true)
+
+
+## A crumb pile: a handful of biscuit specks rather than a puddle. Crumbs
+## vanish one by one as the drop's life runs out, and the pile jiggles while
+## a bug is eating it.
+func _draw_crumbs(z: int, here: Vector2) -> void:
+	var frac: float = clampf(zone_life[z] / float(Tuning.WEAPONS["trail"]["life"]), 0.0, 1.0)
+	var shown := int(ceilf(frac * float(Tuning.CRUMB_COUNT)))
+	# Offsets are hashed off the drop's own position: stable for its life, no
+	# per-crumb state, and swap-removal cannot shuffle them.
+	var salt: float = zone_pos[z].x * 12.9898 + zone_pos[z].y * 78.233
+	for n in shown:
+		var a: float = salt + float(n) * 2.4
+		var d: float = (
+			zone_radius[z] * Tuning.CRUMB_SPREAD * (0.25 + 0.75 * absf(sin(salt + float(n) * 1.7)))
+		)
+		var p := here + Vector2.from_angle(a) * d
+		if zone_bite[z] > 0.0:
+			p.y += sin(Run.clock * Tuning.CRUMB_JIGGLE_RATE + float(n) * 2.0) * Tuning.CRUMB_JIGGLE
+		var size: float = Tuning.CRUMB_SIZE * (0.8 + 0.4 * absf(cos(salt + float(n))))
+		draw_circle(p, size + 1.2, Tuning.CRUMB_OUTLINE)
+		draw_circle(p, size, Tuning.CRUMB_COLOUR)
+		draw_circle(p + Vector2(-size, -size) * 0.35, size * 0.4, Tuning.CRUMB_LIGHT)
 
 
 ## The paw swipe: three tapering crescents sweeping through the wedge that was
