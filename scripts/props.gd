@@ -116,6 +116,19 @@ func _physics_process(delta: float) -> void:
 		_redraw()
 
 
+## The nearest prop, or -1. Weapons fall back to this when no bug is in range,
+## so a shot in a quiet moment goes into a pot rather than into empty grass.
+func nearest(point: Vector2, radius: float) -> int:
+	var best := -1
+	var best_d := radius * radius
+	for i in alive:
+		var d := pos[i].distance_squared_to(point)
+		if d <= best_d:
+			best_d = d
+			best = i
+	return best
+
+
 ## Damages every prop within `radius`. Weapons call this through `world.gd`
 ## rather than knowing about props, so a new weapon breaks pots for free.
 func damage_near(point: Vector2, radius: float, amount: float) -> void:

@@ -206,6 +206,36 @@ const WEAPONS := {
 		"damage_gain": 5.0,
 		"count_gain": 0.5,
 	},
+	"boomer":
+	{
+		"name": "Boomerang Fish",
+		## Out and back, hitting on both legs. The only weapon that rewards
+		## letting a bug approach: it is worth twice as much on the return.
+		"kind": "boomer",
+		"damage": 6.0,
+		"cooldown": 1.5,
+		"speed": 300.0,
+		"range": 150.0,
+		"count": 1,
+		"damage_gain": 3.0,
+		"cooldown_gain": -0.09,
+		"count_gain": 0.4,
+	},
+	"trail":
+	{
+		"name": "Crumb Trail",
+		## Crumbs dropped as the cat walks, which burst when a bug reaches them.
+		## The one weapon that pays for running away, and it does nothing at all
+		## standing still: that is the point, since fleeing is the whole tactic
+		## a child has.
+		"kind": "trail",
+		"damage": 7.0,
+		"cooldown": 0.42,
+		"radius": 30.0,
+		"life": 4.0,
+		"damage_gain": 3.5,
+		"radius_gain": 4.0,
+	},
 	"nap":
 	{
 		"name": "Sleepy Yawn",
@@ -248,9 +278,13 @@ const SHOT_SEEK_RANGE := 300.0
 const SHOT_LIFE := 2.4
 const SHOT_HIT_RADIUS := 14.0
 ## Index order for shot_kind, which picks the draw colour.
-const SHOT_KINDS := ["yarn", "mouse"]
+const SHOT_KINDS := ["yarn", "mouse", "boomer"]
 ## Shots are drawn as their own art, in SHOT_KINDS order.
-const SHOT_ART := ["res://assets/yarn.png", "res://assets/mouse.png"]
+const SHOT_ART := [
+	"res://assets/yarn.png",
+	"res://assets/mouse.png",
+	"res://assets/boomer.png",
+]
 const SHOT_DRAW_SIZE := 20.0
 ## Yarn tumbles as it flies; the mouse points along its travel instead.
 const SHOT_SPIN := 7.0
@@ -259,6 +293,10 @@ const SHOT_SPIN := 7.0
 const SHOT_TRAIL := 16.0
 const SHOT_TRAIL_WIDTH := 4.0
 const SHOT_TRAIL_COLOUR := Color(1.0, 0.85, 0.92, 0.4)
+## A boomerang within this of the cat has been caught.
+const BOOMER_CATCH_RADIUS := 22.0
+## Crumbs hurt over time like a puddle, so their listed damage is a rate.
+const TRAIL_DAMAGE_RATE := 0.9
 ## Orbiting fish sweep every frame rather than on a cooldown, so their listed
 ## damage is scaled down to a per-second rate.
 const ORBIT_DAMAGE_RATE := 0.12
@@ -549,6 +587,8 @@ const ICONS := {
 	"milk": "res://assets/icon_milk.png",
 	"zap": "res://assets/icon_zap.png",
 	"nap": "res://assets/icon_nap.png",
+	"boomer": "res://assets/icon_boomer.png",
+	"trail": "res://assets/icon_trail.png",
 	"boots": "res://assets/icon_boots.png",
 	"claw": "res://assets/icon_claw.png",
 	"bell": "res://assets/icon_bell.png",
@@ -567,6 +607,8 @@ const BLURBS := {
 	"milk": "Milk puddles slow bugs down",
 	"zap": "Zaps far away bugs",
 	"nap": "A big sleepy blast",
+	"boomer": "Flies out and comes back",
+	"trail": "Drops crumbs as you run",
 	"boots": "Run faster",
 	"claw": "Hit harder",
 	"bell": "Attack more often",
@@ -688,6 +730,144 @@ const PROP_SEED := 20260901
 ## a pot in the player's face.
 const PROP_CLEAR_RADIUS := 90.0
 const PROP_SPACING := 78.0
+
+
+# --- Maps ---
+## Where a run happens. A map swaps the floor, the decals and the props, and
+## nothing else: the bugs, the toys and the waves are identical everywhere, so
+## a bought map is scenery rather than an advantage a child has to grind for.
+##
+## The garden is free; the others cost cookies, which is what cookies are for
+## now the cats are. Each map's tables have the garden's shape, so `ground.gd`
+## and `props.gd` read whichever set `Run.map` names and change nothing else.
+## Weights, scales and alphas follow the garden's rules: the big patches stay
+## translucent so nothing on the ground competes with the bugs standing on it.
+const STARTER_MAP := "garden"
+const MAPS := {
+	"garden":
+	{
+		"name": "Garden",
+		"cost": 0,
+		"art": "res://assets/map_garden.png",
+		"lawn": "res://assets/lawn.png",
+		"ground_art": GROUND_ART,
+		"ground_weights": GROUND_WEIGHTS,
+		"ground_scale": GROUND_SCALE,
+		"ground_alpha": GROUND_ALPHA,
+		"props": PROPS,
+	},
+	"beach":
+	{
+		"name": "Beach",
+		## About one finished run, so the first new place arrives quickly.
+		"cost": 60,
+		"art": "res://assets/map_beach.png",
+		"lawn": "res://assets/lawn_beach.png",
+		## Wet sand and tide pools are the common ground; shells and seaweed
+		## are the treats, like the garden's flowers and stones.
+		"ground_art":
+		[
+			"res://assets/ground_wet.png",
+			"res://assets/ground_pool.png",
+			"res://assets/ground_seaweed.png",
+			"res://assets/ground_shells.png",
+		],
+		"ground_weights": [0.38, 0.20, 0.26, 0.16],
+		"ground_scale": [1.6, 1.5, 0.9, 0.55],
+		"ground_alpha": [0.5, 0.6, 0.8, 0.9],
+		## The garden's prop numbers with beach art, so no map is easier.
+		"props":
+		[
+			{
+				"name": "Sandcastle",
+				"art": "res://assets/prop_sandcastle.png",
+				"hp": 12.0,
+				"radius": 13.0,
+				"heart_chance": 0.14,
+				"cookie_chance": 0.10,
+				"xp": 3,
+			},
+			{
+				"name": "Driftwood",
+				"art": "res://assets/prop_driftwood.png",
+				"hp": 20.0,
+				"radius": 15.0,
+				"heart_chance": 0.22,
+				"cookie_chance": 0.08,
+				"xp": 5,
+			},
+			{
+				"name": "Beach Bucket",
+				"art": "res://assets/prop_bucket.png",
+				"hp": 34.0,
+				"radius": 14.0,
+				"heart_chance": 0.10,
+				"cookie_chance": 0.40,
+				"xp": 8,
+			},
+		],
+	},
+	"arctic":
+	{
+		"name": "Arctic",
+		## About two runs after the beach, so there is always a next thing.
+		"cost": 120,
+		"art": "res://assets/map_arctic.png",
+		"lawn": "res://assets/lawn_arctic.png",
+		## Ice sheets and drifts are the common ground; cracks and rocks are
+		## the treats.
+		"ground_art":
+		[
+			"res://assets/ground_ice.png",
+			"res://assets/ground_drift.png",
+			"res://assets/ground_cracks.png",
+			"res://assets/ground_rocks.png",
+		],
+		"ground_weights": [0.30, 0.32, 0.22, 0.16],
+		"ground_scale": [1.7, 1.5, 0.9, 0.55],
+		"ground_alpha": [0.55, 0.6, 0.8, 0.9],
+		"props":
+		[
+			{
+				"name": "Snowman",
+				"art": "res://assets/prop_snowman.png",
+				"hp": 12.0,
+				"radius": 13.0,
+				"heart_chance": 0.14,
+				"cookie_chance": 0.10,
+				"xp": 3,
+			},
+			{
+				"name": "Little Fir",
+				"art": "res://assets/prop_sapling.png",
+				"hp": 20.0,
+				"radius": 15.0,
+				"heart_chance": 0.22,
+				"cookie_chance": 0.08,
+				"xp": 5,
+			},
+			{
+				"name": "Ice Block",
+				"art": "res://assets/prop_iceblock.png",
+				"hp": 34.0,
+				"radius": 14.0,
+				"heart_chance": 0.10,
+				"cookie_chance": 0.40,
+				"xp": 8,
+			},
+		],
+	},
+}
+## Map cards sit under the cat row: smaller, since three must read at once,
+## with the postcard art at a whole 4x so the pixels stay square.
+const START_MAP_CARD_SIZE := Vector2(148, 122)
+const START_MAP_ART_SIZE := Vector2(64, 64)
+
+
+## The tables `ground.gd` and `props.gd` swap by map. Read through here so an
+## unknown id falls back to the garden rather than crashing mid-load.
+func map_info(id: String) -> Dictionary:
+	return MAPS[id] if MAPS.has(id) else MAPS[STARTER_MAP]
 
 
 # --- Lookups the swarm calls every frame ---

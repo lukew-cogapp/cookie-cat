@@ -32,6 +32,11 @@ var shot_damage: Array[float] = []
 var shot_pierce: Array[int] = []
 var shot_life: Array[float] = []
 var shot_kind: Array[int] = []
+## For a boomerang, how much further it may fly before turning round. Zero on
+## an ordinary shot, which never turns.
+var shot_out: Array[float] = []
+## Set once a boomerang has turned, so it homes rather than flying on.
+var shot_return: Array[bool] = []
 var shots := 0
 var _shot_dead: Array[int] = []
 
@@ -82,6 +87,8 @@ func _ready() -> void:
 	shot_pierce.resize(SHOT_MAX)
 	shot_life.resize(SHOT_MAX)
 	shot_kind.resize(SHOT_MAX)
+	shot_out.resize(SHOT_MAX)
+	shot_return.resize(SHOT_MAX)
 	zone_pos.resize(SHOT_MAX)
 	zone_radius.resize(SHOT_MAX)
 	zone_damage.resize(SHOT_MAX)
@@ -158,6 +165,10 @@ func _fire(id: String, level: int) -> void:
 			_fire_zone(id, level, at)
 		"strike":
 			_fire_strike(id, level, at)
+		"boomer":
+			_fire_boomer(id, level, at)
+		"trail":
+			_fire_trail(id, level, at)
 
 
 ## Paw Swipe: a wedge in front of the cat. The one weapon that cares which way
@@ -221,9 +232,13 @@ func _fire_shot(id: String, level: int, at: Vector2) -> void:
 			break
 		_add_shot(at, (_swarm.pos[i] - at).normalized() * speed, id, level)
 		fired += 1
-	# Nothing in range: fire ahead anyway, so the weapon never looks broken.
+	# Nothing to shoot at: aim for a pot instead, and only fire blind if there is
+	# no target of any kind.
 	if fired == 0:
+		var target := _aim_at(at)
 		var dir := Vector2.LEFT if _player.facing_left() else Vector2.RIGHT
+		if target != at:
+			dir = (target - at).normalized()
 		_add_shot(at, dir * speed, id, level)
 	Audio.play("shoot")
 
@@ -234,22 +249,52 @@ func _fire_chaser(id: String, level: int, at: Vector2) -> void:
 	var count := int(Tuning.weapon_stat(id, "count", level))
 	var speed := float(Tuning.WEAPONS[id]["speed"])
 	for n in count:
-		var i := _swarm.nearest(at, Tuning.SHOT_SEEK_RANGE)
+		var target := _aim_at(at)
 		var dir := Vector2.from_angle(TAU * float(n) / float(count))
-		if i >= 0:
-			dir = (_swarm.pos[i] - at).normalized().rotated(0.4 * float(n))
+		if target != at:
+			dir = (target - at).normalized().rotated(0.4 * float(n))
 		_add_shot(at, dir * speed, id, level)
 	Audio.play("shoot")
+
+
+## Boomerang Fish: out to `range`, then back to the cat, hitting on both legs.
+## `shot_turn` is how far it has left to fly out; past that it homes back.
+func _fire_boomer(id: String, level: int, at: Vector2) -> void:
+	var count := int(Tuning.weapon_stat(id, "count", level))
+	var speed := float(Tuning.WEAPONS[id]["speed"])
+	_swarm.near(at, Tuning.SHOT_SEEK_RANGE, _hits)
+	var fallback := _aim_at(at)
+	for n in count:
+		var dir := Vector2.from_angle(TAU * float(n) / float(count))
+		if n < _hits.size():
+			dir = (_swarm.pos[_hits[n]] - at).normalized()
+		elif fallback != at:
+			dir = (fallback - at).normalized().rotated(0.5 * float(n))
+		_add_shot(at, dir * speed, id, level)
+		# Marked as a returner, with the distance it may travel before turning.
+		shot_out[shots - 1] = float(Tuning.WEAPONS[id]["range"])
+	Audio.play("shoot")
+
+
+## Crumb Trail: a crumb dropped where the cat is standing, which waits for a
+## bug rather than chasing one. Does nothing while standing still, on purpose.
+func _fire_trail(id: String, level: int, at: Vector2) -> void:
+	if zones >= SHOT_MAX:
+		return
+	var z := zones
+	zones += 1
+	zone_pos[z] = at
+	zone_radius[z] = _radius(id, level)
+	zone_damage[z] = _damage(id, level) * Tuning.TRAIL_DAMAGE_RATE
+	zone_life[z] = float(Tuning.WEAPONS[id]["life"])
+	zone_slow[z] = 1.0
 
 
 ## Milk Puddle: drops a lasting circle on the nearest crowd, or underfoot.
 func _fire_zone(id: String, level: int, at: Vector2) -> void:
 	if zones >= SHOT_MAX:
 		return
-	var target := at
-	var i := _swarm.nearest(at, Tuning.SHOT_SEEK_RANGE)
-	if i >= 0:
-		target = _swarm.pos[i]
+	var target := _aim_at(at)
 	var z := zones
 	zones += 1
 	zone_pos[z] = target
@@ -302,12 +347,30 @@ func _add_shot(at: Vector2, vel: Vector2, id: String, level: int) -> void:
 	shot_damage[s] = _damage(id, level)
 	shot_pierce[s] = int(Tuning.WEAPONS[id].get("pierce", 1)) + level - 1
 	shot_life[s] = Tuning.SHOT_LIFE
-	shot_kind[s] = Tuning.SHOT_KINDS.find(id)
+	shot_kind[s] = maxi(Tuning.SHOT_KINDS.find(id), 0)
+	shot_out[s] = 0.0
+	shot_return[s] = false
 
 
 func _tick_shots(delta: float) -> void:
 	for s in shots:
-		shot_pos[s] += shot_vel[s] * delta
+		var step := shot_vel[s] * delta
+		if shot_out[s] > 0.0:
+			# Still flying out. Once it has gone its distance it turns and
+			# homes back at the cat, which is what makes it hit twice.
+			shot_out[s] -= step.length()
+			if shot_out[s] <= 0.0:
+				shot_out[s] = 0.0
+				shot_return[s] = true
+		elif shot_return[s] and _player != null:
+			var home := _player.global_position - shot_pos[s]
+			# Caught. A boomerang that reaches the cat has done its work.
+			if home.length() < Tuning.BOOMER_CATCH_RADIUS:
+				_shot_dead.append(s)
+				continue
+			shot_vel[s] = home.normalized() * shot_vel[s].length()
+			step = shot_vel[s] * delta
+		shot_pos[s] += step
 		shot_life[s] -= delta
 		if shot_life[s] <= 0.0:
 			_shot_dead.append(s)
@@ -370,6 +433,20 @@ func _tick_fx(delta: float) -> void:
 		f += 1
 
 
+## Where a weapon that needs a target should aim. Bugs first, then props, then
+## nothing: a shot fired at empty grass while a pot stands beside the cat reads
+## as the weapon being broken.
+func _aim_at(from: Vector2) -> Vector2:
+	var i := _swarm.nearest(from, Tuning.SHOT_SEEK_RANGE)
+	if i >= 0:
+		return _swarm.pos[i]
+	if _props != null:
+		var p := _props.nearest(from, Tuning.SHOT_SEEK_RANGE)
+		if p >= 0:
+			return _props.pos[p]
+	return from
+
+
 func _break_props(at: Vector2, radius: float, amount: float) -> void:
 	if _props != null:
 		_props.damage_near(at, radius, amount)
@@ -401,6 +478,8 @@ func _compact_shots() -> void:
 			shot_pierce[s] = shot_pierce[shots]
 			shot_life[s] = shot_life[shots]
 			shot_kind[s] = shot_kind[shots]
+			shot_out[s] = shot_out[shots]
+			shot_return[s] = shot_return[shots]
 	_shot_dead.clear()
 
 

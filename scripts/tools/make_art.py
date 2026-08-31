@@ -64,6 +64,15 @@ PALETTE = {
     "n": (122, 98, 70, 255),  # mud, wet middle
     "X": (156, 152, 158, 255),  # stone
     "x": (186, 182, 190, 255),  # stone highlight
+    "A": (233, 209, 156, 255),  # sand
+    "a": (247, 229, 182, 255),  # sand light
+    "h": (208, 178, 128, 255),  # sand dark
+    "H": (178, 148, 102, 255),  # wet sand
+    "I": (226, 238, 248, 255),  # snow
+    "i": (242, 248, 255, 255),  # snow light
+    "j": (198, 216, 234, 255),  # snow shade
+    "U": (140, 192, 232, 255),  # ice
+    "u": (196, 228, 248, 255),  # ice light
 }
 
 # The cat, facing right, three frames: stand, step, step-other. Chunky enough
@@ -808,15 +817,311 @@ GROUND_STONES = [
     "..oo............",
 ]
 
+# The boomerang fish, and the crumbs it drops behind. Both need to read at
+# about twenty pixels, so they are shapes first and detail second.
+BOOMER = [
+    "................",
+    "................",
+    "....ooo.........",
+    "...oCCCoo.......",
+    "...oCcCCCoo.....",
+    "...oCCCCCCCo....",
+    "....oCCCCCCo....",
+    ".....oCCCCCo....",
+    "......oCCCCo....",
+    ".....oCCCCo.....",
+    "....oCCCCo......",
+    "...oCCCCo.......",
+    "...oCCCo........",
+    "....ooo.........",
+    "................",
+    "................",
+]
+ICON_BOOMER = [
+    "................",
+    "....oooo........",
+    "...oCCCCoo......",
+    "..oCcCCCCCoo....",
+    "..oCCCCCCCCCo...",
+    "...oCCCoooCCo...",
+    "....oCCo.oCCo...",
+    "...oCCo..oCCo...",
+    "..oCCo..oCCo....",
+    "..oCCo.oCCo.....",
+    "..oCCCoCCo......",
+    "...oCCCCo.......",
+    "....oooo........",
+    "................",
+    "................",
+    "................",
+]
+ICON_TRAIL = [
+    "................",
+    "................",
+    "..oo............",
+    ".oBBo...........",
+    "..oo....oo......",
+    ".......oBBo.....",
+    "........oo......",
+    "................",
+    "....oo.....oo...",
+    "...oBBo...oBBo..",
+    "....oo.....oo...",
+    "................",
+    "..........oo....",
+    ".........oBBo...",
+    "..........oo....",
+    "................",
+]
+
+# Beach and arctic decals that are a garden shape in that map's ground tones.
+# Sharing the silhouette is deliberate: a wet patch is the beach's worn grass
+# and an ice sheet is its mud, so each map's floor reads the same way.
+GROUND_SHELLS = [
+    "................",
+    "...ooo..........",
+    "..opWpo.........",
+    "..oWpDo.....oo..",
+    "...ooo.....opWo.",
+    "...........oWpo.",
+    "............oo..",
+    "................",
+    ".....oooo.......",
+    "....opWpWo......",
+    "....oWpDpo......",
+    ".....oooo.......",
+    "................",
+    "..oo............",
+    ".opWo...........",
+    "..oo............",
+]
+GROUND_SEAWEED = [
+    "................",
+    "..G.............",
+    "..gG......G.....",
+    "...gG....Gg.....",
+    "....G....G......",
+    "....Gg..gG......",
+    ".....G...G......",
+    "................",
+    ".........G..G...",
+    ".G......gG..Gg..",
+    ".Gg......G...G..",
+    "..G......Gg..G..",
+    "..Gg......G.....",
+    "...G............",
+    "................",
+    "................",
+]
+GROUND_CRACKS = [
+    "................",
+    ".j..............",
+    "..jj............",
+    "...Ujj..........",
+    ".....jUj........",
+    ".......j........",
+    ".......jj.......",
+    "........Uj......",
+    ".........jj.....",
+    "..........j.....",
+    "...j......jU....",
+    "..jU.......jj...",
+    "..j.........j...",
+    ".jj.............",
+    ".j..............",
+    "................",
+]
+
+PROP_SANDCASTLE = [
+    "................",
+    "...oo..oo..oo...",
+    "...oAooAAooAo...",
+    "...oAAAAAAAAo...",
+    "...oAaAAAAaAo...",
+    "...oAAAAAAAAo...",
+    "..oAAAAAAAAAAo..",
+    "..oAaAAaaAAaAo..",
+    "..oAAAohhoAAAo..",
+    "..oAAAohhoAAAo..",
+    ".oAAAAohhoAAAAo.",
+    ".oAaAAohhoAAaAo.",
+    ".oAAAAAAAAAAAAo.",
+    ".oooooooooooooo.",
+    "................",
+    "................",
+]
+PROP_DRIFTWOOD = [
+    "................",
+    "................",
+    "................",
+    "......oo........",
+    ".....obbo...oo..",
+    "..ooobBBboooBo..",
+    ".obBBBBBBBBBbo..",
+    ".oBnnBBBBnnBBo..",
+    ".obBBBBBBBBbo...",
+    "..oooooooooo....",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+PROP_BUCKET = [
+    "................",
+    "....oooooo......",
+    "...oo....oo.....",
+    "...o......o.....",
+    "..oooooooooo....",
+    "..orrrrrrrro....",
+    "..oRRRRRRRRo....",
+    "...oRRrRRRo.....",
+    "...oRRRRRRo.....",
+    "...oRRrRRRo.....",
+    "....oRRRRo......",
+    "....oooooo......",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+PROP_SNOWMAN = [
+    "................",
+    ".....oooo.......",
+    "....oWWWWo......",
+    "...oWKWWKWo.....",
+    "...oWWOOWWo.....",
+    "....oWWWWo......",
+    "...oRRRRRRo.....",
+    "..oWWWWWWWWo....",
+    ".oWWiWWWWWWWo...",
+    ".oWWWWKWWWWWo...",
+    ".oWiWWKWWWiWo...",
+    "..oWWWWWWWWo....",
+    "...oWWWWWWo.....",
+    "....oooooo......",
+    "................",
+    "................",
+]
+PROP_ICEBLOCK = [
+    "................",
+    "................",
+    "..oooooooooooo..",
+    "..ouuuuuuuuuUo..",
+    "..ouUUUUUUUUUo..",
+    "..ouUUWUUUUUUo..",
+    "..ouUUUWUUUUUo..",
+    "..ouUUUUUUWUUo..",
+    "..ouUUUUUUUWUo..",
+    "..ouUUUUUUUUUo..",
+    "..oUUUUUUUUUUo..",
+    "..oooooooooooo..",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+PROP_SAPLING = [
+    "................",
+    ".......oo.......",
+    "......oGGo......",
+    ".....oGWGGo.....",
+    "....oGGGGGGo....",
+    ".....oGGGo......",
+    "....oGWGGGo.....",
+    "...oGGGGGGGGo...",
+    "....oGGGGGo.....",
+    "...oGGWGGGGo....",
+    "..oGGGGGGGGGo...",
+    "...ooooooooo....",
+    "......oBBo......",
+    "......oooo......",
+    "................",
+    "................",
+]
+
+# Map pictures for the start screen: a postcard of the place, not an icon,
+# because the child picks the place by picture the way they pick the cat.
+MAP_GARDEN = [
+    "oooooooooooooooo",
+    "oLLLLLLLLLLLLLLo",
+    "olLLLLlLLLLLlLLo",
+    "oLLWWLLLLWWWLLLo",
+    "oTTTTTTTTTTTTTTo",
+    "oTtTTdTTTtTTTdTo",
+    "oTTRTTTTWTTTYTTo",
+    "oTRYRTTWYWTTYWTo",
+    "oTTRTTTTWTTTTTTo",
+    "oTtTTTdTTTtTTdTo",
+    "oTTGgTTTTTTGgTTo",
+    "oTdTTTtTTdTTTTTo",
+    "oTTTYWTTTTTRTTTo",
+    "oTtTTTTTdTTRYRTo",
+    "oTTTTTTTTTTTRTTo",
+    "oooooooooooooooo",
+]
+MAP_BEACH = [
+    "oooooooooooooooo",
+    "olllllllllllYYlo",
+    "ollllllllllYYYlo",
+    "olllllllllllYYlo",
+    "oLLLLLLLLLLLLLLo",
+    "oLLlWLLLLlWLLLLo",
+    "oLLLLLLLLLLLLLLo",
+    "oWLWLWLWLWLWLWLo",
+    "oAaAAAAaAAAAaAAo",
+    "oAAAAhAAAAAAAAAo",
+    "oAApWAAAAhAAAaAo",
+    "oAaAAAAAAAAhAAAo",
+    "oAAAAAhAAAAAAAAo",
+    "oAAhAAAAAaAAhAAo",
+    "oAAAAAAAAAAAAAAo",
+    "oooooooooooooooo",
+]
+MAP_ARCTIC = [
+    "oooooooooooooooo",
+    "ojjjjjjjjjjjjjjo",
+    "ojjjjWjjjjjjjjjo",
+    "ojWjjjjjjWjjjjjo",
+    "ojjjjjjjjjjjWjjo",
+    "oIIIIIIIIIIIIIIo",
+    "oIiIIjIIIiIIIjIo",
+    "oIIIWWIIIIIGGIIo",
+    "oIIWWWWIIIGGGGIo",
+    "oIIIWWIIIIIGGIIo",
+    "oIIWWWWIIIIBBIIo",
+    "oIiIIIIjIIIIIIIo",
+    "oIIUUIIIIIiIIjIo",
+    "oIIUUUIIIIIIIIIo",
+    "oIiIIIIIIjIIIiIo",
+    "oooooooooooooooo",
+]
+
 SPRITES = {
     "cat": CAT_STAND,
+    "boomer": BOOMER,
+    "icon_boomer": ICON_BOOMER,
+    "icon_trail": ICON_TRAIL,
     "ground_mud": GROUND_MUD,
     "ground_patch": GROUND_PATCH,
     "ground_flowers": GROUND_FLOWERS,
     "ground_stones": GROUND_STONES,
+    "ground_shells": GROUND_SHELLS,
+    "ground_seaweed": GROUND_SEAWEED,
+    "ground_cracks": GROUND_CRACKS,
     "prop_pot": PROP_POT,
     "prop_bush": PROP_BUSH,
     "prop_box": PROP_BOX,
+    "prop_sandcastle": PROP_SANDCASTLE,
+    "prop_driftwood": PROP_DRIFTWOOD,
+    "prop_bucket": PROP_BUCKET,
+    "prop_snowman": PROP_SNOWMAN,
+    "prop_iceblock": PROP_ICEBLOCK,
+    "prop_sapling": PROP_SAPLING,
+    "map_garden": MAP_GARDEN,
+    "map_beach": MAP_BEACH,
+    "map_arctic": MAP_ARCTIC,
     "icon_paw": ICON_PAW,
     "icon_purr": ICON_PURR,
     "icon_milk": ICON_MILK,
@@ -847,6 +1152,16 @@ SPRITES = {
     "star": STAR,
     "sparkle": SPARKLE,
     "poof": POOF,
+}
+
+# Decals that borrow a garden silhouette in another map's tones, and the sand
+# and snow lawn tiles. name -> (source grid, palette letter swap).
+RECOLOURED = {
+    "ground_wet": (GROUND_PATCH, {"t": "h", "d": "H"}),
+    "ground_pool": (GROUND_MUD, {"M": "h", "m": "L", "n": "l"}),
+    "ground_ice": (GROUND_MUD, {"M": "u", "m": "U", "n": "l"}),
+    "ground_drift": (GROUND_PATCH, {"t": "j", "d": "W"}),
+    "ground_rocks": (GROUND_STONES, {"X": "N", "x": "X"}),
 }
 
 
@@ -945,6 +1260,19 @@ def main():
         tile.append(row)
     write_png(OUT / "lawn.png", tile)
     print("lawn.png 16x16", flush=True)
+    # The beach and arctic floors are the same scatter in that map's tones, so
+    # every map's ground has identical texture and only the palette changes.
+    for name, swap in (
+        ("lawn_beach", {"T": "A", "t": "a", "d": "h"}),
+        ("lawn_arctic", {"T": "I", "t": "i", "d": "j"}),
+    ):
+        grid, _ = recolour(tile, swap)
+        write_png(OUT / f"{name}.png", grid)
+        print(f"{name}.png 16x16", flush=True)
+    for name, (source, swap) in RECOLOURED.items():
+        grid, _ = recolour(source, swap)
+        write_png(OUT / f"{name}.png", grid)
+        print(f"{name}.png 16x16", flush=True)
 
 
 if __name__ == "__main__":
