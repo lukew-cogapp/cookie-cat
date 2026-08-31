@@ -291,6 +291,20 @@ back through `get_action_raw_strength`, so the cat's movement code stays one
 
 Most of these are inherited from `../godot-world` and still true here.
 
+**Everything moves on the 60Hz physics tick, including the drawing.** Nothing
+here touches the physics server, so `_physics_process` is being used purely as a
+fixed-rate tick, and on a 90 or 120Hz tablet the game renders at display rate
+while everything in it steps at 60. Accepted for now: uniform 60 is fine on the
+hardware this is played on, and the alternatives are both worse. Turning on
+`physics/common/physics_interpolation` smooths Node2D transforms only, so the
+cat would glide while the MultiMesh swarm and every `_draw` effect still stepped
+at 60, which reads worse than the judder it fixes.
+
+Moving the tick to `_process` is not a mechanical change, and this is the trap
+to know before trying: `_sweep_orbit` deals `ORBIT_DAMAGE_RATE` per tick rather
+than per second, so fish damage would scale with the refresh rate. Convert the
+per-tick damage to per-second first, or a 120Hz tablet doubles that weapon.
+
 **Screenshots must run windowed.** `godot --path . -s test/shots.gd`. Under
 `--headless` the dummy renderer writes blank images. Downscale with `sips -Z
 780` before reading them. This is the only way to check anything visual, and
