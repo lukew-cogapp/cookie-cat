@@ -1,7 +1,14 @@
-extends Node
+class_name Tuning
+extends RefCounted
 ## Every number worth fiddling with lives here, so playtesting means editing
-## one file. Autoloaded as `Tuning`, and GDScript hot-reloads, so these can
-## change while the game runs.
+## one file. GDScript hot-reloads, so these can change while the game runs.
+##
+## A named class of constants and `static func`s rather than an autoload: it
+## holds no state, has no signals and never touches the tree, which is the shape
+## Godot's own "autoloads versus regular nodes" page says to spell this way. It
+## is also what lets a `-s` script name it: an autoload cannot be named at
+## compile time, so `shots.gd` and `compile_check.gd` had to reach it through
+## `get_root().get_node("Tuning")`.
 
 # --- The run ---
 ## Ten minutes. Long enough to earn an evolution, short enough that a child
@@ -115,7 +122,7 @@ const COOKIE_FINISH_BONUS := 30
 const BOSS_DROP_SPREAD := 20.0
 
 
-func xp_for_level(level: int) -> int:
+static func xp_for_level(level: int) -> int:
 	return XP_BASE + XP_STEP * (level - 1)
 
 
@@ -456,7 +463,7 @@ const POOP_ART := "res://assets/poop.png"
 
 
 ## The spider's speed multiplier at time `t`, one burst per cycle.
-func spider_pace(t: float) -> float:
+static func spider_pace(t: float) -> float:
 	var phase := fmod(t, SPIDER_SCUTTLE_CYCLE)
 	if phase < SPIDER_SCUTTLE_CYCLE * SPIDER_SCUTTLE_DUTY:
 		return 1.0
@@ -540,7 +547,7 @@ const RUSH_RING_SPEED := 70.0
 
 ## How many bugs a rush holds at clock `t`. Linear across the run, so the pack
 ## grows for the same reason everything else does.
-func rush_count(t: float) -> int:
+static func rush_count(t: float) -> int:
 	var f := clampf(t / RUN_SECONDS, 0.0, 1.0)
 	return int(round(lerpf(float(RUSH_COUNT_MIN), float(RUSH_COUNT_MAX), f)))
 
@@ -565,17 +572,17 @@ const GEM_ORDER := ["gem", "gem_green", "gem_red", "heart", "cookie"]
 
 ## One pickup's art or size, by name. Nothing outside `gems.gd` should index
 ## `GEM_ORDER`: ask for what you want.
-func pickup_art(name: String) -> String:
+static func pickup_art(name: String) -> String:
 	return String(PICKUPS[name]["art"])
 
 
-func pickup_size(name: String) -> float:
+static func pickup_size(name: String) -> float:
 	return float(PICKUPS[name]["size"])
 
 
 ## What an xp tier is worth, as a multiple of the bug's own xp. A red gem has
 ## to be worth crossing the screen for.
-func gem_worth(tier: int) -> float:
+static func gem_worth(tier: int) -> float:
 	return float(PICKUPS[GEM_ORDER[tier]]["worth"])
 
 
@@ -1247,46 +1254,46 @@ const START_HAT_COOKIE_SIZE := Vector2(24, 24)
 
 ## A hat's texture path, empty for "none" or anything unknown, so callers draw
 ## nothing rather than crash on an edited save.
-func hat_art(id: String) -> String:
+static func hat_art(id: String) -> String:
 	return String(HATS[id]["art"]) if HATS.has(id) else ""
 
 
 ## The tables `ground.gd` and `props.gd` swap by map. Read through here so an
 ## unknown id falls back to the garden rather than crashing mid-load.
-func map_info(id: String) -> Dictionary:
+static func map_info(id: String) -> Dictionary:
 	return MAPS[id] if MAPS.has(id) else MAPS[STARTER_MAP]
 
 
 # --- Lookups the swarm calls every frame ---
-func enemy_hp(kind: int, clock: float) -> float:
+static func enemy_hp(kind: int, clock: float) -> float:
 	var ramp := 1.0 + ENEMY_HP_RAMP * (clock / RUN_SECONDS)
 	return float(ENEMIES[kind]["hp"]) * ramp
 
 
-func enemy_speed(kind: int) -> float:
+static func enemy_speed(kind: int) -> float:
 	return float(ENEMIES[kind]["speed"])
 
 
-func enemy_damage(kind: int) -> float:
+static func enemy_damage(kind: int) -> float:
 	return float(ENEMIES[kind]["damage"])
 
 
-func enemy_radius(kind: int) -> float:
+static func enemy_radius(kind: int) -> float:
 	return float(ENEMIES[kind]["radius"])
 
 
-func enemy_knockback(kind: int) -> float:
+static func enemy_knockback(kind: int) -> float:
 	return float(ENEMIES[kind]["knock"])
 
 
-func enemy_xp(kind: int) -> int:
+static func enemy_xp(kind: int) -> int:
 	return int(ENEMIES[kind]["xp"])
 
 
 ## A weapon's stat at its current level. Every weapon reads its numbers
 ## through here, so a missing `_gain` key means "does not grow" rather than an
 ## error, and adding growth to a weapon is one key.
-func weapon_stat(id: String, key: String, level: int) -> float:
+static func weapon_stat(id: String, key: String, level: int) -> float:
 	var w: Dictionary = WEAPONS[id]
 	var base := float(w.get(key, 0.0))
 	var gain := float(w.get(key + "_gain", 0.0))
@@ -1306,7 +1313,7 @@ func weapon_stat(id: String, key: String, level: int) -> float:
 ## art is roughly symmetric, and because the start screen uses TextureRect,
 ## which is correct, so the same sprite looked right in the menu and wrong in
 ## the game. Flipping the mesh here fixes every layer at once.
-func sprite_quad() -> ArrayMesh:
+static func sprite_quad() -> ArrayMesh:
 	var verts := PackedVector3Array([
 		Vector3(-0.5, -0.5, 0.0),
 		Vector3(0.5, -0.5, 0.0),
@@ -1332,7 +1339,7 @@ func sprite_quad() -> ArrayMesh:
 
 
 
-func upgrade_blurb(id: String, level: int) -> String:
+static func upgrade_blurb(id: String, level: int) -> String:
 	if PASSIVES.has(id):
 		var per := float(PASSIVES[id]["per_level"])
 		var pct := int(round(absf(per) * 100.0))
@@ -1356,6 +1363,6 @@ func upgrade_blurb(id: String, level: int) -> String:
 
 
 
-func wave_for(clock: float) -> Dictionary:
+static func wave_for(clock: float) -> Dictionary:
 	var minute := int(clock / 60.0)
 	return WAVES[clampi(minute, 0, WAVES.size() - 1)]

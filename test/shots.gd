@@ -52,10 +52,7 @@ func _init() -> void:
 	await _wait(25)
 	await _shoot("05_boss")
 
-	# The juice layer, each effect caught mid-burst. A -s script cannot name
-	# autoloads, so Tuning comes from the root.
-	var tuning: Node = get_root().get_node("Tuning")
-
+	# The juice layer, each effect caught mid-burst.
 	# Kill a close ring through the world's kill path, so the star pop and
 	# the reward numbers are on screen together.
 	for i in 14:
@@ -93,7 +90,7 @@ func _init() -> void:
 	await _shoot("09_boss_telegraph")
 
 	# The combo cheer: prime the counter, then one kill trips it.
-	world._combo = int(tuning.COMBO_EVERY) - 1
+	world._combo = Tuning.COMBO_EVERY - 1
 	world._on_killed(player.global_position + Vector2(60, 0), 0)
 	await _wait(4)
 	await _shoot("10_combo_cheer")

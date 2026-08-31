@@ -246,11 +246,23 @@ Most of these are inherited from `../godot-world` and still true here.
 780` before reading them. This is the only way to check anything visual, and
 the list above is what it caught.
 
-**A `-s` script cannot name an autoload at all.** Naming `Run`, `Save` or
-`Tuning` fails at compile time before any code runs, so awaiting a frame does
-not help. Use `get_root().get_node("Run")`. GUT suites load at runtime and are
-unaffected, so they name autoloads directly. `test/shots.gd` and
-`compile_check.gd` are the constrained ones.
+**A `-s` script cannot name an autoload at all.** Naming `Run` or `Save` fails
+at compile time before any code runs, so awaiting a frame does not help. Use
+`get_root().get_node("Run")`. GUT suites load at runtime and are unaffected, so
+they name autoloads directly. `test/shots.gd` is the constrained one.
+
+`Tuning` is not among them: it is a `class_name` of constants and `static
+func`s, not an autoload, so every script names it directly. Godot's own
+"autoloads versus regular nodes" page says to spell a stateless library that
+way, and being nameable at compile time is the cheaper half of the reason.
+
+**A script that does not compile still loads.** `load()` returns a `GDScript`
+object either way, and only `reload()` reports the parse error, so
+`compile_check.gd` counted a file it could not compile as fine: it printed
+`LOADED=40 FAILURES=0` while `run_state.gd` was genuinely broken. It calls
+`reload()` on every script now. Autoloads are exempt, because `reload()` fails
+on an already-running one whether or not it compiles, and a real error in one
+of those fails the boot instead.
 
 **One Godot at a time per checkout.** Concurrent `-s` runs fight over `.godot/`
 and hang with no output, not even a `print` on the first line. Give a parallel

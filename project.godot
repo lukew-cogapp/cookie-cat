@@ -17,7 +17,6 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-Tuning="*res://scripts/tuning.gd"
 Save="*res://scripts/save_state.gd"
 Audio="*res://scripts/audio.gd"
 Run="*res://scripts/run_state.gd"
