@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "godot": {
+      "command": "node",
+      "args": ["/Users/lukew/git/godot-mcp/build/index.js"],
+      "env": {
+        "GODOT_PATH": "/opt/homebrew/bin/godot",
+        "GODOT_MCP_ALLOWED_DIRS": "/Users/lukew/personalgit/aubrey/vamp-aub"
+      }
+    }
+  }
+}
