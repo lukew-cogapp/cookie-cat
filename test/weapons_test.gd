@@ -117,3 +117,21 @@ func test_the_shot_pool_holds() -> void:
 		assert_lte(_weapons.shots, Weapons.SHOT_MAX, "the pool held")
 		if _weapons.shots > Weapons.SHOT_MAX:
 			break
+
+
+## The orbiting fish must swim nose-first the whole way round. This was wrong
+## twice: the heading was a quarter turn out, and then a vertical flip meant to
+## keep the fish belly-down reversed its nose through a quarter of the orbit.
+## No flip now, so the only thing to pin is the heading.
+func test_orbiting_fish_face_their_travel() -> void:
+	for n in 32:
+		var a := TAU * float(n) / 32.0
+		# Where a fish at this angle is going: the tangent, anticlockwise.
+		var travel := Vector2(-sin(a), cos(a))
+		# Where the drawing code points it. The art faces +x.
+		var nose := Vector2.from_angle(a + PI * 0.5)
+		assert_gt(
+			nose.dot(travel),
+			0.99,
+			"a fish at %.0f degrees swims forwards" % rad_to_deg(a),
+		)

@@ -12,7 +12,14 @@ const RUN_SECONDS := 600.0
 ## closing in is the one situation a child cannot escape, and the whole
 ## difficulty rests on running away always working. The lawn tiles and the props
 ## wrap around the cat instead, so walking in one direction forever is fine.
-const PROP_FIELD_HALF := Vector2(1600, 1600)
+## Props are scattered on a fixed grid of cells this wide, seeded per cell, so
+## walking into new ground fills it in rather than re-rolling the whole field.
+## The field-follows-the-cat version teleported every pot on screen at once.
+const PROP_CELL := 400.0
+const PROP_PER_CELL := 5
+## Props further than this are forgotten, and their cells with them, so a long
+## walk cannot overflow the arrays. Walking back rebuilds the same garden.
+const PROP_FORGET_DISTANCE := 1500.0
 ## Props are re-scattered ahead of the cat once it walks this far from the
 ## middle of the current field, so the garden never runs out.
 const PROP_REFILL_DISTANCE := 1100.0
@@ -843,7 +850,10 @@ const GROUND_SIZE_MAX := 84.0
 ## repeated across the screen.
 const GROUND_SHADE_MIN := 0.82
 const GROUND_SEED := 20260902
-const GROUND_FIELD_HALF := Vector2(1300, 1300)
+## Same fixed-cell scheme as the props.
+const GROUND_CELL := 300.0
+const GROUND_PER_CELL := 7
+const GROUND_FORGET_DISTANCE := 1400.0
 const GROUND_REFILL_DISTANCE := 1100.0
 
 # --- Breakable props ---

@@ -662,23 +662,15 @@ func _draw() -> void:
 			var a := orbit_angle + TAU * float(n) / float(count)
 			var here := at + Vector2.from_angle(a) * r
 			# A fish swims nose-first along the ring, so it faces the tangent,
-			# not the radius. The art points +x, and the fish travels
-			# anticlockwise as `orbit_angle` grows, so the heading is a quarter
-			# turn PAST its position; drawn a quarter turn back it swam
-			# backwards through the whole orbit.
-			var heading := a + PI * 0.5
-			# Sprites are drawn upright, so a fish on the left half would be
-			# upside down. Mirroring vertically there keeps it belly-down all
-			# the way round, which is what `_sprite`'s flip argument is for.
-			var upside_down := absf(wrapf(heading, -PI, PI)) > PI * 0.5
-			_sprite(
-				_fish_art,
-				here,
-				heading,
-				Tuning.ORBIT_DRAW_SIZE,
-				Color.WHITE,
-				upside_down,
-			)
+			# not the radius. The art points +x and +y is down, so an
+			# increasing angle turns clockwise on screen and the tangent is a
+			# quarter turn past the fish's own position.
+			#
+			# No mirroring. Keeping the fish belly-down through the top half
+			# needs a vertical flip, and a vertical flip reverses the nose: it
+			# swam backwards through a quarter of the orbit however the flip
+			# was gated. It simply rolls round the ring instead.
+			_sprite(_fish_art, here, a + PI * 0.5, Tuning.ORBIT_DRAW_SIZE, Color.WHITE)
 
 	for s in shots:
 		var here := to_local(shot_pos[s])
@@ -725,19 +717,10 @@ func _draw_purr(at: Vector2, r: float) -> void:
 ## One sprite, centred, rotated, at a size in world units. Drawing a texture
 ## takes a rect rather than a centre, so this is the only place that maths
 ## lives.
-func _sprite(
-	art: Texture2D,
-	centre: Vector2,
-	turn: float,
-	size: float,
-	tint: Color,
-	flip_v := false,
-) -> void:
+func _sprite(art: Texture2D, centre: Vector2, turn: float, size: float, tint: Color) -> void:
 	if art == null:
 		return
-	# A negative y scale mirrors about the sprite's own axis, which is what
-	# keeps a rotated fish belly-down rather than rolling over.
-	draw_set_transform(centre, turn, Vector2(1.0, -1.0 if flip_v else 1.0))
+	draw_set_transform(centre, turn, Vector2.ONE)
 	draw_texture_rect(art, Rect2(-size * 0.5, -size * 0.5, size, size), false, tint)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 

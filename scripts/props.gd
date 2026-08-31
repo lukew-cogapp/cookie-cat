@@ -29,7 +29,10 @@ var _rng := RandomNumberGenerator.new()
 var _hits: Array[int] = []
 ## Middle of the currently scattered field. The cat is never walled in, so the
 ## field is re-scattered around it once it walks far enough from this.
-var _centre := Vector2.ZERO
+## Cells already filled, so a cell is never filled twice.
+var _filled: Dictionary = {}
+## Where the cat started, kept clear of props.
+var _clear_around := Vector2.ZERO
 var _player: Node2D
 ## The map's prop table, read once at load: a map cannot change mid-run.
 var _table: Array = []
@@ -59,25 +62,51 @@ func _ready() -> void:
 	flash.resize(Tuning.PROP_COUNT)
 
 
-## Scatters the lawn. Seeded, so the garden is the same every run: a child who
-## learns where the pots are should find them there again.
+## Fills the garden around a point, and remembers which cells it has filled.
+##
+## The field is a fixed grid of cells, not a patch that follows the cat: a cell
+## is seeded by its own coordinates, so walking into new ground fills it in and
+## walking back finds it exactly as it was. The previous version re-scattered
+## the WHOLE field every `PROP_REFILL_DISTANCE`, which teleported every pot on
+## screen at once and reads to a player as the world jumping.
 func scatter(clear_around: Vector2) -> void:
 	alive = 0
 	_dead.clear()
-	_centre = clear_around
-	# Seeded off the field's position, so walking back over old ground finds
-	# the same garden rather than a freshly rolled one.
-	_rng.seed = Tuning.PROP_SEED + int(_centre.x) * 73856093 + int(_centre.y) * 19349663
-	var tries := 0
-	while alive < Tuning.PROP_COUNT and tries < Tuning.PROP_COUNT * 20:
-		tries += 1
-		var p := _centre + Vector2(
-			_rng.randf_range(-Tuning.PROP_FIELD_HALF.x, Tuning.PROP_FIELD_HALF.x),
-			_rng.randf_range(-Tuning.PROP_FIELD_HALF.y, Tuning.PROP_FIELD_HALF.y),
+	_filled.clear()
+	_clear_around = clear_around
+	_refill_around(clear_around)
+
+
+## Fills any cell near `at` that has not been filled yet, and drops rows that
+## have fallen far behind so the arrays never overflow.
+func _refill_around(at: Vector2) -> void:
+	var cell := Tuning.PROP_CELL
+	var reach := int(ceil(Tuning.PROP_REFILL_DISTANCE / cell))
+	var here := Vector2i(floori(at.x / cell), floori(at.y / cell))
+	_cull_far(at)
+	for dy in range(-reach, reach + 1):
+		for dx in range(-reach, reach + 1):
+			var c := here + Vector2i(dx, dy)
+			if _filled.has(c):
+				continue
+			_filled[c] = true
+			_fill_cell(c)
+
+
+## One cell's worth of props, seeded by the cell so it is always the same.
+func _fill_cell(c: Vector2i) -> void:
+	_rng.seed = Tuning.PROP_SEED + c.x * 73856093 + c.y * 19349663
+	var cell := Tuning.PROP_CELL
+	for _n in Tuning.PROP_PER_CELL:
+		if alive >= Tuning.PROP_COUNT:
+			return
+		var p := Vector2(
+			(float(c.x) + _rng.randf()) * cell,
+			(float(c.y) + _rng.randf()) * cell,
 		)
 		# Never on top of where the cat starts, or the run opens with a pot in
 		# the player's face.
-		if p.distance_to(clear_around) < Tuning.PROP_CLEAR_RADIUS:
+		if p.distance_to(_clear_around) < Tuning.PROP_CLEAR_RADIUS:
 			continue
 		if _too_close(p):
 			continue
@@ -89,6 +118,23 @@ func scatter(clear_around: Vector2) -> void:
 		hp[i] = float(_table[k]["hp"])
 		flash[i] = 0.0
 	_redraw()
+
+
+## Forgets props far enough away to be out of sight, so a long walk cannot fill
+## the arrays. Their cells are forgotten too, so walking back rebuilds them
+## from the same seed and the garden looks unchanged.
+func _cull_far(at: Vector2) -> void:
+	var far := Tuning.PROP_FORGET_DISTANCE * Tuning.PROP_FORGET_DISTANCE
+	for i in range(alive - 1, -1, -1):
+		if pos[i].distance_squared_to(at) > far:
+			_dead.append(i)
+	_compact()
+	var cell := Tuning.PROP_CELL
+	var reach := int(ceil(Tuning.PROP_FORGET_DISTANCE / cell))
+	var here := Vector2i(floori(at.x / cell), floori(at.y / cell))
+	for c: Vector2i in _filled.keys():
+		if absi(c.x - here.x) > reach or absi(c.y - here.y) > reach:
+			_filled.erase(c)
 
 
 func set_player(p: Node2D) -> void:
@@ -105,9 +151,7 @@ func _too_close(p: Vector2) -> bool:
 func _physics_process(delta: float) -> void:
 	if not Run.alive:
 		return
-	if _player != null and _player.global_position.distance_to(_centre) > Tuning.PROP_REFILL_DISTANCE:
-		scatter(_player.global_position)
-		return
+	_refill_around(_player.global_position)
 	var faded := false
 	for i in alive:
 		if flash[i] > 0.0:

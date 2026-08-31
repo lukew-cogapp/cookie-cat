@@ -24,7 +24,8 @@ var tint: Array[Color] = []
 var _mm: Array[MultiMesh] = []
 var _by_kind: Array[Array] = []
 var _rng := RandomNumberGenerator.new()
-var _centre := Vector2.ZERO
+## Cells already filled, so a cell is never filled twice.
+var _filled: Dictionary = {}
 var _player: Node2D
 
 ## The map's decal tables, read once at load: a map cannot change mid-run.
@@ -66,20 +67,43 @@ func set_player(p: Node2D) -> void:
 	_player = p
 
 
-## Scatters a field of decals around a point. Seeded off that point, so walking
-## back over old ground finds the same mud rather than a fresh roll.
+## Fills the ground around a point, on a fixed grid of cells.
+##
+## Same shape as `props.gd`, and for the same reason: a field that follows the
+## cat has to re-roll everything at once, which teleported the whole garden and
+## reads as the world jumping. A cell is seeded by its own coordinates, so
+## walking back over old ground finds the same mud.
 func scatter(around: Vector2) -> void:
 	alive = 0
-	_centre = around
-	_rng.seed = (
-		Tuning.GROUND_SEED + int(_centre.x) * 73856093 + int(_centre.y) * 19349663
-	)
-	for _n in Tuning.GROUND_COUNT:
+	_filled.clear()
+	_refill_around(around)
+
+
+func _refill_around(at: Vector2) -> void:
+	var cell := Tuning.GROUND_CELL
+	var reach := int(ceil(Tuning.GROUND_REFILL_DISTANCE / cell))
+	var here := Vector2i(floori(at.x / cell), floori(at.y / cell))
+	_cull_far(at)
+	for dy in range(-reach, reach + 1):
+		for dx in range(-reach, reach + 1):
+			var c := here + Vector2i(dx, dy)
+			if _filled.has(c):
+				continue
+			_filled[c] = true
+			_fill_cell(c)
+
+
+func _fill_cell(c: Vector2i) -> void:
+	_rng.seed = Tuning.GROUND_SEED + c.x * 73856093 + c.y * 19349663
+	var cell := Tuning.GROUND_CELL
+	for _n in Tuning.GROUND_PER_CELL:
+		if alive >= Tuning.GROUND_COUNT:
+			return
 		var i := alive
 		alive += 1
-		pos[i] = _centre + Vector2(
-			_rng.randf_range(-Tuning.GROUND_FIELD_HALF.x, Tuning.GROUND_FIELD_HALF.x),
-			_rng.randf_range(-Tuning.GROUND_FIELD_HALF.y, Tuning.GROUND_FIELD_HALF.y),
+		pos[i] = Vector2(
+			(float(c.x) + _rng.randf()) * cell,
+			(float(c.y) + _rng.randf()) * cell,
 		)
 		kind[i] = _weighted_kind()
 		size[i] = _rng.randf_range(
@@ -88,11 +112,30 @@ func scatter(around: Vector2) -> void:
 		# Quarter turns only. A patch rotated off the pixel grid blurs, and the
 		# whole look depends on the pixels staying square.
 		turn[i] = float(_rng.randi_range(0, 3)) * PI * 0.5
-		# A little tone variation per patch, so a field of mud is not one
-		# stamp repeated.
 		var shade := _rng.randf_range(Tuning.GROUND_SHADE_MIN, 1.0)
-		tint[i] = Color(shade, shade, shade, _alpha[kind[i]])
+		tint[i] = Color(shade, shade, shade, float(_alpha[kind[i]]))
 	_redraw()
+
+
+## Forgets decals out of sight, so a long walk cannot fill the arrays.
+func _cull_far(at: Vector2) -> void:
+	var far := Tuning.GROUND_FORGET_DISTANCE * Tuning.GROUND_FORGET_DISTANCE
+	var kept := 0
+	for i in alive:
+		if pos[i].distance_squared_to(at) <= far:
+			pos[kept] = pos[i]
+			kind[kept] = kind[i]
+			size[kept] = size[i]
+			turn[kept] = turn[i]
+			tint[kept] = tint[i]
+			kept += 1
+	alive = kept
+	var cell := Tuning.GROUND_CELL
+	var reach := int(ceil(Tuning.GROUND_FORGET_DISTANCE / cell))
+	var here := Vector2i(floori(at.x / cell), floori(at.y / cell))
+	for c: Vector2i in _filled.keys():
+		if absi(c.x - here.x) > reach or absi(c.y - here.y) > reach:
+			_filled.erase(c)
 
 
 ## Mud and worn patches are common, flowers and stones are the treats. A flat
@@ -111,8 +154,7 @@ func _weighted_kind() -> int:
 func _physics_process(_delta: float) -> void:
 	if _player == null:
 		return
-	if _player.global_position.distance_to(_centre) > Tuning.GROUND_REFILL_DISTANCE:
-		scatter(_player.global_position)
+	_refill_around(_player.global_position)
 
 
 func _redraw() -> void:
