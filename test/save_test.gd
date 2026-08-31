@@ -11,6 +11,9 @@ func before_all() -> void:
 	_kept = {
 		"cookies": Save.cookies,
 		"unlocked": Save.unlocked.duplicate(),
+		"maps": Save.maps.duplicate(),
+		"hats": Save.hats.duplicate(),
+		"hat": Save.hat,
 		"best_time": Save.best_time,
 		"best_kills": Save.best_kills,
 		"runs": Save.runs,
@@ -20,6 +23,9 @@ func before_all() -> void:
 func after_all() -> void:
 	Save.cookies = int(_kept["cookies"])
 	Save.unlocked = _kept["unlocked"]
+	Save.maps = _kept["maps"]
+	Save.hats = _kept["hats"]
+	Save.hat = String(_kept["hat"])
 	Save.best_time = float(_kept["best_time"])
 	Save.best_kills = int(_kept["best_kills"])
 	Save.runs = int(_kept["runs"])

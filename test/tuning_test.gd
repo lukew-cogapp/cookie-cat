@@ -242,9 +242,8 @@ func test_playing_well_pays_better() -> void:
 	)
 
 
-## Cookies must still be worth earning, even though nothing costs them yet:
-## they are the currency for the cosmetics to come, and a run that pays
-## nothing makes the counter on the start screen a decoration.
+## Cookies must be worth earning: they are the hat shop's currency, and a run
+## that pays nothing makes the counter on the start screen a decoration.
 func test_a_run_pays_cookies() -> void:
 	var a_run := (
 		Tuning.COOKIE_PER_BOSS * Tuning.BOSS_MINUTES.size() * Tuning.COOKIE_VALUE

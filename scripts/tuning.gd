@@ -1037,6 +1037,35 @@ const START_MAP_CARD_SIZE := Vector2(148, 122)
 const START_MAP_ART_SIZE := Vector2(64, 64)
 
 
+# --- Hats ---
+## The only thing cookies buy. Every cat and map is free, deliberately, so
+## nothing that changes how a run plays sits behind a grind: a hat changes no
+## number in the game. "none" is a real entry rather than a hidden state, so
+## taking a hat off is a card a child can press.
+##
+## A run pays roughly 76 to 135 cookies, so the party hat is one run away and
+## the crown three or four: something to want without a wall to hit.
+const STARTER_HAT := "none"
+const HATS := {
+	"none": {"name": "No Hat", "art": "", "cost": 0},
+	"party": {"name": "Party Hat", "art": "res://assets/hat_party.png", "cost": 60},
+	"bow": {"name": "Big Bow", "art": "res://assets/hat_bow.png", "cost": 110},
+	"cap": {"name": "Cool Cap", "art": "res://assets/hat_cap.png", "cost": 180},
+	"crown": {"name": "Crown", "art": "res://assets/hat_crown.png", "cost": 300},
+}
+## Hat cards share the band with the map row, so five must fit half a screen.
+## The hat art is 16x16 drawn at a whole 3x.
+const START_HAT_CARD_SIZE := Vector2(104, 122)
+const START_HAT_ART_SIZE := Vector2(48, 48)
+const START_HAT_COOKIE_SIZE := Vector2(24, 24)
+
+
+## A hat's texture path, empty for "none" or anything unknown, so callers draw
+## nothing rather than crash on an edited save.
+func hat_art(id: String) -> String:
+	return String(HATS[id]["art"]) if HATS.has(id) else ""
+
+
 ## The tables `ground.gd` and `props.gd` swap by map. Read through here so an
 ## unknown id falls back to the garden rather than crashing mid-load.
 func map_info(id: String) -> Dictionary:

@@ -94,3 +94,36 @@ func test_the_slowest_walk_still_escapes() -> void:
 			slowest,
 			"a gentle push outruns the %s" % Tuning.ENEMIES[kind]["name"],
 		)
+
+
+## Menus must answer to the same keys the cat does. Declaring a `ui_*` action
+## REPLACES Godot's built-in events rather than adding to them, so the arrows,
+## the stick and the D-pad all have to be restated or they stop working the
+## moment WASD is added.
+func test_menus_take_wasd_and_everything_else() -> void:
+	var letters := {"ui_left": KEY_A, "ui_right": KEY_D, "ui_up": KEY_W, "ui_down": KEY_S}
+	var arrows := {
+		"ui_left": KEY_LEFT, "ui_right": KEY_RIGHT, "ui_up": KEY_UP, "ui_down": KEY_DOWN,
+	}
+	var pad := {
+		"ui_left": JOY_BUTTON_DPAD_LEFT,
+		"ui_right": JOY_BUTTON_DPAD_RIGHT,
+		"ui_up": JOY_BUTTON_DPAD_UP,
+		"ui_down": JOY_BUTTON_DPAD_DOWN,
+	}
+	for action: String in letters:
+		assert_true(_has_physical_key(action, letters[action]), "%s takes its letter" % action)
+		assert_true(_has_physical_key(action, arrows[action]), "%s takes its arrow" % action)
+		assert_true(_has_button(action, pad[action]), "%s takes the D-pad" % action)
+		var sticks := 0
+		for e: InputEvent in _events(action):
+			if e is InputEventJoypadMotion:
+				sticks += 1
+		assert_gt(sticks, 0, "%s takes the stick" % action)
+
+
+func _has_physical_key(action: String, code: int) -> bool:
+	for e: InputEvent in _events(action):
+		if e is InputEventKey and (e as InputEventKey).physical_keycode == code:
+			return true
+	return false
