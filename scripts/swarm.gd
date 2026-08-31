@@ -202,6 +202,12 @@ func _physics_process(delta: float) -> void:
 		if slow_for[i] > 0.0:
 			slow_for[i] = maxf(slow_for[i] - delta, 0.0)
 			speed *= slow_by[i]
+		# Whatever the multipliers came to, a bug never outpaces a walking cat.
+		# `hurry` and the spider's gait both scale this, and a rush pointed at
+		# the wasp would be 156 against a floored walk of 112. Being outrun is
+		# the one situation a child cannot answer, and the whole difficulty
+		# rests on running away always working.
+		speed = minf(speed, Tuning.ENEMY_SPEED_CEILING)
 		var step := to / maxf(d, 0.001) * speed
 		if knock[i] != Vector2.ZERO:
 			step += knock[i]

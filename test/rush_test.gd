@@ -66,6 +66,23 @@ func test_the_slowest_walk_still_escapes_a_rush() -> void:
 	)
 
 
+## `hurry` is a per-row multiplier and is not confined to the kind `RUSH_KIND`
+## names today: aimed at the wasp it works out at 156 against a floored walk of
+## 112, and the two tests above would both still pass. `swarm.gd` clamps every
+## bug's final speed to `ENEMY_SPEED_CEILING` for that reason, so what has to
+## hold is the ceiling, not the table happening to be slow enough.
+func test_the_speed_ceiling_survives_a_rush_of_any_kind() -> void:
+	var walk := Tuning.PLAYER_SPEED * Tuning.STICK_WALK_FLOOR
+	assert_lt(Tuning.ENEMY_SPEED_CEILING, walk, "the ceiling is under a floored walk")
+	for kind in Tuning.ENEMIES.size():
+		var hurried: float = Tuning.enemy_speed(kind) * Tuning.RUSH_HURRY
+		assert_lt(
+			minf(hurried, Tuning.ENEMY_SPEED_CEILING),
+			walk,
+			"a hurrying %s is still outrun" % Tuning.ENEMIES[kind]["name"],
+		)
+
+
 ## A rush is only a rush if it is quicker than the same bug arriving normally.
 func test_a_rush_is_faster_than_the_same_bug_walking_in() -> void:
 	assert_gt(Tuning.RUSH_HURRY, 1.0, "the pack hurries")

@@ -68,6 +68,13 @@ const PLAYER_STEP_RATE := 8.0
 ## to clear the fastest bug: at 0.55 a gentle push gave 65 against a wasp's 104,
 ## so a child who was moving still got caught.
 const STICK_WALK_FLOOR := 0.95
+## The hard ceiling on how fast any bug can ever move, whatever the table says
+## and whatever multipliers have stacked on it. `swarm.gd` clamps to this after
+## `hurry` and the spider's gait, because those are per-row and neither is
+## bounded by the enemy table: a rush aimed at the wasp works out at 156 against
+## a floored walk of 112. Just under the floored walk, so a child who is moving
+## at all is never caught from behind.
+const ENEMY_SPEED_CEILING := PLAYER_SPEED * STICK_WALK_FLOOR - 2.0
 const CAT_STEP_A := "res://assets/cat_step_a.png"
 const CAT_STEP_B := "res://assets/cat_step_b.png"
 
@@ -967,6 +974,37 @@ const START_BUG_SIZE := Vector2(48, 48)
 const START_LOCKED_TINT := Color(0.42, 0.4, 0.5)
 const START_COST_COLOUR := Color(1.0, 0.84, 0.36)
 ## Idle life on the lawn. Slow enough to be scenery, not a chase.
+## The map row and the hat row sit side by side in one strip, and between them
+## they are about 1170 design units of small cards. That was hand-placed for the
+## 1280 design and overflows anything narrower: at a 4:3 window's 960 units the
+## last hat card is drawn off the right edge.
+##
+## So the strip is placed against the width the screen actually has rather than
+## the width it was drawn for. `aspect=expand` maps HEIGHT to 720 units always,
+## which means a wider screen reveals MORE horizontal units: a 20:9 phone in
+## landscape reports about 1600, the design reports 1280, and a 4:3 tablet
+## reports 960. Reads backwards until that sinks in.
+##
+## Kept clear at each end of the strip, so the outermost card is never against
+## the edge of the screen. Generous, because Godot rounds each control's width
+## up to whole pixels and eight cards of rounding add up: the strip always comes
+## out a little wider than the arithmetic in `_relayout` predicts, and this
+## swallows the difference rather than chasing it.
+const START_BAND_MARGIN := 90.0
+## Between cards within each group. These mirror the separations set on the two
+## containers in `start_screen.tscn`, because the strip's width has to be known
+## before the layout pass runs and a container's own `size` is only correct
+## after it.
+const START_MAP_SEPARATION := 16.0
+const START_HAT_SEPARATION := 8.0
+## And between the map group and the hat group, so they read as two things to
+## choose from rather than one row of eight.
+const START_BAND_GAP := 56.0
+## The floor on that shrinking. Below this the cards are too small to tap on a
+## phone, and a strip that will not fit is better cropped than unusable: the
+## widths in play only reach here on a window nobody plays on.
+const START_BAND_MIN_SCALE := 0.6
+
 const START_BUG_COUNT := 6
 const START_BUG_TIME_MIN := 16.0
 const START_BUG_TIME_MAX := 30.0

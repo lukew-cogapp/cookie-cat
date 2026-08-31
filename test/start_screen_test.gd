@@ -52,6 +52,59 @@ func test_play_holds_focus_from_the_start() -> void:
 	assert_true(play.has_focus(), "Play is focused when the screen opens")
 
 
+## A card drawn off the edge is a choice the child cannot see. The hat strip was
+## hand-placed for the 1280 design and the Crown card fell off the right of a
+## 4:3 window, which no test noticed and a screenshot did.
+##
+## `_relayout` takes the width, so both a phone's 1600 units and a 4:3 window's
+## 960 are checked here rather than only whatever size the harness happens to
+## run at.
+func test_every_card_is_on_screen_at_any_width() -> void:
+	for width: float in [1680.0, 1600.0, 1280.0, 960.0, 900.0]:
+		_start._relayout(width)
+		await wait_process_frames(2)
+		# The strip only. Everything else is centre-anchored against the real
+		# viewport, so a hypothetical width says nothing about where it sits: a
+		# cat card measured at 1280 is not off screen because 960 was asked
+		# about. The strip is the thing `_relayout` actually places.
+		var centre := get_viewport().get_visible_rect().size.x * 0.5
+		for group: String in ["Maps", "Hats"]:
+			var g: Control = _start.get_node(group)
+			for b: Node in g.get_children():
+				var r := (b as Control).get_global_rect()
+				# Back to strip coordinates: measured from the screen centre,
+				# which is what the container is anchored to.
+				var from_centre := r.position.x - centre
+				assert_gte(
+					from_centre, -width * 0.5,
+					"%s's card starts on screen at %d wide" % [group, width],
+				)
+				assert_lte(
+					from_centre + r.size.x, width * 0.5,
+					"%s's card ends on screen at %d wide" % [group, width],
+				)
+
+
+## The two groups must not run into each other either, or the strip reads as one
+## row of eight rather than two things to choose from.
+func test_the_map_and_hat_groups_stay_apart() -> void:
+	for width: float in [1600.0, 1280.0, 960.0]:
+		_start._relayout(width)
+		await wait_process_frames(2)
+		# The last map card against the first hat card, not the containers: a
+		# container keeps the width the scene gave it and only its children are
+		# where the cards actually are.
+		var maps: Control = _start.get_node("Maps")
+		var hats: Control = _start.get_node("Hats")
+		var last_map: Control = maps.get_child(maps.get_child_count() - 1)
+		var first_hat: Control = hats.get_child(0)
+		assert_lte(
+			last_map.get_global_rect().end.x,
+			first_hat.get_global_rect().position.x,
+			"the groups do not overlap at %d wide" % width,
+		)
+
+
 func _focusable(node: Node) -> Array[Button]:
 	var out: Array[Button] = []
 	for child: Node in node.get_children():

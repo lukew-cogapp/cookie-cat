@@ -30,11 +30,11 @@ keep a headless run out of the real editor config.
 
 ```
 project.godot              input map, autoloads, main scene
-scripts/tuning.gd          every tunable number, autoloaded as `Tuning`
+scripts/tuning.gd          every tunable number, the `Tuning` class
 scripts/save_state.gd      cookies and unlocked cats, autoloaded as `Save`
 scripts/run_state.gd       one run's state, autoloaded as `Run`
 scripts/swarm.gd           enemies as array rows, one MultiMesh per kind
-scripts/weapons.gd         all eight toys in one node
+scripts/weapons.gd         all ten toys in one node
 scripts/gems.gd            pickups, same pattern as the swarm
 scripts/traps.gd           holes in the ground, one hazard per map
 scripts/director.gd        the wave table, and bosses

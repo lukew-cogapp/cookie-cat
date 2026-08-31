@@ -56,6 +56,8 @@ func _ready() -> void:
 	_build_cards()
 	_build_map_cards()
 	_build_hat_cards()
+	_relayout()
+	get_viewport().size_changed.connect(_relayout)
 	_wire_focus()
 	_select(Run.cat)
 	_select_map(Run.map)
@@ -67,6 +69,80 @@ func _ready() -> void:
 	# `play_music` is idempotent, so the loop carries into the run unbroken.
 	Audio.play_music("music")
 	_play.grab_focus()
+
+
+## Places the map-and-hat strip against the width the screen actually has.
+##
+## Everything else here is centred and has room to spare at any width. The strip
+## does not: it is about 1170 units of small cards, hand-placed for the 1280
+## design, and the last hat card was drawn off the edge of a 4:3 window. See
+## `Tuning.START_BAND_MARGIN` for why a wider screen means more units.
+##
+## Connected to `size_changed` as well as called from `_ready`, because a
+## browser tab is resized constantly: a phone rotating, and Safari collapsing
+## its toolbar on the first scroll.
+## `at_width` is for the tests, which need to check a phone's 1600 units and a
+## 4:3 window's 960 without owning a window of either size.
+func _relayout(at_width := 0.0) -> void:
+	var width := at_width if at_width > 0.0 else get_viewport_rect().size.x
+	# The scene's own alignment would fight these offsets: Maps right-aligns and
+	# Hats left-aligns, which was how the two halves met in the middle of the
+	# old fixed strip. Each group is now placed exactly, so both fill.
+	_maps.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_hats.alignment = BoxContainer.ALIGNMENT_BEGIN
+	# GROW_DIRECTION_BOTH lets a container widen past its own offsets to fit its
+	# children's minimum sizes, which silently undid every offset set below. The
+	# offsets are the authority here, so the growth has to be off.
+	_maps.grow_horizontal = Control.GROW_DIRECTION_END
+	_hats.grow_horizontal = Control.GROW_DIRECTION_END
+	_maps.add_theme_constant_override("separation", int(Tuning.START_MAP_SEPARATION))
+	_hats.add_theme_constant_override("separation", int(Tuning.START_HAT_SEPARATION))
+	# The cards shrink to whatever fits, rather than to one of two fixed sizes:
+	# the widths in play run from a 900-unit desktop window to a 1680-unit
+	# phone, and no single smaller size covers both ends. Never above 1.0, so a
+	# wide screen gets margin rather than oversized cards.
+	var room := width - Tuning.START_BAND_MARGIN * 2.0
+	var fixed := (
+		(Tuning.MAPS.size() - 1) * Tuning.START_MAP_SEPARATION
+		+ (Tuning.HATS.size() - 1) * Tuning.START_HAT_SEPARATION
+		+ Tuning.START_BAND_GAP
+	)
+	var per_scale := (
+		Tuning.MAPS.size() * Tuning.START_MAP_CARD_SIZE.x
+		+ Tuning.HATS.size() * Tuning.START_HAT_CARD_SIZE.x
+	)
+	var scale := clampf((room - fixed) / per_scale, Tuning.START_BAND_MIN_SCALE, 1.0)
+	for id: String in _map_buttons:
+		(_map_buttons[id] as Control).custom_minimum_size = (
+			Tuning.START_MAP_CARD_SIZE * scale
+		)
+	for id: String in _hat_buttons:
+		(_hat_buttons[id] as Control).custom_minimum_size = (
+			Tuning.START_HAT_CARD_SIZE * scale
+		)
+	# The two groups' own widths, from the tables rather than measured: a
+	# container's `size` is an output of the layout pass and is stale on the
+	# frame its contents changed.
+	var maps_w := (
+		Tuning.MAPS.size() * Tuning.START_MAP_CARD_SIZE.x * scale
+		+ (Tuning.MAPS.size() - 1) * Tuning.START_MAP_SEPARATION
+	)
+	var hats_w := (
+		Tuning.HATS.size() * Tuning.START_HAT_CARD_SIZE.x * scale
+		+ (Tuning.HATS.size() - 1) * Tuning.START_HAT_SEPARATION
+	)
+	# Centred as one strip, so the gap between the groups stays in the middle
+	# however much room there is either side. Both containers are anchored to the
+	# centre of the screen, so these offsets are measured from there and the left
+	# edge of the strip is negative.
+	var total := maps_w + Tuning.START_BAND_GAP + hats_w
+	var left := -total * 0.5
+	# Only the left edge is set. A container sizes itself to its children's
+	# minimums and the layout pass rewrites `offset_right`, so assigning it does
+	# nothing: the group's width follows its cards, and placing the left edge is
+	# what centres the strip.
+	_maps.offset_left = left
+	_hats.offset_left = left + maps_w + Tuning.START_BAND_GAP
 
 
 func _start() -> void:
