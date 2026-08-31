@@ -21,8 +21,8 @@ var won := false
 ## Weapon id -> its level. Passives live in `passives` for the same reason
 ## they are separate in the pick list: they never fire, so nothing iterates
 ## both together.
-var weapons: Dictionary = {}
-var passives: Dictionary = {}
+var weapons: Dictionary[String, int] = {}
+var passives: Dictionary[String, int] = {}
 
 var kills := 0
 ## Cookies picked up this run. Banked by `Save` when the run ends, not as they
@@ -92,7 +92,7 @@ func take(id: String) -> void:
 		consumed.emit(id)
 		return
 	var pool := passives if Tuning.PASSIVES.has(id) else weapons
-	pool[id] = int(pool.get(id, 0)) + 1
+	pool[id] = pool.get(id, 0) + 1
 	Audio.play("choose")
 	changed.emit()
 
@@ -102,13 +102,13 @@ func level_of(id: String) -> int:
 	if Tuning.CONSUMABLES.has(id):
 		return 0
 	if Tuning.PASSIVES.has(id):
-		return int(passives.get(id, 0))
-	return int(weapons.get(id, 0))
+		return passives.get(id, 0)
+	return weapons.get(id, 0)
 
 
 ## A passive's multiplier, 1.0 when it has never been picked.
 func passive(id: String) -> float:
-	var lv := int(passives.get(id, 0))
+	var lv: int = passives.get(id, 0)
 	if lv == 0:
 		return 1.0
 	return 1.0 + float(Tuning.PASSIVES[id]["per_level"]) * lv
@@ -133,13 +133,13 @@ func finish(win: bool) -> void:
 func _choices() -> Array:
 	var pool: Array[String] = []
 	for id: String in Tuning.WEAPONS:
-		var lv := int(weapons.get(id, 0))
+		var lv: int = weapons.get(id, 0)
 		if lv == 0 and weapons.size() >= Tuning.WEAPON_SLOTS:
 			continue
 		if lv < Tuning.WEAPON_LEVEL_MAX:
 			pool.append(id)
 	for id: String in Tuning.PASSIVES:
-		var lv := int(passives.get(id, 0))
+		var lv: int = passives.get(id, 0)
 		if lv == 0 and passives.size() >= Tuning.PASSIVE_SLOTS:
 			continue
 		if lv < Tuning.PASSIVE_LEVEL_MAX:
