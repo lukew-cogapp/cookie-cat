@@ -1,0 +1,25 @@
+# gdlint only. gdformat is deliberately not used: it rewrites a data table to
+# one value per line, which destroys the music score in audio.gd and the wave
+# and enemy tables in tuning.gd, and it mangles a wrapped method call into
+# `JSON . stringify(`. It has no per-line opt-out, only whole directories, and
+# the tables share scripts/ with ordinary code. Checked against 4.x, not a
+# guess: `# fmt: off` is a GDQuest-formatter feature and this one ignores it.
+
+# Doc comments sit between the declarations they describe here, which this
+# rule reads as definitions out of order. It fired 400+ times and never once
+# on a real problem.
+disable:
+- class-definitions-order
+# A suite with more than twenty tests is a thorough suite, not a smell.
+- max-public-methods
+# tuning.gd is one long table on purpose. See CLAUDE.md.
+- max-file-lines
+
+# 125 rather than 100 so the enemy table's rows stay one line each: a row per
+# bug is what makes the numbers comparable down the column. Nothing else in the
+# project reaches 110, so this still catches a line that has actually run away.
+max-line-length: 125
+
+excluded_directories: !!set
+  .git: null
+  addons: null

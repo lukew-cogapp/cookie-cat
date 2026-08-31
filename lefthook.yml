@@ -29,6 +29,21 @@ pre-commit:
           exit 1
         fi
 
+    gdlint:
+      # Style and static checks the engine's own parser does not make. Not
+      # gdformat: it rewrites a data table to one value per line and mangles a
+      # wrapped call into `JSON . stringify(`, with no per-line opt-out.
+      # Rules that fight the house style are off in .gdlintrc, so a finding
+      # here is worth reading rather than a thing to bypass.
+      glob: "*.gd"
+      run: |
+        if ! command -v uvx > /dev/null; then
+          echo "uvx not found; skipping gdlint."
+          exit 0
+        fi
+        perl -e 'alarm 120; exec @ARGV' \
+          uvx --from "gdtoolkit==4.*" gdlint {staged_files} || exit 1
+
     no-prints:
       # print() in gameplay code goes to a console no player opens. On the web
       # build that console is the only place a message would appear at all.

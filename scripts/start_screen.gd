@@ -503,8 +503,10 @@ func _hop_art(art: TextureRect) -> void:
 		return
 	var half := Tuning.START_HOP_TIME * 0.5
 	_hop = create_tween().set_trans(Tween.TRANS_SINE)
-	_hop.tween_property(art, "position:y", -Tuning.START_HOP, half).as_relative().set_ease(Tween.EASE_OUT)
-	_hop.tween_property(art, "position:y", Tuning.START_HOP, half).as_relative().set_ease(Tween.EASE_IN)
+	var up := _hop.tween_property(art, "position:y", -Tuning.START_HOP, half)
+	up.as_relative().set_ease(Tween.EASE_OUT)
+	var down := _hop.tween_property(art, "position:y", Tuning.START_HOP, half)
+	down.as_relative().set_ease(Tween.EASE_IN)
 
 
 func _bob_title() -> void:

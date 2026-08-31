@@ -15,6 +15,7 @@ defeat), the reading load (pictures), and every difficulty number.
 godot --path .                                        play it
 godot --headless --path . --import                    after a clone, or a new PNG
 godot --headless --path . -s test/compile_check.gd    compile every script and scene
+uvx --from "gdtoolkit==4.*" gdlint scripts/ test/    lint
 ./test/run.sh                                         every suite
 ./test/run.sh swarm_test.gd                            one suite, by file name
 godot --path . -s test/shots.gd                        screenshots, windowed
@@ -59,6 +60,19 @@ test/*_test.gd             GUT suites; run with test/run.sh
 test/shots.gd              windowed screenshot renderer
 test/compile_check.gd      loads everything, run by the pre-commit hook
 ```
+
+**gdlint, never gdformat.** `.gdlintrc` turns off the three rules that fight
+the house style (`class-definitions-order` reads a doc comment between two
+declarations as disorder, and fired 400 times without once finding a problem)
+and sets the line limit at 125 so an enemy row stays one line. What is left is
+worth reading; lefthook runs it on staged `.gd` files.
+
+The formatter is not used and should not be added. It rewrites a data table to
+one value per line, which destroys the music score in `audio.gd` and the enemy
+table, and it turns a wrapped call into `JSON . stringify(`, in the web save
+path of all places. Its only opt-out is whole directories, and the tables share
+`scripts/` with ordinary code. `# fmt: off` belongs to GDQuest's separate
+formatter; this one ignores it, which was tested rather than assumed.
 
 **Numbers live in `tuning.gd`.** Nothing else holds a literal. This game is
 almost entirely tuning, so the file is long on purpose and every constant that
