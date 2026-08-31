@@ -1,0 +1,23 @@
+# Godot 4 auto-generated
+.godot/
+/android/
+/build/
+
+# Screenshot output, regenerate with test/screenshot.gd
+test/shots/
+
+# One-off local probes and verification scripts.
+/verify*.gd
+/verify*.gd.uid
+/probe_*.gd.uid
+/tmp_*.gd.uid
+/test/probe_*.gd
+/test/probe_*.gd.uid
+/test/tmp_*.gd
+/test/tmp_*.gd.uid
+
+# Agent worktrees, not part of the game.
+.claude/worktrees/
+
+# Sandbox renders, regenerate with the scripts in sandbox/.
+sandbox/shots/

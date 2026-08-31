@@ -1,0 +1,75 @@
+#!/bin/bash
+# Run the test suites and report the result.
+#
+#   test/run.sh                        every suite
+#   test/run.sh catch_chance_test.gd   just that file
+#
+# GUT is the only harness. It replaced a hand-rolled `extends SceneTree`
+# runner, and earns its place two ways:
+#
+# 1. An engine error inside a test is a test failure, not a line of output
+#    that a grep has to notice. The old runner spotted one only because it
+#    grepped for SCRIPT ERROR; the underlying godot run exits 0 and prints
+#    FAILURES=0.
+# 2. A GUT script loads at runtime, after autoloads register, so it can name
+#    `Inventory`, `Party`, `Hud` and `Tuning` directly. A `-s` script cannot:
+#    it fails to compile before any code runs.
+#
+# Two flags that are not optional:
+#
+#   No -d. It attaches the debugger, and an error then drops the run into an
+#   interactive `debug>` prompt that waits forever.
+#   -gprefix= -gsuffix=_test.gd. GUT looks for `test_*.gd` by default and this
+#   project names suites `*_test.gd`, so without these it finds nothing and
+#   reports "Nothing was run" while exiting 0.
+
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+SELECT="${1:-}"
+OUT="${TMPDIR:-/tmp}/bug-garden-tests"
+mkdir -p "$OUT"
+log="$OUT/gut.txt"
+LIMIT=600
+
+# GUT skips a script that does not extend GutTest: it warns and exits 0, so a
+# suite written in the old `extends SceneTree` style never runs and never
+# fails. Eight of them accumulated that way. Only `*_test.gd` is checked; the
+# screenshot renderers and compile_check are tools, and stay as they are.
+stray=$(/usr/bin/grep -L '^extends GutTest' test/*_test.gd)
+if [ -n "$stray" ]; then
+    echo "These suites do not extend GutTest, so GUT would skip them:"
+    echo "$stray"
+    exit 1
+fi
+
+args=(-gdir=res://test -ginclude_subdirs -gprefix= -gsuffix=_test.gd -gexit)
+[ -n "$SELECT" ] && args+=("-gselect=$SELECT")
+
+# There is no `timeout` binary on macOS, hence perl. Redirect rather than pipe,
+# since a pipe hides the failing line.
+perl -e 'alarm shift; exec @ARGV' "$LIMIT" \
+    godot --headless -s addons/gut/gut_cmdln.gd "${args[@]}" \
+    < /dev/null > "$log" 2>&1
+status=$?
+
+# An absent summary is a died or timed-out run, which is not a pass. GUT also
+# exits 0 when its filters match no script at all, so that counts as a failure
+# here: asking for a suite and running none is how a green lies.
+if ! /usr/bin/grep -qE '^Passing Tests' "$log"; then
+    echo "NO RESULT (died, matched nothing, or hit the ${LIMIT}s limit)"
+    echo "Log in $log"
+    exit 1
+fi
+
+# -a: GUT's colour escapes make grep call the log binary and print nothing
+# but "Binary file matches", which hides the totals this whole script is for.
+/usr/bin/grep -a -A 12 '^Totals' "$log"
+
+if [ "$status" != "0" ]; then
+    echo
+    echo "GUT reported failures. Log in $log"
+    exit 1
+fi
+echo
+echo "All green. Log in $log"
