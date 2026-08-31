@@ -468,9 +468,42 @@ never replaces the live one. The web export needs no renderer change: Godot
 4.7 forces `gl_compatibility` on the web through `rendering_method.web`.
 
 The same tag builds Android through `.github/workflows/android.yml`: an APK
-attached to the GitHub release for sideloading, and an AAB uploaded to Play's
-**internal testing** track. Never straight to production, because a Play
-release is hard to take back and the listing is worth looking at first.
+attached to the GitHub release for sideloading, and a signed AAB, built and
+checked but not sent anywhere.
+
+**Publishing is a separate, deliberate act.** Run the workflow by hand with
+`publish` ticked, which is the only thing that uploads to Play's **internal
+testing** track. A tag that published on its own would be one typo from a
+release nobody meant to make, and a store release is hard to take back.
+Internal testing rather than production for the same reason: the listing is
+worth looking at first.
+
+Comments in `export_presets.cfg` start with `;`, not `#`. The parser stops at
+the first line it cannot read, so a `#` note beside an option silently hides
+every preset below it: the AAB build failed naming a preset that was sitting
+in the file. Godot also drops these comments whenever it rewrites the file
+from the export dialog.
+
+### What is left before the first release
+
+1. Google's identity verification has to clear, which is a wait rather than a
+   task. The phone check is gated behind it.
+2. Create the app in the Play Console as `io.github.lukehmu.catvsbugs`. The
+   package name is permanent once live.
+3. Invite `play-publisher@cat-vs-bugs-play.iam.gserviceaccount.com` under
+   Users and permissions, with **Release to testing tracks**. Without it the
+   key authenticates and cannot publish.
+4. Upload what is in `store/`, and paste the copy from `play-listing.md`.
+5. Run the Android workflow with `publish` ticked.
+6. The closed test: 12 testers opted in for 14 continuous days before
+   production is available, because the Play account is a personal one created
+   after November 2023.
+
+Nothing has been run on a real device yet. Everything about touch, the
+landscape lock, the Back button and the thumbstick is verified by reasoning
+and by screenshots, which is exactly the kind of confidence this file's own
+"what playing it taught" section exists to distrust. Sideload the APK from a
+tagged release before shipping.
 
 ### Play listing assets
 
