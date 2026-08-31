@@ -1,4 +1,4 @@
-# cookie-cat
+# cat-vs-bugs
 
 Godot 4.7 survivors-like, built with Aubrey. 2D, top-down, kid-themed: you are
 a cat, the bugs come to you, the toys fire themselves. Ten minute runs, cookies

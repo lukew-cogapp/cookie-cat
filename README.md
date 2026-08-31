@@ -1,4 +1,4 @@
-# Cookie Cat
+# Cat vs Bugs
 
 ### [▶ Play it in your browser](https://lukew-cogapp.github.io/cookie-cat/)
 
@@ -34,7 +34,7 @@ the first decision of a run, not a reward to grind for.
 
 | Cat | Opens with |
 | --- | --- |
-| Cookie Cat | Paw Swipe |
+| Cookie | Paw Swipe |
 | Minty | Yarn Ball |
 | Berry | Fish Friends |
 | Choccy | Purr Ring |

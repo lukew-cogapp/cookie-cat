@@ -160,7 +160,7 @@ func test_the_web_key_is_namespaced() -> void:
 	# Every game published under one github.io account shares an origin and
 	# therefore one storage bucket, so an unprefixed key would be clobbered by
 	# the next game published beside this one.
-	assert_true(Save.WEB_KEY.begins_with("cookie_cat"), "the key names this game")
+	assert_true(Save.WEB_KEY.begins_with("cat_vs_bugs"), "the key names this game")
 
 
 ## Whatever the backend, a round trip has to survive. On desktop this exercises

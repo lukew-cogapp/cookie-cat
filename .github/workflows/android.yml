@@ -91,7 +91,7 @@ jobs:
           GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           mkdir -p build/android
-          godot --headless --path . --export-release "Android" build/android/cookie-cat.apk
+          godot --headless --path . --export-release "Android" build/android/cat-vs-bugs.apk
 
       - name: Export the AAB
         env:
@@ -100,14 +100,14 @@ jobs:
           GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           godot --headless --path . --install-android-build-template \
-            --export-release "Android Play" build/android/cookie-cat.aab
+            --export-release "Android Play" build/android/cat-vs-bugs.aab
 
       # An Android export can exit 0 and leave nothing behind, the same way the
       # web one can. Fail here rather than publishing an empty release.
       - name: Check both packages exist
         run: |
-          test -s build/android/cookie-cat.apk || { echo "::error::no APK produced"; ls -R build; exit 1; }
-          test -s build/android/cookie-cat.aab || { echo "::error::no AAB produced"; ls -R build; exit 1; }
+          test -s build/android/cat-vs-bugs.apk || { echo "::error::no APK produced"; ls -R build; exit 1; }
+          test -s build/android/cat-vs-bugs.aab || { echo "::error::no AAB produced"; ls -R build; exit 1; }
           ls -lh build/android
 
       # The APK on the release is the sideload path: download it on a tablet
@@ -116,7 +116,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/android/cookie-cat.apk
+          files: build/android/cat-vs-bugs.apk
 
       # Internal testing, never production. A Play release is hard to take back,
       # and promoting a track is one button in the console once the listing has
@@ -126,7 +126,7 @@ jobs:
         uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: uk.co.cogapp.lukew.cookiecat
-          releaseFiles: build/android/cookie-cat.aab
+          packageName: uk.co.cogapp.lukew.catvsbugs
+          releaseFiles: build/android/cat-vs-bugs.aab
           track: internal
           status: completed

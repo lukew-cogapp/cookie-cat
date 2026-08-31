@@ -109,7 +109,7 @@ const CONSUMABLES := {
 
 const STARTER_CAT := "cookie"
 const CATS := {
-	"cookie": {"name": "Cookie Cat", "weapon": "paw", "cost": 0, "art": "res://assets/cat.png"},
+	"cookie": {"name": "Cookie", "weapon": "paw", "cost": 0, "art": "res://assets/cat.png"},
 	"mint": {"name": "Minty", "weapon": "yarn", "cost": 0, "art": "res://assets/cat_mint.png"},
 	"berry": {"name": "Berry", "weapon": "fish", "cost": 0, "art": "res://assets/cat_berry.png"},
 	"choc": {"name": "Choccy", "weapon": "purr", "cost": 0, "art": "res://assets/cat_choc.png"},

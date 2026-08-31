@@ -21,7 +21,7 @@ const TMP_PATH := "user://save.json.tmp"
 ## because every game published under the same github.io account shares one
 ## origin and therefore one storage bucket: an unprefixed "save" would be
 ## clobbered by the next game published beside this one.
-const WEB_KEY := "cookie_cat_save_v1"
+const WEB_KEY := "cat_vs_bugs_save_v1"
 ## Bumped when a field's meaning changes. An older file is discarded rather
 ## than migrated: there is nothing here worth a migration path.
 const VERSION := 1
