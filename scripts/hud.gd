@@ -293,7 +293,13 @@ func _card(id: String) -> Button:
 	col.add_child(name)
 
 	var blurb := Label.new()
+	# A new toy says what it is; an upgrade says what the level actually gives,
+	# since "Fish Friends" twice tells a child nothing about which card to take.
 	blurb.text = String(Tuning.BLURBS.get(id, ""))
+	if level > 0:
+		var gives := Tuning.upgrade_blurb(id, level)
+		if gives != "":
+			blurb.text = gives
 	blurb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	blurb.add_theme_font_size_override("font_size", 14)

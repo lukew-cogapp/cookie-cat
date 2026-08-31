@@ -41,8 +41,7 @@ var _table: Array = []
 func _ready() -> void:
 	_table = Tuning.map_info(Run.map)["props"]
 	_rng.seed = Tuning.PROP_SEED
-	var q := QuadMesh.new()
-	q.size = Vector2.ONE
+	var q := Tuning.sprite_quad()
 	for k in _table.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_2D

@@ -35,7 +35,7 @@ PALETTE = {
     "C": (110, 224, 214, 255),  # mint ice cream
     "c": (176, 245, 240, 255),  # mint light
     "W": (255, 255, 255, 255),
-    "K": (44, 36, 48, 255),  # pupils
+    "K": (44, 36, 48, 255),  # pupils, and the heart's outline
     "Y": (255, 214, 92, 255),  # star / coin gold
     "y": (255, 240, 176, 255),
     "R": (240, 108, 124, 255),  # heart
@@ -43,6 +43,7 @@ PALETTE = {
     "G": (124, 200, 108, 255),  # grub green
     "g": (168, 226, 148, 255),
     "V": (150, 124, 208, 255),  # beetle violet
+    "N": (108, 84, 62, 255),  # dung beetle, darker than its ball
     "v": (192, 174, 236, 255),
     "O": (240, 156, 90, 255),  # snail orange
     "S": (120, 210, 170, 255),  # slime
@@ -244,23 +245,25 @@ SPIDER = [
     "..o...o..o...o..",
     "................",
 ]
-# The dung beetle pushes its ball in front, so the two-blob outline is the
-# silhouette. Stink lines are light green: funny, not gross.
+# A rounder, darker body than the plain beetle, tilted nose-down onto a ball
+# it is pushing, with a horn. Two earlier tries failed the silhouette rule that
+# the snail already taught: a big ball with a small body read as an upside-down
+# snail, and an oversized body read as the ordinary beetle in another colour.
 DUNG = [
     "................",
-    "...........g..g.",
-    "...........g..g.",
-    "................",
-    "..........oooo..",
-    ".........oMmmmo.",
-    "..ooo...oMmmmmmo",
-    ".oVVVo..ommmmmno",
-    "oVvVVVooommmmmno",
-    "oVVVWKooommmnnno",
-    "oVvVVVo..ommmno.",
-    ".oVVVo....oooo..",
-    "..o.o.o.........",
-    ".o..o..o........",
+    ".............o..",
+    "...o........oNo.",
+    "..oNo......oNo..",
+    "...oNoooooNo....",
+    "....oNNNNNNo....",
+    "..ooNNNNNNNNoo..",
+    ".oNNWKNNNWKNNNo.",
+    "oBBoNNNNNNNNNNo.",
+    "oBbBoNNNNNNNNo..",
+    "oBbBBoNNNNNNo...",
+    "oBBBBooNNNNo....",
+    ".oBBo..o..o.....",
+    "..oo..o....o....",
     "................",
     "................",
 ]
@@ -342,22 +345,23 @@ GEM_RED = [
     "................",
     "................",
 ]
-# Broad shoulders and a short point, or it reads as a spade at 15px.
+# Hard black outline, two clear lobes, and a SHORT point: the old heart tapered
+# over five rows to a single pixel, which reads as a spade or an arrow.
 HEART = [
     "................",
-    "..ooo.....ooo...",
-    ".oRRRo...oRRRo..",
-    "oRrrRRo.oRRRRRo.",
-    "oRrRRRRoRRRRRRo.",
-    "oRRRRRRRRRRRRRo.",
-    "oRRRRRRRRRRRRRo.",
-    ".oRRRRRRRRRRRo..",
-    "..oRRRRRRRRRo...",
-    "...oRRRRRRRo....",
-    "....oRRRRRo.....",
-    ".....oRRRo......",
-    "......oRo.......",
-    ".......o........",
+    "................",
+    "...KKKK..KKKK...",
+    "..KrrrrKKrrrrK..",
+    ".KrrrrrrrrrrrrK.",
+    ".KrrRRrrrrRRrrK.",
+    ".KrRRRRrrRRRRrK.",
+    ".KRRRRRRRRRRRRK.",
+    "..KRRRRRRRRRRK..",
+    "...KRRRRRRRRK...",
+    "....KRRRRRRK....",
+    ".....KRRRRK.....",
+    "......KRRK......",
+    ".......KK.......",
     "................",
     "................",
 ]

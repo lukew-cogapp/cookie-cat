@@ -251,3 +251,41 @@ func test_a_run_pays_cookies() -> void:
 	)
 	assert_gt(a_run, 0, "finishing a run pays something")
 	assert_gt(Tuning.COOKIE_EVERY, 0, "and so does killing bugs")
+
+
+## An upgrade card has to say what the level gives. "Fish Friends" twice tells
+## a child nothing about which card to take.
+func test_every_upgrade_says_what_it_gives() -> void:
+	for id: String in Tuning.WEAPONS:
+		for level in range(1, Tuning.WEAPON_LEVEL_MAX):
+			assert_ne(
+				Tuning.upgrade_blurb(id, level),
+				"",
+				"%s at level %d says what it gives" % [id, level],
+			)
+	for id: String in Tuning.PASSIVES:
+		assert_ne(Tuning.upgrade_blurb(id, 1), "", "%s says what it gives" % id)
+
+
+## And it has to be true: the words come from the numbers, so a retune cannot
+## leave the card lying.
+func test_a_count_upgrade_is_reported_when_it_happens() -> void:
+	for id: String in Tuning.WEAPONS:
+		for level in range(1, Tuning.WEAPON_LEVEL_MAX):
+			var was := int(Tuning.weapon_stat(id, "count", level))
+			var now := int(Tuning.weapon_stat(id, "count", level + 1))
+			var says := Tuning.upgrade_blurb(id, level)
+			if now > was:
+				assert_true(
+					"%d of them" % now in says,
+					"%s level %d adds one and says so: %s" % [id, level, says],
+				)
+
+
+## Fish Friends is the clearest example: every level should put another fish
+## on the ring, or the card is a wasted pick.
+func test_every_fish_level_adds_a_fish() -> void:
+	for level in range(1, Tuning.WEAPON_LEVEL_MAX):
+		var was := int(Tuning.weapon_stat("fish", "count", level))
+		var now := int(Tuning.weapon_stat("fish", "count", level + 1))
+		assert_eq(now, was + 1, "fish level %d adds one" % (level + 1))

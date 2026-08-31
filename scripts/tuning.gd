@@ -173,7 +173,10 @@ const WEAPONS := {
 		"count": 2,
 		"spin": 2.2,
 		"damage_gain": 2.0,
-		"count_gain": 0.6,
+		## A whole fish per level, so every pick shows up on the ring. At 0.6
+		## a level, levels 2 and 4 added nothing visible and read as a wasted
+		## card.
+		"count_gain": 1.0,
 	},
 	"mouse":
 	{
@@ -1106,6 +1109,69 @@ func weapon_stat(id: String, key: String, level: int) -> float:
 	var base := float(w.get(key, 0.0))
 	var gain := float(w.get(key + "_gain", 0.0))
 	return base + gain * float(level - 1)
+
+
+## What one more level of `id` actually gives, in the fewest words that say it.
+##
+## Derived from the numbers rather than written per weapon, so retuning a
+## `_gain` cannot leave the card lying. A child cannot read a stat block, but
+## "4 of them" or "bigger" tells them which card is the one they want.
+## The unit quad every MultiMesh in the game draws through.
+##
+## A default QuadMesh maps uv.y=0, the TOP of the texture, to y=+0.5, which in
+## Godot 2D is DOWN the screen: every sprite drawn through one comes out
+## vertically mirrored. It went unnoticed for a long time because most of the
+## art is roughly symmetric, and because the start screen uses TextureRect,
+## which is correct, so the same sprite looked right in the menu and wrong in
+## the game. Flipping the mesh here fixes every layer at once.
+func sprite_quad() -> ArrayMesh:
+	var verts := PackedVector3Array([
+		Vector3(-0.5, -0.5, 0.0),
+		Vector3(0.5, -0.5, 0.0),
+		Vector3(0.5, 0.5, 0.0),
+		Vector3(-0.5, 0.5, 0.0),
+	])
+	# uv.y=0 on the TOP edge (y=-0.5), which is what a QuadMesh gets backwards.
+	var uvs := PackedVector2Array([
+		Vector2(0.0, 0.0),
+		Vector2(1.0, 0.0),
+		Vector2(1.0, 1.0),
+		Vector2(0.0, 1.0),
+	])
+	var idx := PackedInt32Array([0, 1, 2, 0, 2, 3])
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = idx
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return m
+
+
+
+func upgrade_blurb(id: String, level: int) -> String:
+	if PASSIVES.has(id):
+		var per := float(PASSIVES[id]["per_level"])
+		var pct := int(round(absf(per) * 100.0))
+		return "%d%% %s" % [pct, "less waiting" if per < 0.0 else "better"]
+	if not WEAPONS.has(id):
+		return ""
+	var parts: Array[String] = []
+	# Count first: another fish on the ring is the most visible upgrade there
+	# is, so it is what the card should lead with.
+	var was_count := int(weapon_stat(id, "count", level))
+	var now_count := int(weapon_stat(id, "count", level + 1))
+	if now_count > was_count:
+		parts.append("%d of them" % now_count)
+	if weapon_stat(id, "damage", level + 1) > weapon_stat(id, "damage", level):
+		parts.append("hits harder")
+	if weapon_stat(id, "radius", level + 1) > weapon_stat(id, "radius", level):
+		parts.append("bigger")
+	if weapon_stat(id, "cooldown", level + 1) < weapon_stat(id, "cooldown", level):
+		parts.append("faster")
+	return ", ".join(parts)
+
 
 
 func wave_for(clock: float) -> Dictionary:

@@ -414,7 +414,5 @@ func _redraw() -> void:
 
 ## A unit quad centred on the origin. The texture supplies the shape; every
 ## enemy is the same mesh so they can share one draw call.
-func _quad() -> QuadMesh:
-	var q := QuadMesh.new()
-	q.size = Vector2.ONE
-	return q
+func _quad() -> ArrayMesh:
+	return Tuning.sprite_quad()

@@ -41,8 +41,7 @@ func _ready() -> void:
 	_weights = m["ground_weights"]
 	_scale = m["ground_scale"]
 	_alpha = m["ground_alpha"]
-	var q := QuadMesh.new()
-	q.size = Vector2.ONE
+	var q := Tuning.sprite_quad()
 	for k in _art.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_2D

@@ -34,8 +34,7 @@ var _streak_until := 0.0
 
 
 func _ready() -> void:
-	var q := QuadMesh.new()
-	q.size = Vector2.ONE
+	var q := Tuning.sprite_quad()
 	for k in Tuning.GEM_ORDER.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_2D

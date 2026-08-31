@@ -31,8 +31,7 @@ var _font: Font
 
 
 func _ready() -> void:
-	var q := QuadMesh.new()
-	q.size = Vector2.ONE
+	var q := Tuning.sprite_quad()
 	for k in Tuning.PUFF_TEXTURES.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_2D
