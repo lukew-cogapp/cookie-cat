@@ -21,3 +21,4 @@ test/shots/
 
 # Sandbox renders, regenerate with the scripts in sandbox/.
 sandbox/shots/
+__pycache__/
