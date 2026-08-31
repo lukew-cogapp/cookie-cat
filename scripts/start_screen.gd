@@ -654,7 +654,9 @@ func _build_licence() -> void:
 	col.add_child(scroll)
 
 	var text := Label.new()
-	text.text = "%s\n\n%s" % [Engine.get_license_text(), _third_party()]
+	# Filled on first open. Nobody reads this on the way past, and a couple of
+	# thousand characters of licence is a Label to shape for no one.
+	text.text = ""
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.add_theme_font_size_override("font_size", Tuning.TEXT_SMALL)
@@ -667,6 +669,8 @@ func _build_licence() -> void:
 	col.add_child(close)
 
 	open.pressed.connect(func() -> void:
+		if text.text.is_empty():
+			text.text = "%s\n\n%s" % [Engine.get_license_text(), _third_party()]
 		panel.visible = true
 		close.grab_focus()
 	)
