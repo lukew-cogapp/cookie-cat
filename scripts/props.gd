@@ -27,6 +27,9 @@ var _filled: Dictionary[Vector2i, bool] = {}
 var _clear_around := Vector2.ZERO
 ## Where the field was last topped up, so it is not rebuilt every frame.
 var _last_refill := Vector2.ZERO
+## Reused by `damage_near`, which would otherwise allocate a child array per
+## weapon area per frame.
+var _hit: Array[Prop] = []
 var _player: Node2D
 ## The map's prop table, read once at load: a map cannot change mid-run.
 var _table: Array = []
@@ -135,7 +138,8 @@ func _drop(c: Node) -> void:
 
 ## Two props on one spot read as one prop that takes twice the hits.
 func _too_close(p: Vector2) -> bool:
-	for c in get_children():
+	for i in get_child_count():
+		var c := get_child(i)
 		var d := (c as Prop).position.distance_squared_to(p)
 		if d < Tuning.PROP_SPACING * Tuning.PROP_SPACING:
 			return true
@@ -165,7 +169,8 @@ func _physics_process(delta: float) -> void:
 func nearest(point: Vector2, radius: float) -> Prop:
 	var best: Prop = null
 	var best_d := radius * radius
-	for c in get_children():
+	for i in get_child_count():
+		var c := get_child(i)
 		var p := c as Prop
 		var d := p.position.distance_squared_to(point)
 		if d <= best_d:
@@ -187,11 +192,15 @@ func nearest(point: Vector2, radius: float) -> Prop:
 ## two overlapping areas of effect paying out one pot twice.
 func damage_near(point: Vector2, radius: float, amount: float) -> void:
 	var r2 := radius * radius
-	var kids := get_children()
-	for c in kids:
-		var p := c as Prop
-		if p.position.distance_squared_to(point) > r2:
-			continue
+	# Collected into a member rather than a fresh `get_children()` array: this
+	# runs once per shot and once per puddle per frame, and a levelled crumb
+	# trail alone keeps a dozen or more of those alive at once.
+	_hit.clear()
+	for i in get_child_count():
+		var p := get_child(i) as Prop
+		if p.position.distance_squared_to(point) <= r2:
+			_hit.append(p)
+	for p: Prop in _hit:
 		if not p.damage(amount):
 			continue
 		var at := p.position

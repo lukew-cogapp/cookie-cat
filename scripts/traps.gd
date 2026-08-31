@@ -156,8 +156,8 @@ func _physics_process(delta: float) -> void:
 ## Which hole the cat is in, or null. Returns the hole rather than an index,
 ## because an index into a list of children is only true until one is freed.
 func _hole_at(point: Vector2) -> Trap:
-	for c in get_children():
-		var t := c as Trap
+	for i in get_child_count():
+		var t := get_child(i) as Trap
 		if t.bites(point):
 			return t
 	return null

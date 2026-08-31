@@ -26,6 +26,8 @@ var _by_kind: Array[Array] = []
 var _rng := RandomNumberGenerator.new()
 ## Cells already filled, so a cell is never filled twice.
 var _filled: Dictionary[Vector2i, bool] = {}
+## Where the field was last topped up, so it is not rebuilt every frame.
+var _last_refill := Vector2.ZERO
 var _player: Node2D
 
 ## The map's decal tables, read once at load: a map cannot change mid-run.
@@ -75,6 +77,7 @@ func set_player(p: Node2D) -> void:
 func scatter(around: Vector2) -> void:
 	alive = 0
 	_filled.clear()
+	_last_refill = around
 	_refill_around(around)
 
 
@@ -151,9 +154,16 @@ func _weighted_kind() -> int:
 
 
 func _physics_process(_delta: float) -> void:
-	if _player == null:
+	if not Run.alive or _player == null:
 		return
-	_refill_around(_player.global_position)
+	# Only once the cat has walked far enough to need new ground, the way the
+	# props and the traps do it. Unconditionally this walks every live decal and
+	# rebuilds a key array sixty times a second to decide, almost always, that
+	# there is nothing to do.
+	var here := _player.global_position
+	if here.distance_to(_last_refill) > Tuning.GROUND_REFILL_DISTANCE:
+		_last_refill = here
+		_refill_around(here)
 
 
 func _redraw() -> void:
