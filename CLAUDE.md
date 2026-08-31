@@ -54,7 +54,9 @@ scripts/world.gd           wires the run together
 scripts/hud.gd             health bar, clock, xp bar, the pick screen
 scripts/start_screen.gd    the cat, map and hat shop
 scripts/tools/make_art.py  draws every sprite from pixel grids
+scripts/tools/store_shots.py  curates test/shots into store/screenshots
 assets/*.png               16x16, all generated
+store/                     Play listing assets and copy; .gdignore, never shipped
 ui/*.tres                  shared styles
 addons/gut/                vendored, do not restyle
 test/*_test.gd             GUT suites; run with test/run.sh
@@ -464,6 +466,26 @@ The same tag builds Android through `.github/workflows/android.yml`: an APK
 attached to the GitHub release for sideloading, and an AAB uploaded to Play's
 **internal testing** track. Never straight to production, because a Play
 release is hard to take back and the listing is worth looking at first.
+
+### Play listing assets
+
+`store/` holds what the Play Console asks for, none of it read by the game:
+`icon_512.png` (the listing icon: the launcher cat with a 32px margin, because
+Play rounds the corners at about 30% of the width), `feature.png` (1024x500,
+24-bit with no alpha, which Play requires), six 1920x1080 screenshots (the
+promotion bar is 16:9 at 1080p; the publish minimum is lower), and
+`play-listing.md`. A `.gdignore` keeps the directory out of the import cache
+and the export, and `store/*` is in every preset's `exclude_filter` besides.
+
+Regenerate with `make_art.py` (icon and feature graphic), then
+`godot --path . -s test/shots.gd` and `python3 scripts/tools/store_shots.py`
+(screenshots, re-encoded to the no-alpha PNG Play wants). The shot window
+holds itself on top while it runs: macOS stops presenting a covered window,
+and every later capture is then the same stale frame.
+
+A promo video is optional and is a YouTube URL only, ads disabled on it.
+Footage can come from `godot --path . --write-movie out.avi --fixed-fps 30
+--quit-after N`.
 
 ### Android signing
 
