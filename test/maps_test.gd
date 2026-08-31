@@ -95,39 +95,30 @@ func test_props_everywhere_keep_the_garden_rules() -> void:
 			assert_gt(int(prop["xp"]), 0, "%s pays something" % prop["name"])
 
 
-## A run pays roughly the finish bonus plus the bosses. The first new place
-## must arrive within a run or two, and nothing may sit beyond a few.
-func test_paid_maps_are_reachable() -> void:
-	var per_run := (
-		Tuning.COOKIE_FINISH_BONUS
-		+ Tuning.COOKIE_PER_BOSS * Tuning.BOSS_MINUTES.size() * Tuning.COOKIE_VALUE
-	)
-	var cheapest := 999999
+## Every place is free to pick, and has been since the beach and the arctic
+## arrived. Three tests here used to describe a shop that charged for them, and
+## went on failing for as long as the whole suite was timing out.
+##
+## A place a child cannot reach is worse than no place at all: choosing where to
+## play is the one decision on the start screen that is not a cat, and paying
+## for it would gate the only variety in the game behind a grind.
+func test_every_map_is_free() -> void:
 	for id: String in Tuning.MAPS:
-		var cost := int(Tuning.MAPS[id]["cost"])
-		if cost > 0:
-			cheapest = mini(cheapest, cost)
-			assert_lt(cost, per_run * 3, "%s arrives within a few runs" % id)
-	assert_lte(cheapest, per_run, "one full run buys the first new place")
+		assert_eq(int(Tuning.MAPS[id]["cost"]), 0, "%s costs nothing" % id)
 
 
-func test_buying_a_map_spends_and_survives_a_reload() -> void:
-	Save.cookies = 200
-	var cost := int(Tuning.MAPS["beach"]["cost"])
-	assert_true(Save.unlock_map("beach"), "bought")
-	assert_eq(Save.cookies, 200 - cost, "and paid for")
-	Save.save_now()
-	Save.load_now()
-	assert_true(Save.is_map_unlocked("beach"), "still owned after a reload")
-
-
-func test_a_map_cannot_be_bought_twice_or_broke() -> void:
-	assert_false(Save.unlock_map("beach"), "no cookies, no beach")
-	Save.cookies = 9999
-	assert_true(Save.unlock_map("beach"), "bought once")
+## And is therefore already owned, whatever the save file says. `unlock_map`
+## still exists and still has to behave: a free map is granted, and granting it
+## twice must not be an error a child could hit by tapping twice.
+func test_a_free_map_is_owned_and_can_be_asked_for_twice() -> void:
+	Save.cookies = 0
+	assert_true(Save.is_map_unlocked("beach"), "the beach is there from the start")
 	var held := Save.cookies
-	assert_false(Save.unlock_map("beach"), "refused the second time")
-	assert_eq(Save.cookies, held, "and charged nothing")
+	Save.unlock_map("beach")
+	assert_eq(Save.cookies, held, "and asking for it charges nothing")
+	Save.unlock_map("beach")
+	assert_true(Save.is_map_unlocked("beach"), "still owned after asking twice")
+	assert_eq(Save.cookies, held, "and still free")
 	assert_false(Save.unlock_map("moon"), "no such place")
 
 

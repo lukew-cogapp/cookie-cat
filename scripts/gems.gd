@@ -104,7 +104,11 @@ func _collect(i: int) -> void:
 	_streak_until = Run.clock + Tuning.GEM_STREAK_GAP
 	_streak += 1
 	match kind[i]:
-		Kind.GEM:
+		# All three tiers pay. They differ only in the worth `world.gd` put in
+		# `value`, so matching GEM alone threw the green and red ones away: they
+		# were picked up, sparkled, and paid nothing. A boss rolls a tier gem
+		# four times in five, which made the biggest reward in the game free.
+		Kind.GEM, Kind.GEM_GREEN, Kind.GEM_RED:
 			Run.add_xp(value[i])
 			# Each pickup in a streak chimes a semitone higher: the classic
 			# coin-run reward, and it tells a child the streak is a thing.

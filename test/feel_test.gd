@@ -64,16 +64,25 @@ func test_boomerang_turns_visibly_and_the_catch_reads() -> void:
 	assert_has(Audio.played, "catch")
 
 
+## `_last_crumb` starts at the origin and `_fire_trail` refuses a crumb within
+## `TRAIL_MIN_STEP` of the last one, so dropping at `Vector2.ZERO` makes no
+## crumb at all. Both of these tests did that and had been failing since they
+## were written, unnoticed while the whole suite was timing out.
+const CRUMB_AT := Vector2(200, 0)
+
+
 func test_crumbs_and_milk_are_different_zones() -> void:
-	_weapons._fire_trail("trail", 1, Vector2.ZERO)
+	_weapons._fire_trail("trail", 1, CRUMB_AT)
 	_weapons._fire_zone("milk", 1, Vector2(500, 0))
+	assert_eq(_weapons.zones, 2, "both zones were laid")
 	assert_eq(_weapons.zone_kind[0], Tuning.ZONE_CRUMB)
 	assert_eq(_weapons.zone_kind[1], Tuning.ZONE_MILK)
 
 
 func test_a_bitten_crumb_pile_jiggles_and_squeaks() -> void:
-	_weapons._fire_trail("trail", 1, Vector2.ZERO)
-	_swarm.spawn(Vector2.ZERO, Swarm.Kind.SNAIL)
+	_weapons._fire_trail("trail", 1, CRUMB_AT)
+	assert_eq(_weapons.zones, 1, "the crumb was laid")
+	_swarm.spawn(CRUMB_AT, Swarm.Kind.SNAIL)
 	_weapons._tick_zones(1.0 / 60.0)
 	assert_gt(_weapons.zone_bite[0], 0.0, "a bug on the pile starts the jiggle")
 	assert_has(Audio.played, "crumb")

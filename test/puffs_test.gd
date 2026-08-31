@@ -74,6 +74,33 @@ func test_claimed_gem_darts_away_then_collects() -> void:
 	assert_eq(Run.xp, xp + 2, "collected as XP")
 
 
+## Every tier pays. `_collect` matched the plain gem alone, so a green or a red
+## one was picked up, sparkled, and gave nothing: a boss rolls a tier gem four
+## times in five, which made the biggest reward in the game free. Only the plain
+## gem had ever been collected in a test, which is why it went unnoticed.
+func test_every_gem_tier_pays_its_worth() -> void:
+	for tier: int in [Gems.Kind.GEM, Gems.Kind.GEM_GREEN, Gems.Kind.GEM_RED]:
+		# A fresh run per tier: `add_xp` levels up and resets `Run.xp`, so a
+		# running total across the three would prove nothing.
+		Run.cat = Tuning.STARTER_CAT
+		Run.start()
+		var gems := Gems.new()
+		add_child_autofree(gems)
+		var player := StubPlayer.new()
+		add_child_autofree(player)
+		player.global_position = Vector2.ZERO
+		gems.set_player(player)
+		gems.drop(Vector2(20, 0), tier, 3)
+		# Worth 3, and a level needs 4 at level one, so no level-up intervenes
+		# and the bar simply moves by the gem's worth.
+		assert_gt(Run.xp_needed, 3, "the fixture does not cross a level")
+		var before := Run.xp
+		for _i in 300:
+			gems._physics_process(1.0 / 60.0)
+		assert_eq(gems.alive, 0, "tier %d was collected" % tier)
+		assert_eq(Run.xp, before + 3, "tier %d paid its worth" % tier)
+
+
 func test_spawn_scales_in() -> void:
 	var swarm := Swarm.new()
 	add_child_autofree(swarm)
