@@ -801,7 +801,6 @@ func _draw_crumbs(z: int, here: Vector2) -> void:
 		var size: float = Tuning.CRUMB_SIZE * (0.8 + 0.4 * absf(cos(salt + float(n))))
 		draw_circle(p, size + 1.2, Tuning.CRUMB_OUTLINE)
 		draw_circle(p, size, Tuning.CRUMB_COLOUR)
-		draw_circle(p + Vector2(-size, -size) * 0.35, size * 0.4, Tuning.CRUMB_LIGHT)
 
 
 ## The paw swipe: three tapering crescents sweeping through the wedge that was

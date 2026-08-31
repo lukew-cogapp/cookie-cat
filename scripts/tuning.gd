@@ -863,7 +863,6 @@ const ZONE_MILK := 0
 const ZONE_CRUMB := 1
 ## Biscuit tones from the cat's own sandwich, so crumbs read as food.
 const CRUMB_COLOUR := Color(0.77, 0.55, 0.36)
-const CRUMB_LIGHT := Color(0.91, 0.72, 0.52)
 const CRUMB_OUTLINE := Color(0.23, 0.16, 0.23, 0.85)
 ## Crumbs per drop. They vanish one by one as the drop's life runs out, so a
 ## trail being eaten empties visibly.
