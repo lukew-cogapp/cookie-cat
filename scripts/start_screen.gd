@@ -11,6 +11,7 @@ extends Control
 @onready var _maps: HBoxContainer = $Maps
 @onready var _hats: HBoxContainer = $Hats
 @onready var _play: Button = $Play
+@onready var _quit: Button = $Quit
 @onready var _music_button: Button = $Audio/Music
 @onready var _sound_button: Button = $Audio/Sound
 @onready var _cookies: Label = $Cookies/Pad/Row/Count
@@ -47,6 +48,10 @@ func _ready() -> void:
 	if not Save.is_map_unlocked(Run.map):
 		Run.map = Tuning.STARTER_MAP
 	_play.pressed.connect(_start)
+	# Nothing to quit to in a browser tab, and a dead button a child presses
+	# twice is worse than no button.
+	_quit.visible = OS.get_name() != "Web"
+	_quit.pressed.connect(_quit_game)
 	Save.changed.connect(_refresh)
 	_build_cards()
 	_build_map_cards()
@@ -66,6 +71,14 @@ func _ready() -> void:
 
 func _start() -> void:
 	get_tree().change_scene_to_file("res://scenes/world.tscn")
+
+
+## Written before quitting rather than trusted to the autosave. `Save` writes on
+## every change, so there is normally nothing outstanding, but `quit()` tears
+## the tree down and this is the one exit that can be sure it did not race one.
+func _quit_game() -> void:
+	Save.save_now()
+	get_tree().quit()
 
 
 func _refresh() -> void:
@@ -298,7 +311,20 @@ func _wire_focus() -> void:
 		b.focus_neighbor_top = b.get_path_to(cats[mini(i, cats.size() - 1)])
 		b.focus_neighbor_bottom = b.get_path_to(_play)
 	_play.focus_neighbor_top = _play.get_path_to(band[0])
-	_play.focus_neighbor_bottom = _play.get_path_to(cats[0])
+	# Quit sits between Play and the cats, and drops out of the cycle entirely on
+	# the web, where it is hidden: a focus neighbour pointing at a hidden button
+	# is a dead end, which is the thing this whole function exists to avoid.
+	if _quit.visible:
+		_play.focus_neighbor_bottom = _play.get_path_to(_quit)
+		_quit.focus_neighbor_top = _quit.get_path_to(_play)
+		_quit.focus_neighbor_bottom = _quit.get_path_to(cats[0])
+		_quit.focus_neighbor_left = _quit.get_path_to(_quit)
+		_quit.focus_neighbor_right = _quit.get_path_to(_quit)
+		for i in cats.size():
+			var b: Button = cats[i]
+			b.focus_neighbor_top = b.get_path_to(_quit)
+	else:
+		_play.focus_neighbor_bottom = _play.get_path_to(cats[0])
 
 
 ## The audio switches. Off is shown by dimming rather than by words, since the
