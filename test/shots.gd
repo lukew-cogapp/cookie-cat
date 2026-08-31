@@ -35,10 +35,10 @@ func _init() -> void:
 
 	# Every weapon at once, which is what a good run looks like by minute six
 	# and the only way to see whether the effects read against each other.
-	run.weapons = {
+	run.weapons = _loadout({
 		"paw": 3, "yarn": 3, "purr": 3, "fish": 3,
 		"mouse": 2, "milk": 2, "zap": 2, "nap": 2,
-	}
+	})
 	for i in 70:
 		var a := TAU * float(i) / 70.0
 		swarm.spawn(player.global_position + Vector2.from_angle(a) * 210.0, i % 5)
@@ -104,7 +104,7 @@ func _init() -> void:
 
 	# The boomerang, alone, so both legs and the catch can be judged. Clearing
 	# the loadout also stops the other toys popping the target bugs first.
-	run.weapons = {"boomer": 3}
+	run.weapons = _loadout({"boomer": 3})
 	weapons._ready_in.clear()
 	weapons.shots = 0
 	weapons.zones = 0
@@ -119,7 +119,7 @@ func _init() -> void:
 
 	# The crumb trail: walk the cat so a line of crumbs drops, then let bugs
 	# reach it and eat.
-	run.weapons = {"trail": 3}
+	run.weapons = _loadout({"trail": 3})
 	weapons._ready_in.clear()
 	weapons.shots = 0
 	for _step in 6:
@@ -135,10 +135,10 @@ func _init() -> void:
 	# where the cat historically vanished. The one shot legibility is judged on.
 	hud._pending.clear()
 	hud._picker.visible = false
-	run.weapons = {
+	run.weapons = _loadout({
 		"paw": 4, "yarn": 3, "purr": 3, "fish": 3, "mouse": 2,
 		"milk": 2, "zap": 2, "nap": 2, "boomer": 2, "trail": 2,
-	}
+	})
 	weapons._ready_in.clear()
 	for i in 120:
 		var a := TAU * float(i) * 7.0 / 120.0
@@ -184,3 +184,13 @@ func _shoot(name: String) -> void:
 	var img := get_root().get_texture().get_image()
 	img.save_png("%s%s.png" % [OUT, name])
 	print("shot ", name)
+
+
+## `Run.weapons` is a `Dictionary[String, int]`, and an untyped literal cannot
+## be assigned to one: the run stopped after the second shot with every later
+## picture missing.
+func _loadout(picks: Dictionary) -> Dictionary:
+	var out: Dictionary[String, int] = {}
+	for k: String in picks:
+		out[k] = int(picks[k])
+	return out
