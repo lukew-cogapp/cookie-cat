@@ -22,6 +22,8 @@ extends CanvasLayer
 @onready var _quit: Button = $Paused/Panel/Pad/Col/Quit
 
 var _pending: Array[Array] = []
+## The banner's fade, kept so a second banner can cut the first one short.
+var _banner_fade: Tween = null
 var _card_style := preload("res://ui/card.tres")
 var _card_hover := preload("res://ui/card_hover.tres")
 
@@ -163,7 +165,17 @@ func set_health(hp: float, max_hp: float) -> void:
 
 func flash(text: String) -> void:
 	_banner.text = text
+	# One banner at a time. A boss can be announced inside a rush's telegraph,
+	# and without this the first banner's callback clears the second's text a
+	# fraction of a second after it appears, at exactly the moment it matters.
+	if _banner_fade != null and _banner_fade.is_valid():
+		_banner_fade.kill()
+	_banner.modulate.a = 1.0
 	var t := create_tween()
+	_banner_fade = t
+	# Runs under the pick screen's pause, or a banner caught by a level up
+	# freezes on screen behind the cards.
+	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	t.tween_interval(Tuning.BANNER_TIME)
 	t.tween_property(_banner, "modulate:a", 0.0, 0.4)
 	t.tween_callback(func() -> void:

@@ -25,6 +25,11 @@ var _finger := -1
 var _origin := Vector2.ZERO
 var _at := Vector2.ZERO
 var _held := false
+## Every finger currently on the glass, so the stick can hand over to one that
+## is already down. A child steering with one thumb and pressing with the other
+## lifts them in whichever order they like, and without this the cat stops dead
+## when the steering thumb goes and the remaining thumb sends no new press.
+var _down: Array[int] = []
 
 
 func _ready() -> void:
@@ -46,19 +51,36 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
-		if touch.pressed and _finger == -1:
-			_finger = touch.index
-			_origin = touch.position
-			_at = touch.position
-			_held = true
-			queue_redraw()
-		elif not touch.pressed and touch.index == _finger:
-			_release()
+		if touch.pressed:
+			if not touch.index in _down:
+				_down.append(touch.index)
+			# Never while paused: the pick screen is up, and claiming the finger
+			# that is reaching for a card draws a thumbstick over the cards and
+			# leaves the stick bound to a finger that lifts on a button.
+			if _finger == -1 and not get_tree().paused:
+				_grab(touch.index, touch.position)
+		else:
+			_down.erase(touch.index)
+			if touch.index == _finger:
+				_release()
+				# Hand over rather than stopping: another finger is already on
+				# the glass and its owner is still asking the cat to walk.
+				if not _down.is_empty() and not get_tree().paused:
+					_grab(_down[0], _at)
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
 		if drag.index == _finger:
 			_at = drag.position
 			queue_redraw()
+
+
+## Takes the stick, starting from wherever that finger is.
+func _grab(index: int, at: Vector2) -> void:
+	_finger = index
+	_origin = at
+	_at = at
+	_held = true
+	queue_redraw()
 
 
 ## Runs while the tree is paused (`process_mode` in `world.tscn`), because a

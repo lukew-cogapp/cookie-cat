@@ -19,7 +19,12 @@ var _bosses_done: Array[int] = []
 ## Where the pending boss will walk in, and seconds until it does. Negative
 ## means none pending: the boss is announced before it exists, so a child is
 ## never surprise-bitten by the biggest bug in the game.
-var _boss_pos := Vector2.ZERO
+## The direction a boss is coming from, not the point. The cat walks during the
+## telegraph, so a point picked at announce time is `PLAYER_SPEED` times
+## `BOSS_TELEGRAPH_TIME` out of date by the time it is used: nearly half the
+## spawn ring, which can put the boss on screen or on top of the cat. The rush
+## keeps an angle for the same reason.
+var _boss_from := 0.0
 var _boss_in := -1.0
 ## Seconds until the next rush, and where the pending one will come from.
 ## `_rush_in` negative means none pending, the same shape as the boss above:
@@ -54,7 +59,8 @@ func _physics_process(delta: float) -> void:
 	if _boss_in >= 0.0:
 		_boss_in -= delta
 		if _boss_in < 0.0:
-			_swarm.spawn(_boss_pos, Swarm.Kind.BIG)
+			var at := _player.global_position + Vector2.from_angle(_boss_from) * Tuning.SPAWN_RING
+			_swarm.spawn(at, Swarm.Kind.BIG)
 	_check_rush(delta)
 	# Top up towards the quota, but at a limited rate. The quota is what fills
 	# the screen; unthrottled it also refills every kill in the same frame, so
@@ -123,6 +129,10 @@ func _check_boss() -> void:
 	if minute not in Tuning.BOSS_MINUTES or minute in _bosses_done:
 		return
 	_bosses_done.append(minute)
-	_boss_pos = _ring_point()
+	_boss_from = _rng.randf() * TAU
 	_boss_in = Tuning.BOSS_TELEGRAPH_TIME
-	boss_arrived.emit(_boss_pos)
+	# The telegraph still points at where the boss would arrive right now, which
+	# is what the player needs to see; the spawn recomputes it on the frame.
+	boss_arrived.emit(
+		_player.global_position + Vector2.from_angle(_boss_from) * Tuning.SPAWN_RING
+	)
