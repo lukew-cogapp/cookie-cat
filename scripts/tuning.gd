@@ -435,6 +435,17 @@ const COMBO_RING_RADIUS := 34.0
 const COMBO_RING_SPEED := 110.0
 
 
+# --- Touch ---
+## The on-screen thumbstick, for phones and tablets. It appears wherever the
+## finger lands rather than sitting in a corner: a small thumb cannot find a
+## fixed pad without looking, and looking away from the cat loses the run.
+const TOUCH_RADIUS := 90.0
+const TOUCH_DEADZONE := 12.0
+const TOUCH_KNOB_RADIUS := 34.0
+const TOUCH_BASE_COLOUR := Color(1.0, 1.0, 1.0, 0.14)
+const TOUCH_RING_COLOUR := Color(1.0, 1.0, 1.0, 0.4)
+const TOUCH_KNOB_COLOUR := Color(1.0, 0.72, 0.82, 0.75)
+
 # --- HUD ---
 const BANNER_TIME := 1.6
 const CARD_SIZE := Vector2(200, 250)

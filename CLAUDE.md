@@ -9,6 +9,23 @@ Audience is a five-year-old. That is a design constraint, not a note: it
 decides the control scheme (movement only), the fail state (a tally, never a
 defeat), the reading load (pictures), and every difficulty number.
 
+## Commands
+
+```
+godot --path .                                        play it
+godot --headless --path . --import                    after a clone, or a new PNG
+godot --headless --path . -s test/compile_check.gd    compile every script and scene
+./test/run.sh                                         every suite
+./test/run.sh swarm_test.gd                            one suite, by file name
+godot --path . -s test/shots.gd                        screenshots, windowed
+python3 scripts/tools/make_art.py                      redraw every sprite
+```
+
+`-gselect` matches file names, not test names: `./test/run.sh one_gem` runs
+nothing and says so. Wrap long invocations in `perl -e 'alarm N; exec @ARGV'`,
+because `timeout` is not installed here, and pass `env HOME=/private/tmp` to
+keep a headless run out of the real editor config.
+
 ## Layout
 
 ```
@@ -116,6 +133,23 @@ asserts the bindings exist.
 **A lambda capturing a local `int` gets a copy.** A test counted signal
 emissions into a captured `var seen := 0` and read 0 while the behaviour was
 correct. Capture an Array if a closure must accumulate.
+
+**A gentle stick push was a trap.** `Input.get_vector` keeps the stick's
+magnitude, so a light push walked at 65 against a wasp's 104: the child was
+moving and still being caught. `STICK_WALK_FLOOR` floors it above the fastest
+bug, and `test_the_slowest_walk_still_escapes` pins that against the enemy
+table. The default `deadzone` of 0.5 also ignores half the stick's travel and
+is 0.2 here.
+
+**Milk is the only crowd control.** It slows as well as damages
+(`WEAPONS.milk.slow`, applied through `Swarm.slow`); without the slow it was a
+second purr ring, since damage over an area already exists. The strongest slow
+wins while two puddles overlap, and it lingers `SLOW_LINGER` past the edge so
+crossing out does not flicker.
+
+**Props are damaged through `world.gd`, not by each weapon.** `Props` exposes
+`damage_near`, and `weapons.gd` routes every area of effect through
+`_break_props`, so a new weapon breaks pots without knowing props exist.
 
 ## Godot facts worth not relearning
 
