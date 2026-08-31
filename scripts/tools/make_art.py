@@ -51,6 +51,7 @@ PALETTE = {
     "Z": (250, 226, 120, 255),  # wasp yellow
     "N": (86, 74, 96, 255),  # wasp stripes
     "M": (188, 176, 200, 255),  # toy mouse grey
+    "Q": (46, 96, 150, 255),  # deep water, the bottom of a trap
     "L": (140, 200, 246, 255),  # water / milk blue
     "l": (214, 240, 255, 255),
     "E": (110, 216, 128, 255),  # green xp gem
@@ -207,22 +208,26 @@ WASP = [
     "......oo........",
     "................",
 ]
+# A teardrop, not a blob: one narrow rounded peak over a base that spreads
+# wider than any other kind, and no legs at all. The beetle was the same
+# 12-wide rounded rectangle in another hue, so the hit flash made them one
+# sprite; kinds must differ by silhouette, not by hue.
 SLIME = [
     "................",
     "................",
-    "................",
-    ".....oooo.......",
-    "....osssSo......",
-    "...oSsSSSSo.....",
+    "......oo........",
+    ".....osSo.......",
+    ".....oSSo.......",
+    "....osSSSo......",
+    "....oSSSSo......",
+    "...oSSoSSo......",
+    "...oSKSSKSo.....",
     "..oSSSSSSSSo....",
-    "..oSSoSSoSSo....",
-    ".oSSSKSSKSSSo...",
     ".oSSSSSSSSSSo...",
-    ".oSSSSooSSSSo...",
-    ".oSSSSSSSSSSo...",
-    ".oSSSSSSSSSSo...",
-    "..ooSoSSoSooo...",
-    "....ooooooo.....",
+    "oSSSSSooSSSSSo..",
+    "oSSSSSSSSSSSSo..",
+    "oSSSSSSSSSSSSo..",
+    ".oooooooooooo...",
     "................",
 ]
 # The spider is all legs: four splayed each side, so the silhouette reads at
@@ -1303,9 +1308,74 @@ WEB = [
     "................",
 ]
 
+# The traps, one per map: a pond in the lawn, a dug hole in the sand, a hole in
+# the ice. All three read as a HOLE rather than a lump, which is what the dark
+# middle and the pale near rim are for: a raised thing lights from the top, a
+# recessed one is dark at the bottom and bright at the near lip. They also share
+# one squashed-oval outline so the shape says "opening" before the colour says
+# which map. Wider than they are tall, because the ground is seen from above at
+# a slight angle like every other decal.
+TRAP_POND = [
+    "................",
+    "................",
+    "....oooooooo....",
+    "..oolLLLLLLloo..",
+    ".olLLLQQQQLLLLo.",
+    ".oLLQQQQQQQQLLo.",
+    ".oLQQQQQQQQQQLo.",
+    ".oLQQQQQQQQQQLo.",
+    ".oLLQQQQQQQQLLo.",
+    ".olLLLQQQQLLLLo.",
+    "..oolLLLLLLloo..",
+    "....oooooooo....",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+TRAP_SANDPIT = [
+    "................",
+    "................",
+    "....oooooooo....",
+    "..oohmmmmmmhoo..",
+    ".ohmmmnnnnmmmho.",
+    ".ommnnnnnnnnmmo.",
+    ".omnnnnnnnnnnmo.",
+    ".omnnnnnnnnnnmo.",
+    ".ommnnnnnnnnmmo.",
+    ".ohmmmnnnnmmmho.",
+    "..oohmmmmmmhoo..",
+    "....oooooooo....",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+TRAP_ICEHOLE = [
+    "................",
+    "................",
+    "....oooooooo....",
+    "..ooiKKKKKKioo..",
+    ".oiQKKKKKKKKQio.",
+    ".oQKKKKKKKKKKQo.",
+    ".oQKKKKKKKKKKQo.",
+    ".oQKKKKKKKKKKQo.",
+    ".oQKKKKKKKKKKQo.",
+    ".oiQKKKKKKKKQio.",
+    "..ooiKKKKKKioo..",
+    "....oooooooo....",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+
 SPRITES = {
     "cat": CAT_STAND,
     "web": WEB,
+    "trap_pond": TRAP_POND,
+    "trap_sandpit": TRAP_SANDPIT,
+    "trap_icehole": TRAP_ICEHOLE,
     "hat_party": HAT_PARTY,
     "hat_crown": HAT_CROWN,
     "hat_bow": HAT_BOW,
