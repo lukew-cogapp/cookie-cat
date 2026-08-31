@@ -175,15 +175,21 @@ func _init() -> void:
 	await _wait(int(Tuning.ECLIPSE_FADE * 60.0) + 12)
 	hud._pending.clear()
 	hud._picker.visible = false
+	# Topped up on the frame of the shot, not before the fade: the cat dies
+	# standing in this crowd long before the night has finished falling, and
+	# the end screen then covers the picture the shot exists to take.
+	player.heal(Tuning.PLAYER_MAX_HP)
 	await _wait(2)
 	await _shoot("20_eclipse")
-	player.heal(Tuning.PLAYER_MAX_HP)
 	world._on_eclipse_ended()
-	await _wait(int(Tuning.ECLIPSE_FADE * 30.0))
+	# Long enough for the night to be visibly gone, or the dawn shot is the
+	# same picture as the one above it.
+	await _wait(int(Tuning.ECLIPSE_FADE * 60.0) + 30)
 	# The crowd's xp can level up during the fade, and the picker would sit
 	# over the dawn this shot exists to show.
 	hud._pending.clear()
 	hud._picker.visible = false
+	player.heal(Tuning.PLAYER_MAX_HP)
 	await _wait(2)
 	await _shoot("21_eclipse_dawn")
 	await _wait(int(Tuning.ECLIPSE_FADE * 40.0) + 10)
