@@ -27,6 +27,9 @@ var _flash: Tween
 ## so a flavour only needs its standing sprite drawn.
 var _walk: Array[Texture2D] = []
 var _step := 0.0
+## The worn hat, a child of the cat sprite: it inherits the scale, the walk
+## bob and the hurt flash for free, and only the flip needs mirroring by hand.
+var _hat: Sprite2D
 
 
 func _ready() -> void:
@@ -45,6 +48,11 @@ func _ready() -> void:
 		_sprite.texture,
 		load(art.replace(".png", "_step_b.png")),
 	]
+	var hat_art := Tuning.hat_art(Save.hat)
+	if hat_art != "":
+		_hat = Sprite2D.new()
+		_hat.texture = load(hat_art)
+		_sprite.add_child(_hat)
 	max_hp = Tuning.PLAYER_MAX_HP
 	hp = max_hp
 	health_changed.emit(hp, max_hp)
@@ -68,6 +76,10 @@ func _physics_process(delta: float) -> void:
 		# falling over, and there is only ever left and right art.
 		if not is_zero_approx(dir.x):
 			_sprite.flip_h = dir.x < 0.0
+			# flip_h is a Sprite2D property, not a transform, so a child hat
+			# does not inherit it.
+			if _hat != null:
+				_hat.flip_h = _sprite.flip_h
 		# A walk bob, so movement reads even against a flat lawn.
 		_sprite.position.y = -absf(sin(Run.clock * Tuning.PLAYER_BOB_RATE)) * Tuning.PLAYER_BOB
 		_step += delta * Tuning.PLAYER_STEP_RATE
@@ -111,6 +123,9 @@ func hurt(amount: float) -> void:
 	Audio.play("hurt")
 	_flash_red()
 	if hp <= 0.0:
+		# Before `finish`, which stops the music and plays the tally cue: the
+		# last heart going needs its own moment first.
+		Audio.play("death")
 		died.emit()
 		Run.finish(false)
 

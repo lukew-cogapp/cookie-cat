@@ -30,9 +30,16 @@ var cookies := 0
 var unlocked: Array[String] = []
 ## Maps bought, kept apart from the cats so neither list can price the other.
 var maps: Array[String] = []
+## Hats bought, and the one being worn. Cosmetics are all cookies buy.
+var hats: Array[String] = []
+var hat: String = Tuning.STARTER_HAT
 var best_time := 0.0
 var best_kills := 0
 var runs := 0
+## The audio switches. Kept here so quiet survives closing the window: a child
+## who turned the sound off did not mean only for one run.
+var sound_off := false
+var music_off := false
 
 
 func _ready() -> void:
@@ -81,10 +88,14 @@ func _write_raw(text: String) -> void:
 func load_now() -> void:
 	unlocked = [Tuning.STARTER_CAT]
 	maps = []
+	hats = []
+	hat = Tuning.STARTER_HAT
 	cookies = 0
 	best_time = 0.0
 	best_kills = 0
 	runs = 0
+	sound_off = false
+	music_off = false
 	var raw := _read_raw()
 	if raw == "":
 		return
@@ -95,6 +106,9 @@ func load_now() -> void:
 	if int(d.get("version", 0)) != VERSION:
 		return
 	cookies = int(d.get("cookies", 0))
+	sound_off = bool(d.get("sound_off", false))
+	music_off = bool(d.get("music_off", false))
+	Audio.set_muted(sound_off, music_off)
 	best_time = float(d.get("best_time", 0.0))
 	best_kills = int(d.get("best_kills", 0))
 	runs = int(d.get("runs", 0))
@@ -110,6 +124,14 @@ func load_now() -> void:
 		var name := String(id)
 		if Tuning.MAPS.has(name) and name not in maps:
 			maps.append(name)
+	# And for hats. The worn hat must also still be owned: an edited save
+	# naming an unbought crown falls back to bare-headed.
+	for id: Variant in d.get("hats", []):
+		var name := String(id)
+		if Tuning.HATS.has(name) and name not in hats:
+			hats.append(name)
+	var worn := String(d.get("hat", Tuning.STARTER_HAT))
+	hat = worn if is_hat_unlocked(worn) else Tuning.STARTER_HAT
 	changed.emit()
 
 
@@ -121,12 +143,25 @@ func save_now() -> void:
 				"cookies": cookies,
 				"unlocked": unlocked,
 				"maps": maps,
+				"hats": hats,
+				"hat": hat,
 				"best_time": best_time,
 				"best_kills": best_kills,
 				"runs": runs,
+				"sound_off": sound_off,
+				"music_off": music_off,
 			}
 		)
 	)
+
+
+## Flips one of the audio switches and remembers it.
+func set_audio(sound_is_off: bool, music_is_off: bool) -> void:
+	sound_off = sound_is_off
+	music_off = music_is_off
+	Audio.set_muted(sound_off, music_off)
+	save_now()
+	changed.emit()
 
 
 func add_cookies(amount: int) -> void:
@@ -175,6 +210,41 @@ func unlock_map(id: String) -> bool:
 		return false
 	cookies -= int(Tuning.MAPS[id]["cost"])
 	maps.append(id)
+	save_now()
+	changed.emit()
+	return true
+
+
+# --- Hats: the same shop, over Tuning.HATS ---
+func can_afford_hat(id: String) -> bool:
+	return Tuning.HATS.has(id) and cookies >= int(Tuning.HATS[id]["cost"])
+
+
+## "none" costs nothing, so bare-headed is always available.
+func is_hat_unlocked(id: String) -> bool:
+	if Tuning.HATS.has(id) and int(Tuning.HATS[id]["cost"]) == 0:
+		return true
+	return id in hats
+
+
+## Buying a hat also puts it on: a child who paid wants to see it at once.
+func unlock_hat(id: String) -> bool:
+	if is_hat_unlocked(id) or not can_afford_hat(id):
+		return false
+	cookies -= int(Tuning.HATS[id]["cost"])
+	hats.append(id)
+	hat = id
+	save_now()
+	changed.emit()
+	return true
+
+
+## Wears an owned hat. Refused for anything unowned, so the shop cannot equip
+## what was not paid for.
+func equip_hat(id: String) -> bool:
+	if not is_hat_unlocked(id):
+		return false
+	hat = id
 	save_now()
 	changed.emit()
 	return true

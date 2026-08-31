@@ -36,6 +36,11 @@ var _big_pop_at := -100.0
 var _duck_until := 0.0
 var _rng := RandomNumberGenerator.new()
 
+## Off switches, kept by `Save` between sessions. Sound and music are separate
+## because a child who wants quiet in the room usually still wants the pops.
+var muted := false
+var music_muted := false
+
 ## Names played, newest last, kept only so headless tests can assert that a
 ## cue fired. Sound is the one kind of feedback a screenshot cannot show.
 var played: Array[String] = []
@@ -63,6 +68,9 @@ func _ready() -> void:
 	# End of a run. Falling, but a major third, not a dirge: the run ending is
 	# not a punishment.
 	_bank["run_over"] = _chime([784.0, 659.0, 523.0], 0.8)
+	# The last heart going. A soft wobble down rather than a sting: the run
+	# still ends on a tally, so this cannot read as a punishment.
+	_bank["death"] = _chime([659.0, 587.0, 523.0, 440.0, 392.0], 0.9)
 	_bank["win"] = _chime([523.0, 659.0, 784.0, 1047.0, 1319.0, 1568.0], 1.1)
 	# A big one is coming: low but major, an announcement rather than a scare.
 	_bank["boss"] = _chime([130.8, 164.8, 196.0, 261.6], 0.8)
@@ -75,12 +83,17 @@ func _ready() -> void:
 	# A bug nibbling a crumb: the smallest sound in the bank.
 	_bank["crumb"] = _tone(240.0, 180.0, 0.05, "sine", 0.14)
 	# C-major bass under a sparse melody. The loop point never clicks: see _music.
+	# Sixteen beats, not eight: the old loop came round every 3.2 seconds and
+	# a child hears that as one bar repeating for ten minutes. The bass is an
+	# octave up as well, since down at C2 it was a drone under everything
+	# rather than a tune.
 	_bank["music"] = _music(
-		[65.41, 65.41, 87.31, 65.41, 73.42, 73.42, 98.0, 87.31],
-		[261.63, 0.0, 329.63, 392.0, 0.0, 329.63, 293.66, 0.0],
-		0.4,
+		[130.81, 164.81, 196.0, 164.81, 146.83, 196.0, 174.61, 146.83,
+		 130.81, 196.0, 164.81, 130.81, 146.83, 174.61, 196.0, 164.81],
+		[523.25, 0.0, 659.25, 587.33, 0.0, 783.99, 659.25, 0.0,
+		 587.33, 659.25, 0.0, 523.25, 587.33, 0.0, 659.25, 783.99],
+		0.36,
 	)
-
 	for _i in VOICES:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
@@ -94,7 +107,7 @@ func _ready() -> void:
 
 
 func play(sound: String, pitch := 1.0) -> void:
-	if not _bank.has(sound):
+	if muted or not _bank.has(sound):
 		return
 	var now := Time.get_ticks_msec() / 1000.0
 	var throttled: bool = THROTTLED.has(sound)
@@ -134,7 +147,7 @@ func _bank_pop(now: float) -> void:
 
 
 func play_music(sound: String) -> void:
-	if not _bank.has(sound):
+	if music_muted or not _bank.has(sound):
 		return
 	if _music_player.playing and _music_player.stream == _bank[sound]:
 		return
@@ -144,6 +157,21 @@ func play_music(sound: String) -> void:
 
 func stop_music() -> void:
 	_music_player.stop()
+
+
+## Applies the saved switches. Called by `Save` once it has loaded, and by the
+## title screen's toggles.
+func set_muted(sound_off: bool, music_off: bool) -> void:
+	muted = sound_off
+	music_muted = music_off
+	# `Save` loads before this node is ready, so the player may not exist yet.
+	# The flags are enough: `play_music` checks them when it is next called.
+	if _music_player == null:
+		return
+	if music_muted:
+		_music_player.stop()
+	elif _music_player.stream != null and not _music_player.playing:
+		_music_player.play()
 
 
 ## One beat per entry; a 0.0 melody entry is a rest. The saw bass keeps
