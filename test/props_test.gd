@@ -43,15 +43,17 @@ func test_nothing_spawns_on_the_cat() -> void:
 		)
 
 
-## The field is scattered around wherever the cat is, not around the origin,
-## because there is no wall to bound it.
-func test_props_land_in_the_field_around_the_cat() -> void:
+## Props are laid out on a fixed grid of cells, not a field that follows the
+## cat, so scattering around a point fills the ground near it.
+func test_props_land_near_the_cat() -> void:
 	var here := Vector2(5000.0, -3000.0)
 	_props.scatter(here)
+	assert_gt(_props.alive, 0, "the ground around the cat was filled")
+	var near := 0
 	for i in _props.alive:
-		var off := _props.pos[i] - here
-		assert_lte(absf(off.x), Tuning.PROP_FIELD_HALF.x, "inside the field on x")
-		assert_lte(absf(off.y), Tuning.PROP_FIELD_HALF.y, "inside the field on y")
+		if _props.pos[i].distance_to(here) < Tuning.PROP_REFILL_DISTANCE * 2.0:
+			near += 1
+	assert_eq(near, _props.alive, "and everything placed is within reach")
 
 
 ## Walking back over old ground must find the same garden, not a fresh roll.
@@ -163,3 +165,21 @@ func test_props_take_a_few_hits() -> void:
 			paw,
 			"%s survives one swipe" % Tuning.PROPS[k]["name"],
 		)
+
+
+## Continuous damage must not pin a prop white. An aura or a puddle hits every
+## frame, and refreshing the flash each time held a pot permanently white:
+## bugs never showed it because they die in a second, but a pot outlives its
+## own flash many times over.
+func test_continuous_damage_does_not_pin_the_flash() -> void:
+	var i := 0
+	_props.hp[i] = 9999.0
+	_props.damage_near(_props.pos[i], 6.0, 0.1)
+	assert_gt(_props.flash[i], 0.0, "the first hit flashes")
+	# Run the flash down, damaging all the while, as a puddle would.
+	# Damage first, then run the timer down, which is the real frame order:
+	# the guard only refuses a re-flash while one is still running.
+	for _frame in 20:
+		_props.damage_near(_props.pos[i], 6.0, 0.1)
+		_props.flash[i] = maxf(_props.flash[i] - 0.02, 0.0)
+	assert_eq(_props.flash[i], 0.0, "and it is allowed to end")

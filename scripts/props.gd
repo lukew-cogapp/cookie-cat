@@ -187,7 +187,12 @@ func damage_near(point: Vector2, radius: float, amount: float) -> void:
 			_hits.append(i)
 	for i in _hits:
 		hp[i] -= amount
-		flash[i] = Tuning.HIT_FLASH_TIME
+		# Only re-flash once the last one has finished. An aura or a puddle
+		# damages every frame, and refreshing the timer each time pinned a pot
+		# permanently white: bugs never showed it because they die in a second,
+		# but a pot outlives its own flash many times over.
+		if flash[i] <= 0.0:
+			flash[i] = Tuning.HIT_FLASH_TIME
 		if hp[i] <= 0.0:
 			_dead.append(i)
 			broke.emit(pos[i], kind[i])

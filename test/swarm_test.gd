@@ -159,3 +159,17 @@ func test_slow_wears_off() -> void:
 func test_slow_on_a_dead_row_is_ignored() -> void:
 	_swarm.slow(3, 0.5, 1.0)
 	assert_eq(_swarm.alive, 0, "nothing was created")
+
+
+## Same as the props: a bug standing in a puddle must not stay solid white,
+## which loses the silhouette that tells the kinds apart.
+func test_continuous_damage_does_not_pin_the_flash() -> void:
+	_swarm.spawn(Vector2.ZERO, 2)
+	_swarm.hp[0] = 9999.0
+	_swarm.damage(0, 0.1, Vector2.ONE)
+	assert_gt(_swarm.flash[0], 0.0, "the first hit flashes")
+	# Damage first, then run the timer down, which is the real frame order.
+	for _frame in 20:
+		_swarm.damage(0, 0.1, Vector2.ONE)
+		_swarm.flash[0] = maxf(_swarm.flash[0] - 0.02, 0.0)
+	assert_eq(_swarm.flash[0], 0.0, "and it is allowed to end")

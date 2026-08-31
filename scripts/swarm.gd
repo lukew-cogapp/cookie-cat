@@ -195,7 +195,12 @@ func damage(i: int, amount: float, from: Vector2) -> bool:
 	if i < 0 or i >= alive:
 		return false
 	hp[i] -= amount
-	flash[i] = Tuning.HIT_FLASH_TIME
+	# Only re-flash once the last one has finished. A puddle or an aura damages
+	# every frame, and refreshing the timer each time held a tanky bug solid
+	# white for as long as it stood there, which loses the silhouette that
+	# tells the kinds apart.
+	if flash[i] <= 0.0:
+		flash[i] = Tuning.HIT_FLASH_TIME
 	var away := (pos[i] - from).normalized()
 	knock[i] = away * Tuning.enemy_knockback(kind[i])
 	if hp[i] > 0.0:
