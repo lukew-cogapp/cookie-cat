@@ -126,23 +126,7 @@ func _collect(i: int) -> void:
 
 
 func _compact() -> void:
-	if _dead.is_empty():
-		return
-	_dead.sort()
-	_dead.reverse()
-	var last := -1
-	for i in _dead:
-		if i == last:
-			continue
-		last = i
-		alive -= 1
-		if i != alive:
-			pos[i] = pos[alive]
-			kind[i] = kind[alive]
-			value[i] = value[alive]
-			flying[i] = flying[alive]
-			speed[i] = speed[alive]
-	_dead.clear()
+	alive = Rows.compact(_dead, alive, [pos, kind, value, flying, speed])
 
 
 func _redraw() -> void:

@@ -340,18 +340,7 @@ func _tick_webs(delta: float) -> void:
 		if web_life[w] <= 0.0:
 			_web_dead.append(w)
 	if not _web_dead.is_empty():
-		_web_dead.sort()
-		_web_dead.reverse()
-		var last := -1
-		for w in _web_dead:
-			if w == last:
-				continue
-			last = w
-			webs -= 1
-			if w != webs:
-				web_pos[w] = web_pos[webs]
-				web_life[w] = web_life[webs]
-		_web_dead.clear()
+		webs = Rows.compact(_web_dead, webs, [web_pos, web_life])
 	_web_mm.visible_instance_count = webs
 	for w in webs:
 		var fade: float = clampf(web_life[w] / Tuning.WEB_FADE, 0.0, 1.0)
@@ -386,21 +375,7 @@ func _tick_poops(delta: float) -> void:
 
 ## Swap-removal, under the same two rules as `_compact`.
 func _compact_poops() -> void:
-	if _poop_dead.is_empty():
-		return
-	_poop_dead.sort()
-	_poop_dead.reverse()
-	var last := -1
-	for p in _poop_dead:
-		if p == last:
-			continue
-		last = p
-		poops -= 1
-		if p != poops:
-			poop_pos[p] = poop_pos[poops]
-			poop_vel[p] = poop_vel[poops]
-			poop_life[p] = poop_life[poops]
-	_poop_dead.clear()
+	poops = Rows.compact(_poop_dead, poops, [poop_pos, poop_vel, poop_life])
 
 
 ## Slows one row, for as long as the puddle keeps refreshing it. The strongest
@@ -438,35 +413,14 @@ func nearest(point: Vector2, radius: float) -> int:
 ## Swap-removes every dead row. Called once per pass, after the loop, because
 ## a swap moves the last row into the hole and a mid-loop swap would skip it.
 func _compact() -> void:
-	if _dead.is_empty():
-		return
-	# Descending, so each swap only ever moves rows this pass has finished
-	# with. Ascending would move a row that is itself still queued to die.
-	_dead.sort()
-	_dead.reverse()
-	var last := -1
-	for i in _dead:
-		# One row can be queued twice: killed by two shots in a frame, or
-		# killed and culled. Dropping it twice would delete a live enemy.
-		if i == last:
-			continue
-		last = i
-		alive -= 1
-		if i != alive:
-			pos[i] = pos[alive]
-			hp[i] = hp[alive]
-			kind[i] = kind[alive]
-			flash[i] = flash[alive]
-			knock[i] = knock[alive]
-			touch[i] = touch[alive]
-			grow[i] = grow[alive]
-			_facing_left[i] = _facing_left[alive]
-			slow_for[i] = slow_for[alive]
-			slow_by[i] = slow_by[alive]
-			gait[i] = gait[alive]
-			aim[i] = aim[alive]
-			hurry[i] = hurry[alive]
-	_dead.clear()
+	alive = Rows.compact(
+		_dead,
+		alive,
+		[
+			pos, hp, kind, flash, knock, touch, grow,
+			_facing_left, slow_for, slow_by, gait, aim, hurry,
+		]
+	)
 
 
 func _redraw() -> void:

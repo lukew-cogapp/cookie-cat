@@ -584,48 +584,25 @@ func _hit(i: int, amount: float, from: Vector2) -> void:
 
 
 func _compact_shots() -> void:
-	if _shot_dead.is_empty():
-		return
-	_shot_dead.sort()
-	_shot_dead.reverse()
-	var last := -1
-	for s in _shot_dead:
-		if s == last:
-			continue
-		last = s
-		shots -= 1
-		if s != shots:
-			shot_pos[s] = shot_pos[shots]
-			shot_vel[s] = shot_vel[shots]
-			shot_damage[s] = shot_damage[shots]
-			shot_pierce[s] = shot_pierce[shots]
-			shot_life[s] = shot_life[shots]
-			shot_kind[s] = shot_kind[shots]
-			shot_out[s] = shot_out[shots]
-			shot_return[s] = shot_return[shots]
-	_shot_dead.clear()
+	shots = Rows.compact(
+		_shot_dead,
+		shots,
+		[
+			shot_pos, shot_vel, shot_damage, shot_pierce,
+			shot_life, shot_kind, shot_out, shot_return,
+		]
+	)
 
 
 func _compact_zones() -> void:
-	if _zone_dead.is_empty():
-		return
-	_zone_dead.sort()
-	_zone_dead.reverse()
-	var last := -1
-	for z in _zone_dead:
-		if z == last:
-			continue
-		last = z
-		zones -= 1
-		if z != zones:
-			zone_pos[z] = zone_pos[zones]
-			zone_radius[z] = zone_radius[zones]
-			zone_damage[z] = zone_damage[zones]
-			zone_life[z] = zone_life[zones]
-			zone_slow[z] = zone_slow[zones]
-			zone_kind[z] = zone_kind[zones]
-			zone_bite[z] = zone_bite[zones]
-	_zone_dead.clear()
+	zones = Rows.compact(
+		_zone_dead,
+		zones,
+		[
+			zone_pos, zone_radius, zone_damage, zone_life,
+			zone_slow, zone_kind, zone_bite,
+		]
+	)
 
 
 ## Weapon effects are drawn here rather than spawned as nodes: a scene per
