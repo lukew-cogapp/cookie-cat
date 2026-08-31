@@ -6,6 +6,13 @@ extends GutTest
 ## silently corrupt the crowd: a row dropped twice deletes a live enemy, and a
 ## mid-loop swap skips the row it moved.
 
+class StubPlayer:
+	extends Node2D
+
+	func hurt(_amount: float) -> void:
+		pass
+
+
 var _swarm: Swarm
 
 
@@ -146,14 +153,37 @@ func test_the_strongest_slow_wins() -> void:
 	assert_eq(_swarm.slow_by[0], 0.4, "the deeper slow holds")
 
 
-## Driven by hand rather than by letting the swarm tick: `_physics_process`
-## needs a live run and a player it can damage, and this is asserting the timer,
-## not the movement it gates.
+## The swarm's own tick runs the timer down. This used to do the subtraction
+## itself and then assert the result of its own arithmetic, so no change to
+## `swarm.gd` could ever have broken it.
 func test_slow_wears_off() -> void:
-	_swarm.spawn(Vector2.ZERO, 0)
+	Run.cat = Tuning.STARTER_CAT
+	Run.start()
+	var player := StubPlayer.new()
+	add_child_autofree(player)
+	player.global_position = Vector2.ZERO
+	_swarm.set_player(player)
+	# Far enough away that it neither reaches the cat nor is culled.
+	_swarm.spawn(Vector2(300, 0), 0)
 	_swarm.slow(0, 0.5, 0.1)
-	_swarm.slow_for[0] = maxf(_swarm.slow_for[0] - 0.2, 0.0)
-	assert_eq(_swarm.slow_for[0], 0.0, "the timer runs out")
+	assert_almost_eq(_swarm.slow_by[0], 0.5, 0.01, "slowed to begin with")
+	for _i in 12:
+		_swarm._physics_process(1.0 / 60.0)
+	assert_eq(_swarm.slow_for[0], 0.0, "the swarm's own tick ran it out")
+	Run.alive = false
+
+
+## A row killed this frame is not removed until `_compact` runs, so a second
+## weapon landing the same frame finds it alive by index. `damage` must refuse
+## it: reporting a second kill paid a second gem, a second tally and, from a
+## boss, a second pile of cookies. An aura plus a shot does this routinely.
+func test_a_dead_row_cannot_be_killed_twice() -> void:
+	_swarm.spawn(Vector2.ZERO, 0)
+	assert_true(_swarm.damage(0, 9999.0, Vector2.ZERO), "the first hit kills it")
+	assert_false(_swarm.damage(0, 9999.0, Vector2.ZERO), "the second is refused")
+	assert_false(_swarm.damage(0, 1.0, Vector2.ZERO), "and so is a small one")
+	_swarm._compact()
+	assert_eq(_swarm.alive, 0, "and it is dropped exactly once")
 
 
 func test_slow_on_a_dead_row_is_ignored() -> void:

@@ -2,7 +2,7 @@
 
 Godot 4.7 survivors-like, built with Aubrey. 2D, top-down, kid-themed: you are
 a cat, the bugs come to you, the toys fire themselves. Ten minute runs, cookies
-between them, more cats to unlock. Sibling project to `../godot-world`, whose
+between them, more hats to buy. Sibling project to `../godot-world`, whose
 conventions this follows.
 
 Audience is a five-year-old. That is a design constraint, not a note: it
@@ -108,8 +108,9 @@ it gets a picture or it does not ship.
 
 **The first weapon could not hit anything.** The paw's arc was 1.5 radians,
 which at eight compass points hits one. A probe reported three kills in twenty
-seconds and a dead cat. It is 2.5 now, a bit over 140 degrees: a child cannot
-aim, so anything in front counts.
+seconds and a dead cat. Widening it to 2.5 was the first fix; it is a full
+circle now (kind `sweep`), because a child cannot aim and anything in reach has
+to count. No weapon has an `arc` any more.
 
 **Mercy time alone is not survivable.** The whole bar went in 3.7 seconds
 standing in a crowd, because the next touch landed the frame the flashing
@@ -303,7 +304,7 @@ The clock is the only difficulty input. No scaling by player level, no rubber
 banding: `Tuning.WAVES` is one entry per minute holding which kinds spawn, how
 often, and how many must be alive. The quota is what fills the screen; the
 interval only decides how lumpy the filling looks. Kinds arrive on a schedule,
-so minute 0 is grubs and minute 9 is all five plus bosses at 4, 7 and 9.
+so minute 0 is grubs and minute 9 is seven kinds plus bosses at 4, 7 and 9.
 
 Rushes ride on the same clock. Past `RUSH_AFTER` the director rolls a gap
 between `RUSH_GAP_MIN` and `RUSH_GAP_MAX` and sends a pack of the weakest bug in
@@ -318,9 +319,10 @@ levels fast should feel stronger, not meet tougher bugs.
 
 `test/tuning_test.gd` asserts the properties the numbers must keep rather than
 the numbers themselves: no bug outruns the cat, waves escalate, the peak crowd
-fits the arrays, the spawn ring clears the screen corner, every weapon has art
-and a blurb and gets better with levels, the cheapest cat is reachable in a few
-runs. Retuning freely is the point; breaking one of those is a bug.
+fits the arrays, the spawn ring clears the screen corner, and every weapon has
+art and a blurb and gets better with levels. `hats_test.gd` owns the one about
+the cheapest thing being reachable in a few runs, since hats are what cookies
+buy. Retuning freely is the point; breaking one of those is a bug.
 
 Cookies are banked by `Save` when a run **ends**, not as they are picked up, so
 quitting halfway pays nothing. Surviving the full ten minutes pays

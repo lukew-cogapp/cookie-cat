@@ -528,8 +528,13 @@ func _pulse_play() -> void:
 
 func _make_bug() -> TextureRect:
 	var bug := TextureRect.new()
-	# Never the Big Bug: the menu lawn is a calm place.
-	bug.texture = load(Tuning.ENEMY_TEXTURES[randi() % (Tuning.ENEMY_TEXTURES.size() - 1)])
+	# Never the Big Bug: the menu lawn is a calm place. Named rather than counted
+	# off the end of the list, which excluded whichever kind happened to be last
+	# and let the boss onto the lawn as soon as one was added after it.
+	var kind := randi() % Tuning.ENEMY_TEXTURES.size()
+	if kind == Swarm.Kind.BIG:
+		kind = Swarm.Kind.GRUB
+	bug.texture = load(Tuning.ENEMY_TEXTURES[kind])
 	bug.custom_minimum_size = Tuning.START_BUG_SIZE
 	bug.size = Tuning.START_BUG_SIZE
 	bug.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

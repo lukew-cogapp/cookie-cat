@@ -69,14 +69,21 @@ func test_cannot_buy_what_is_already_owned() -> void:
 	assert_eq(Save.cookies, before, "and charged nothing")
 
 
-## The shop machinery still has to work, for the cosmetics cookies will buy.
-## Exercised against a priced entry rather than a cat, since cats are free.
+## The shop machinery still has to work, for the cosmetics cookies buy. Against
+## a priced hat rather than a cat, since cats are free.
+##
+## This used to set `cookies` to 500 and assert it was 500, so it could not fail
+## and the spend it is named for was never exercised.
 func test_unlocking_spends_and_records() -> void:
-	Save.cookies = 500
-	Save.unlocked = []
-	assert_false("hat" in Save.unlocked, "not owned to begin with")
-	Save.cookies = 500
-	assert_eq(Save.cookies, 500, "cookies are held for cosmetics")
+	var id := "party"
+	var cost := int(Tuning.HATS[id]["cost"])
+	assert_gt(cost, 0, "the fixture hat is actually priced")
+	Save.hats = []
+	Save.cookies = cost + 40
+	assert_false(Save.is_hat_unlocked(id), "not owned to begin with")
+	assert_true(Save.unlock_hat(id), "bought")
+	assert_eq(Save.cookies, 40, "and paid exactly its price")
+	assert_true(Save.is_hat_unlocked(id), "and recorded")
 
 
 ## Buying the same cat twice would charge twice for nothing.

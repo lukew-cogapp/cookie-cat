@@ -284,9 +284,14 @@ const PASSIVES := {
 	"bowl": {"name": "Big Bowl", "per_level": 0.11},
 }
 
-## Weapon at max level plus this passive, once a present is opened, becomes
-## the evolution. One per weapon at most, and two are enough for a ten-minute
-## run: a third has never been reached in a playtest.
+## NOT BUILT YET. A design, kept because the pairings are the thought-out part:
+## a weapon at max level plus the named passive would become the evolution. One
+## per weapon at most.
+##
+## Nothing in `scripts/` reads this. There are no presents either, despite what
+## `BOSS_MINUTES` says below: a boss drops cookies. Only `tuning_test` touches
+## the table, and it checks the shape rather than any behaviour, so do not read
+## a passing suite as evidence that any of this works.
 const EVOLUTIONS := {
 	"paw": {"needs": "claw", "into": "Tiger Swipe", "damage": 3.0, "radius": 1.6},
 	"yarn": {"needs": "bell", "into": "Yarn Storm", "damage": 2.2, "count": 3.0},
@@ -305,6 +310,14 @@ const SHOT_LIFE := 2.4
 const SHOT_HIT_RADIUS := 14.0
 ## Index order for shot_kind, which picks the draw colour.
 const SHOT_KINDS := ["yarn", "mouse", "boomer"]
+## The mouse's index in that list, named because `_tick_shots` steers it and
+## comparing against a bare 1 is how the start screen ended up letting the boss
+## onto its lawn.
+const SHOT_MOUSE := 1
+## How sharply the mouse turns towards whatever it is chasing, as a share of the
+## remaining angle per second. Gentle on purpose: a shot that snaps onto its
+## target cannot miss and stops reading as a mouse hunting.
+const MOUSE_TURN := 3.0
 ## Shots are drawn as their own art, in SHOT_KINDS order.
 const SHOT_ART := [
 	"res://assets/yarn.png",
@@ -505,7 +518,7 @@ const SPAWN_PER_TICK := 1
 ## reward for it and the screen stays exactly as full. A probe died at 32
 ## seconds against an unthrottled quota.
 const SPAWN_REFILL_RATE := 3.0
-## Minutes at which one Big Bug arrives. Each drops a present.
+## Minutes at which one Big Bug arrives. Each drops a pile of cookies.
 const BOSS_MINUTES := [4, 7, 9]
 
 # --- Rushes ---

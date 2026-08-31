@@ -176,6 +176,12 @@ func _physics_process(delta: float) -> void:
 	var target := _player.global_position
 	var cull := Tuning.ENEMY_CULL_DISTANCE * Tuning.ENEMY_CULL_DISTANCE
 	for i in alive:
+		# Killed during last frame's weapons pass and not compacted yet. Weapons
+		# run after the swarm in `world.tscn`, so a kill sits in `_dead` across
+		# the frame boundary: without this the corpse walks one more step and can
+		# still land its touch on the cat.
+		if hp[i] <= 0.0:
+			continue
 		var k := kind[i]
 		var to := target - pos[i]
 		var d := to.length()
@@ -237,6 +243,12 @@ func _physics_process(delta: float) -> void:
 ## Damage one row. Returns true if it died, so a shot can count its kill.
 func damage(i: int, amount: float, from: Vector2) -> bool:
 	if i < 0 or i >= alive:
+		return false
+	# Already dead this frame. The row is not removed until `_compact` runs at
+	# the end of the loop, so a second weapon landing on the same frame finds it
+	# alive by index and would be told it killed it again: two gems, two kills,
+	# and two cookie piles from one boss. An aura plus a shot does this often.
+	if hp[i] <= 0.0:
 		return false
 	hp[i] -= amount
 	# Only re-flash once the last one has finished. A puddle or an aura damages

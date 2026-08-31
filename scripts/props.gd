@@ -185,6 +185,12 @@ func damage_near(point: Vector2, radius: float, amount: float) -> void:
 		if pos[i].distance_squared_to(point) <= r2:
 			_hits.append(i)
 	for i in _hits:
+		# Already broken this frame. Rows go once `_compact` runs, so a second
+		# weapon reaching the same pot would break it again and drop its reward
+		# twice. `weapons.gd` routes every area of effect through here, so two
+		# overlapping ones is the normal case, not a rare one.
+		if hp[i] <= 0.0:
+			continue
 		hp[i] -= amount
 		# A flash, then a gap longer than the flash. An aura damages every
 		# frame; refreshing the timer pinned a pot solid white, and merely

@@ -181,8 +181,6 @@ func _radius(id: String, level: int) -> float:
 func _fire(id: String, level: int) -> void:
 	var at := _player.global_position
 	match String(Tuning.WEAPONS[id]["kind"]):
-		"arc":
-			_fire_arc(id, level, at)
 		"aura", "burst", "sweep":
 			_fire_circle(id, level, at)
 		"shot":
@@ -197,25 +195,6 @@ func _fire(id: String, level: int) -> void:
 			_fire_boomer(id, level, at)
 		"trail":
 			_fire_trail(id, level, at)
-
-
-## Paw Swipe: a wedge in front of the cat. The one weapon that cares which way
-## the player faces, which is what makes standing still feel different from
-## walking into a crowd.
-func _fire_arc(id: String, level: int, at: Vector2) -> void:
-	var r := _radius(id, level)
-	var facing := Vector2.LEFT if _player.facing_left() else Vector2.RIGHT
-	var half: float = float(Tuning.WEAPONS[id]["arc"]) * 0.5
-	_swarm.near(at, r, _hits)
-	var dealt := false
-	for i in _hits:
-		if absf(facing.angle_to(_swarm.pos[i] - at)) <= half:
-			_hit(i, _damage(id, level), at)
-			dealt = true
-	_break_props(at, r, _damage(id, level))
-	_add_fx(at, facing, r, Tuning.FX_ARC, Tuning.FX_TIME_ARC)
-	if dealt:
-		Audio.play("shoot", _voice(id))
 
 
 ## Purr Ring and Sleepy Yawn: everything inside a circle.
@@ -429,6 +408,20 @@ func _tick_shots(delta: float) -> void:
 				continue
 			shot_vel[s] = home.normalized() * shot_vel[s].length()
 			step = shot_vel[s] * delta
+		elif shot_kind[s] == Tuning.SHOT_MOUSE:
+			# The mouse chases, which is what its card promises and what its
+			# `chaser` kind is named for. It aimed once at the moment of firing
+			# and then flew straight, which made it a slower yarn ball.
+			#
+			# Turned rather than redirected: a shot that snaps onto its target
+			# cannot miss, and the swerve is the part a child can see.
+			var seek := _aim_at(shot_pos[s])
+			if seek != shot_pos[s]:
+				var want := (seek - shot_pos[s]).normalized()
+				var speed := shot_vel[s].length()
+				var turn: float = Tuning.MOUSE_TURN * delta
+				shot_vel[s] = shot_vel[s].normalized().lerp(want, turn).normalized() * speed
+				step = shot_vel[s] * delta
 		shot_pos[s] += step
 		shot_life[s] -= delta
 		if shot_life[s] <= 0.0:
