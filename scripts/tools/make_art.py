@@ -1246,8 +1246,30 @@ HAT_CAP = [
     "................",
 ]
 
+# A spider web, drawn on the ground. Pale and open rather than solid: it has to
+# read as something to avoid without hiding the bugs standing on it.
+WEB = [
+    "................",
+    "....W..W..W.....",
+    "..W..W.W.W..W...",
+    "...W..WWW..W....",
+    "....WWWWWWW.....",
+    "..WWWWWWWWWWW...",
+    ".W..WWWWWWW..W..",
+    "W.W.WWWWWWW.W.W.",
+    ".W..WWWWWWW..W..",
+    "..WWWWWWWWWWW...",
+    "....WWWWWWW.....",
+    "...W..WWW..W....",
+    "..W..W.W.W..W...",
+    "....W..W..W.....",
+    "................",
+    "................",
+]
+
 SPRITES = {
     "cat": CAT_STAND,
+    "web": WEB,
     "hat_party": HAT_PARTY,
     "hat_crown": HAT_CROWN,
     "hat_bow": HAT_BOW,

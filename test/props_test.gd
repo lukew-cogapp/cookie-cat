@@ -174,6 +174,7 @@ func test_props_take_a_few_hits() -> void:
 func test_continuous_damage_does_not_pin_the_flash() -> void:
 	var i := 0
 	_props.hp[i] = 9999.0
+	_props.flash[i] = -Tuning.HIT_FLASH_GAP
 	_props.damage_near(_props.pos[i], 6.0, 0.1)
 	assert_gt(_props.flash[i], 0.0, "the first hit flashes")
 	# Run the flash down, damaging all the while, as a puddle would.
@@ -182,4 +183,4 @@ func test_continuous_damage_does_not_pin_the_flash() -> void:
 	for _frame in 20:
 		_props.damage_near(_props.pos[i], 6.0, 0.1)
 		_props.flash[i] = maxf(_props.flash[i] - 0.02, 0.0)
-	assert_eq(_props.flash[i], 0.0, "and it is allowed to end")
+	assert_lte(_props.flash[i], 0.0, "and it is allowed to end")

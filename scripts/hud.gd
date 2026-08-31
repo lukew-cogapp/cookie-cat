@@ -1,15 +1,11 @@
 extends CanvasLayer
-## Hearts, the XP bar, the clock, and the level-up picker.
+## The health bar, the XP bar, the clock, and the level-up picker.
 ##
 ## The text is content and lives here beside the condition it describes, not
 ## in `tuning.gd`. Everything a five-year-old must read to play is an icon or
 ## a number: the words are for the adult sitting next to them.
 
-## Big enough to count across the room.
-const HEART_FULL := "♥"
-const HEART_EMPTY := "♡"
-
-@onready var _hearts: Label = $Top/Row/Hearts
+@onready var _health_fill: ColorRect = $Top/Row/Health/Pad/Bar/Fill
 @onready var _clock: Label = $Top/Row/Clock
 @onready var _xp_fill: ColorRect = $Xp/Fill
 @onready var _level: Label = $Xp/Level
@@ -81,10 +77,17 @@ func _process(_delta: float) -> void:
 	_clock.text = "%d:%02d" % [int(left) / 60, int(left) % 60]
 
 
+## The health bar. A bar rather than hearts, so a boss's hit visibly takes more
+## than a grub's; the colour is what a child reads, not the number.
 func set_health(hp: float, max_hp: float) -> void:
-	var full := int(round(hp))
-	var total := int(round(max_hp))
-	_hearts.text = HEART_FULL.repeat(full) + HEART_EMPTY.repeat(maxi(total - full, 0))
+	var frac: float = clampf(hp / maxf(max_hp, 1.0), 0.0, 1.0)
+	_health_fill.anchor_right = frac
+	var colour := Tuning.HEALTH_GOOD
+	if frac < Tuning.HEALTH_LOW_BELOW:
+		colour = Tuning.HEALTH_LOW
+	elif frac < Tuning.HEALTH_FAIR_BELOW:
+		colour = Tuning.HEALTH_FAIR
+	_health_fill.color = colour
 
 
 func flash(text: String) -> void:

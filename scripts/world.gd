@@ -52,6 +52,11 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	Run.tick(delta)
 	_follow_lawn()
+	# The webs the spiders left. The swarm owns them and the player does not
+	# know they exist, so the world asks on its behalf.
+	var web := _swarm.web_slow_at(_player.global_position)
+	if web < 1.0:
+		_player.slow_by(web, Tuning.WEB_LINGER)
 	if Run.clock > _combo_until:
 		_combo = 0
 	if _shake > 0.0:

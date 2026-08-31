@@ -13,6 +13,12 @@ signal health_changed(hp: float, max_hp: float)
 ## cat. The player cannot do it itself: it does not know about the swarm.
 signal hurt_taken
 
+## How much of its speed the cat keeps, and for how long. Set by the world from
+## the webs the spiders leave: a slow that takes control away from a child is
+## mild and brief on purpose, since running away must still work.
+var _slow := 1.0
+var _slow_for := 0.0
+
 var hp := 0.0
 var max_hp := 0.0
 ## Seconds of invulnerability left after a hit. Without it a child standing in
@@ -63,9 +69,13 @@ func _physics_process(delta: float) -> void:
 		return
 	if mercy > 0.0:
 		mercy = maxf(mercy - delta, 0.0)
+	if _slow_for > 0.0:
+		_slow_for = maxf(_slow_for - delta, 0.0)
+		if _slow_for <= 0.0:
+			_slow = 1.0
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if dir != Vector2.ZERO:
-		var speed := Tuning.PLAYER_SPEED * Run.passive("boots")
+		var speed := Tuning.PLAYER_SPEED * Run.passive("boots") * _slow
 		# `dir` keeps the stick's magnitude, so a gentle push walks. Below the
 		# floor it is treated as full tilt, or a child pushing softly creeps
 		# and cannot get away from anything.
@@ -141,6 +151,14 @@ func heal(amount: float) -> void:
 ## How far gems are pulled from, so the pickup layer can ask one thing.
 func magnet_radius() -> float:
 	return Tuning.MAGNET_RADIUS * Run.passive("magnet")
+
+
+## Slows the cat, for as long as it keeps being told to. The strongest slow
+## wins while it lasts, so stepping from one web to another does not speed up.
+func slow_by(factor: float, secs: float) -> void:
+	if _slow_for <= 0.0 or factor < _slow:
+		_slow = factor
+	_slow_for = maxf(_slow_for, secs)
 
 
 ## Which way the cat is looking. The Paw Swipe aims by this, so it reads off

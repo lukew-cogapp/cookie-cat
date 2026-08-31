@@ -83,16 +83,20 @@ func _ready() -> void:
 	# A bug nibbling a crumb: the smallest sound in the bank.
 	_bank["crumb"] = _tone(240.0, 180.0, 0.05, "sine", 0.14)
 	# C-major bass under a sparse melody. The loop point never clicks: see _music.
-	# Sixteen beats, not eight: the old loop came round every 3.2 seconds and
-	# a child hears that as one bar repeating for ten minutes. The bass is an
-	# octave up as well, since down at C2 it was a drone under everything
-	# rather than a tune.
+	# Thirty-two beats, and a melody that goes somewhere before it comes back.
+	# Sixteen at 0.36 still came round every 5.8 seconds, which a child hears
+	# as one phrase repeating; this runs twice as long and moves through I-vi-
+	# IV-V so the return lands rather than just restarting.
 	_bank["music"] = _music(
-		[130.81, 164.81, 196.0, 164.81, 146.83, 196.0, 174.61, 146.83,
-		 130.81, 196.0, 164.81, 130.81, 146.83, 174.61, 196.0, 164.81],
-		[523.25, 0.0, 659.25, 587.33, 0.0, 783.99, 659.25, 0.0,
-		 587.33, 659.25, 0.0, 523.25, 587.33, 0.0, 659.25, 783.99],
-		0.36,
+		[130.81, 130.81, 164.81, 196.0, 110.0, 110.0, 130.81, 164.81,
+		 174.61, 174.61, 220.0, 174.61, 196.0, 196.0, 246.94, 196.0,
+		 130.81, 164.81, 196.0, 164.81, 110.0, 130.81, 164.81, 130.81,
+		 174.61, 220.0, 196.0, 246.94, 196.0, 164.81, 146.83, 130.81],
+		[523.25, 0.0, 659.25, 0.0, 440.0, 523.25, 0.0, 659.25,
+		 698.46, 0.0, 880.0, 0.0, 783.99, 0.0, 987.77, 0.0,
+		 523.25, 659.25, 0.0, 783.99, 659.25, 0.0, 523.25, 0.0,
+		 698.46, 0.0, 783.99, 987.77, 0.0, 659.25, 0.0, 523.25],
+		0.34,
 	)
 	for _i in VOICES:
 		var p := AudioStreamPlayer.new()

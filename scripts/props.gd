@@ -153,8 +153,8 @@ func _physics_process(delta: float) -> void:
 	_refill_around(_player.global_position)
 	var faded := false
 	for i in alive:
-		if flash[i] > 0.0:
-			flash[i] = maxf(flash[i] - delta, 0.0)
+		if flash[i] > -Tuning.HIT_FLASH_GAP:
+			flash[i] = maxf(flash[i] - delta, -Tuning.HIT_FLASH_GAP)
 			faded = true
 	if faded or not _dead.is_empty():
 		_compact()
@@ -186,11 +186,11 @@ func damage_near(point: Vector2, radius: float, amount: float) -> void:
 			_hits.append(i)
 	for i in _hits:
 		hp[i] -= amount
-		# Only re-flash once the last one has finished. An aura or a puddle
-		# damages every frame, and refreshing the timer each time pinned a pot
-		# permanently white: bugs never showed it because they die in a second,
-		# but a pot outlives its own flash many times over.
-		if flash[i] <= 0.0:
+		# A flash, then a gap longer than the flash. An aura damages every
+		# frame; refreshing the timer pinned a pot solid white, and merely
+		# waiting for the last flash to end still left it white half the time.
+		# The countdown runs negative through the gap.
+		if flash[i] <= -Tuning.HIT_FLASH_GAP:
 			flash[i] = Tuning.HIT_FLASH_TIME
 		if hp[i] <= 0.0:
 			_dead.append(i)

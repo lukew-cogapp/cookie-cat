@@ -29,9 +29,10 @@ const PROP_REFILL_DISTANCE := 1100.0
 const ZOOM := 2.5
 
 # --- Player ---
-## Hearts, not a health bar: big icons a five-year-old can count. Five, not
-## three, so a bad minute is a setback rather than the end of the run.
-const PLAYER_MAX_HP := 5.0
+## A bar, not hearts. Hearts could only show five states, so a grub and a boss
+## both took exactly one however hard they hit; with a bar the difference is
+## visible. 100 so the numbers below read as percentages.
+const PLAYER_MAX_HP := 100.0
 const PLAYER_SPEED := 118.0
 ## Every enemy is slower than this. A child who runs away must always escape;
 ## the genre's tension comes from being surrounded, not from being outrun.
@@ -89,7 +90,7 @@ const PASSIVE_LEVEL_MAX := 5
 ## and they never appear in `weapons` or `passives`, so a snack cannot be
 ## "levelled" and cannot fill a slot.
 const CONSUMABLES := {
-	"snack": {"name": "Tasty Snack", "heals": 1.0},
+	"snack": {"name": "Tasty Snack", "heals": 40.0},
 }
 
 const STARTER_CAT := "cookie"
@@ -241,7 +242,7 @@ const WEAPONS := {
 		## a child has.
 		"kind": "trail",
 		"damage": 7.0,
-		"cooldown": 0.42,
+		"cooldown": 1.1,
 		"radius": 30.0,
 		"life": 4.0,
 		"damage_gain": 3.5,
@@ -349,14 +350,14 @@ const SLOW_LINGER := 0.35
 ## HP is flat per kind and grows with the clock, not with player level: a
 ## child who levels fast should feel stronger, not meet tougher bugs.
 const ENEMIES := [
-	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 1.0, "radius": 9.0, "xp": 1, "gem_up": 0.02, "knock": 46.0},
-	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 1.0, "radius": 10.0, "xp": 2, "gem_up": 0.06, "knock": 38.0},
-	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 1.0, "radius": 12.0, "xp": 4, "gem_up": 0.14, "knock": 22.0},
-	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 1.0, "radius": 8.5, "xp": 3, "gem_up": 0.1, "knock": 60.0},
-	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 1.0, "radius": 11.0, "xp": 3, "gem_up": 0.12, "knock": 34.0},
-	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 1.0, "radius": 26.0, "xp": 60, "gem_up": 0.8, "knock": 6.0},
-	{"name": "Spider", "hp": 12.0, "speed": 92.0, "damage": 1.0, "radius": 9.0, "xp": 3, "gem_up": 0.1, "knock": 42.0},
-	{"name": "Dung Beetle", "hp": 26.0, "speed": 40.0, "damage": 1.0, "radius": 11.0, "xp": 5, "gem_up": 0.16, "knock": 18.0},
+	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 4.0, "radius": 9.0, "xp": 1, "gem_up": 0.02, "knock": 46.0},
+	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 6.0, "radius": 10.0, "xp": 2, "gem_up": 0.06, "knock": 38.0},
+	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 10.0, "radius": 12.0, "xp": 4, "gem_up": 0.14, "knock": 22.0},
+	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 7.0, "radius": 8.5, "xp": 3, "gem_up": 0.1, "knock": 60.0},
+	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 8.0, "radius": 11.0, "xp": 3, "gem_up": 0.12, "knock": 34.0},
+	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 30.0, "radius": 26.0, "xp": 60, "gem_up": 0.8, "knock": 6.0},
+	{"name": "Spider", "hp": 12.0, "speed": 92.0, "damage": 7.0, "radius": 9.0, "xp": 3, "gem_up": 0.1, "knock": 42.0},
+	{"name": "Dung Beetle", "hp": 26.0, "speed": 40.0, "damage": 9.0, "radius": 11.0, "xp": 5, "gem_up": 0.16, "knock": 18.0},
 ]
 const ENEMY_MAX := 220
 ## Past this from the player an enemy is forgotten. Over a screen and a half,
@@ -387,6 +388,32 @@ const SPIDER_SCUTTLE_CYCLE := 1.1
 const SPIDER_SCUTTLE_DUTY := 0.45
 ## Pace between bursts. Not zero: a bug frozen mid-walk reads as a hang.
 const SPIDER_PAUSE_PACE := 0.12
+
+## Webs. The spider drops one as it scuttles, and the cat slows crossing it.
+## This is what the spider is FOR: without it, it is a fast bug and nothing
+## more, and speed alone is already the wasp's job.
+##
+## The slow is the one thing in the game that takes control away from a child,
+## so it is deliberately mild and short. Running away must still work.
+const WEB_ART := "res://assets/web.png"
+const WEB_MAX := 60
+## Seconds between one spider laying a web. Slow enough that a crowd of them
+## does not carpet the ground.
+const WEB_EVERY := 2.4
+## A web fades after this, so an old fight cannot leave the garden sticky. Ten
+## seconds is the cap the design asks for.
+const WEB_LIFE := 10.0
+## The last of that life spent fading, so a web thins out rather than blinking.
+const WEB_FADE := 2.0
+const WEB_RADIUS := 26.0
+const WEB_DRAW_SIZE := 40.0
+## How much of the cat's speed a web leaves it. Not a stop: a cornered child
+## who cannot move cannot escape, which is the one thing that must never
+## happen.
+const WEB_SLOW := 0.55
+## And how long the slow lingers after stepping out, so crossing the edge does
+## not flicker.
+const WEB_LINGER := 1.0
 
 ## The dung beetle is the first bug that hurts the cat without touching it, so
 ## every number here is about being dodgeable: it stands off, shivers in plain
@@ -497,10 +524,14 @@ const GEM_FLY_ACCEL := 700.0
 ## A heart every so many kills, so a child who is struggling gets one and a
 ## child who is winning barely notices them.
 const HEART_EVERY := 90
-const HEART_HEAL := 1.0
+## A dropped heart is worth a quarter of the bar.
+const HEART_HEAL := 25.0
 
 # --- Feel ---
 const HIT_FLASH_TIME := 0.08
+## The quiet gap after a flash before another may start. Longer than the flash,
+## or a thing under continuous damage is white more often than not.
+const HIT_FLASH_GAP := 0.22
 ## Bugs are drawn white-tinted for this long after a hit. The art carries the
 ## colour now, so a hit replaces it rather than blending towards white.
 const HIT_FLASH_COLOUR := Color(3.0, 3.0, 3.0)
@@ -739,6 +770,14 @@ const TOUCH_RING_COLOUR := Color(1.0, 1.0, 1.0, 0.4)
 const TOUCH_KNOB_COLOUR := Color(1.0, 0.72, 0.82, 0.75)
 
 # --- HUD ---
+## The health bar. Green while healthy, amber, then red: a colour a child reads
+## without counting, which is what the hearts were for.
+const HEALTH_GOOD := Color(0.42, 0.85, 0.42)
+const HEALTH_FAIR := Color(1.0, 0.78, 0.3)
+const HEALTH_LOW := Color(0.95, 0.36, 0.4)
+const HEALTH_FAIR_BELOW := 0.6
+const HEALTH_LOW_BELOW := 0.3
+
 const BANNER_TIME := 1.6
 const CARD_SIZE := Vector2(200, 250)
 ## The loadout list, top right. Pips rather than a number: a level is a
@@ -797,6 +836,10 @@ const MODAL_POP_TIME := 0.28
 
 # --- Start screen ---
 ## Five cards plus gaps must fit a 1280 design width.
+## A switched-off audio button is dimmed rather than relabelled: the label has
+## to stay readable to someone who cannot read it.
+const START_AUDIO_OFF_ALPHA := 0.4
+
 const START_CARD_SIZE := Vector2(168, 212)
 ## All 16x16 art, scaled by whole numbers so the pixels stay square: the cat
 ## at 6x, weapon and cost icons at 2x, the cookie counter and bugs at 3x.

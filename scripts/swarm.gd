@@ -50,6 +50,14 @@ var poops := 0
 var _poop_dead: Array[int] = []
 var _poop_mm: MultiMesh
 
+## Webs the spiders have left. Pooled rows drawn by one MultiMesh, like the
+## poop: a web is a position and a countdown, and nothing else.
+var web_pos: Array[Vector2] = []
+var web_life: Array[float] = []
+var webs := 0
+var _web_dead: Array[int] = []
+var _web_mm: MultiMesh
+
 ## One MultiMesh per kind, so each kind draws its own texture in its own
 ## draw call. Six calls for any number of bugs, and a kind is told apart by
 ## its art rather than by a tint over one shared sprite.
@@ -94,6 +102,22 @@ func _ready() -> void:
 	poop_node.multimesh = _poop_mm
 	poop_node.texture = load(Tuning.POOP_ART)
 	add_child(poop_node)
+	# The web pool, the same shape again.
+	_web_mm = MultiMesh.new()
+	_web_mm.transform_format = MultiMesh.TRANSFORM_2D
+	_web_mm.use_colors = true
+	_web_mm.mesh = quad
+	_web_mm.instance_count = Tuning.WEB_MAX
+	_web_mm.visible_instance_count = 0
+	var web_node := MultiMeshInstance2D.new()
+	web_node.multimesh = _web_mm
+	web_node.texture = load(Tuning.WEB_ART)
+	# Under the bugs: a web is ground, not an actor.
+	add_child(web_node)
+	move_child(web_node, 0)
+	web_pos.resize(Tuning.WEB_MAX)
+	web_life.resize(Tuning.WEB_MAX)
+
 	poop_pos.resize(Tuning.POOP_MAX)
 	poop_vel.resize(Tuning.POOP_MAX)
 	poop_life.resize(Tuning.POOP_MAX)
@@ -158,6 +182,12 @@ func _physics_process(delta: float) -> void:
 		# beetle stands off and lobs. Both still obey knockback and slows.
 		if k == Kind.SPIDER:
 			speed *= Tuning.spider_pace(Run.clock + gait[i])
+			# A web every so often as it goes. `aim` is the per-row timer the
+			# dung beetle fires on, and a spider never fires, so it is free.
+			aim[i] -= delta
+			if aim[i] <= 0.0:
+				aim[i] = Tuning.WEB_EVERY
+				_lay_web(pos[i])
 		elif k == Kind.DUNG:
 			if d < Tuning.DUNG_STAND_RANGE:
 				speed = 0.0
@@ -174,8 +204,8 @@ func _physics_process(delta: float) -> void:
 		pos[i] += step * delta
 		if absf(to.x) > Tuning.ENEMY_FLIP_DEADZONE:
 			_facing_left[i] = to.x < 0.0
-		if flash[i] > 0.0:
-			flash[i] = maxf(flash[i] - delta, 0.0)
+		if flash[i] > -Tuning.HIT_FLASH_GAP:
+			flash[i] = maxf(flash[i] - delta, -Tuning.HIT_FLASH_GAP)
 		if touch[i] > 0.0:
 			touch[i] = maxf(touch[i] - delta, 0.0)
 		if grow[i] > 0.0:
@@ -186,6 +216,7 @@ func _physics_process(delta: float) -> void:
 			touch[i] = Tuning.ENEMY_TOUCH_COOLDOWN
 			_player.hurt(Tuning.enemy_damage(k))
 	_tick_poops(delta)
+	_tick_webs(delta)
 	_compact()
 	_redraw()
 
@@ -199,7 +230,7 @@ func damage(i: int, amount: float, from: Vector2) -> bool:
 	# every frame, and refreshing the timer each time held a tanky bug solid
 	# white for as long as it stood there, which loses the silhouette that
 	# tells the kinds apart.
-	if flash[i] <= 0.0:
+	if flash[i] <= -Tuning.HIT_FLASH_GAP:
 		flash[i] = Tuning.HIT_FLASH_TIME
 	var away := (pos[i] - from).normalized()
 	knock[i] = away * Tuning.enemy_knockback(kind[i])
@@ -252,6 +283,56 @@ func spawn_poop(at: Vector2, vel: Vector2) -> void:
 	poop_pos[p] = at
 	poop_vel[p] = vel
 	poop_life[p] = Tuning.POOP_LIFE
+
+
+## Drops a web where a spider is standing, on its own cooldown.
+func _lay_web(at: Vector2) -> void:
+	if webs >= Tuning.WEB_MAX:
+		return
+	var w := webs
+	webs += 1
+	web_pos[w] = at
+	web_life[w] = Tuning.WEB_LIFE
+
+
+## How much of its speed the cat keeps at this point, and for how long. The
+## world asks; the swarm owns the webs.
+func web_slow_at(point: Vector2) -> float:
+	var r2 := Tuning.WEB_RADIUS * Tuning.WEB_RADIUS
+	for w in webs:
+		if web_pos[w].distance_squared_to(point) <= r2:
+			return Tuning.WEB_SLOW
+	return 1.0
+
+
+func _tick_webs(delta: float) -> void:
+	for w in webs:
+		web_life[w] -= delta
+		if web_life[w] <= 0.0:
+			_web_dead.append(w)
+	if not _web_dead.is_empty():
+		_web_dead.sort()
+		_web_dead.reverse()
+		var last := -1
+		for w in _web_dead:
+			if w == last:
+				continue
+			last = w
+			webs -= 1
+			if w != webs:
+				web_pos[w] = web_pos[webs]
+				web_life[w] = web_life[webs]
+		_web_dead.clear()
+	_web_mm.visible_instance_count = webs
+	for w in webs:
+		var fade: float = clampf(web_life[w] / Tuning.WEB_FADE, 0.0, 1.0)
+		_web_mm.set_instance_transform_2d(
+			w,
+			Transform2D(
+				0.0, Vector2(Tuning.WEB_DRAW_SIZE, Tuning.WEB_DRAW_SIZE), 0.0, web_pos[w]
+			)
+		)
+		_web_mm.set_instance_color(w, Color(1.0, 1.0, 1.0, fade))
 
 
 func _tick_poops(delta: float) -> void:

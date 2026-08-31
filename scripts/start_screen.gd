@@ -11,6 +11,8 @@ extends Control
 @onready var _maps: HBoxContainer = $Maps
 @onready var _hats: HBoxContainer = $Hats
 @onready var _play: Button = $Play
+@onready var _music_button: Button = $Audio/Music
+@onready var _sound_button: Button = $Audio/Sound
 @onready var _cookies: Label = $Cookies/Pad/Row/Count
 @onready var _stats: Label = $Stats
 @onready var _bugs: Control = $Bugs
@@ -35,6 +37,9 @@ var _hop: Tween
 
 
 func _ready() -> void:
+	_music_button.pressed.connect(_toggle_music)
+	_sound_button.pressed.connect(_toggle_sound)
+	_refresh_audio()
 	_title.text = ProjectSettings.get_setting("application/config/name")
 	# An edited save or a version bump can orphan the remembered cat or map.
 	if not Save.is_unlocked(Run.cat):
@@ -291,6 +296,29 @@ func _wire_focus() -> void:
 		b.focus_neighbor_bottom = b.get_path_to(_play)
 	_play.focus_neighbor_top = _play.get_path_to(band[0])
 	_play.focus_neighbor_bottom = _play.get_path_to(cats[0])
+
+
+## The audio switches. Off is shown by dimming rather than by words, since the
+## label has to stay readable to someone who cannot read it.
+func _refresh_audio() -> void:
+	_music_button.modulate.a = Tuning.START_AUDIO_OFF_ALPHA if Save.music_off else 1.0
+	_sound_button.modulate.a = Tuning.START_AUDIO_OFF_ALPHA if Save.sound_off else 1.0
+
+
+func _toggle_music() -> void:
+	Save.set_audio(Save.sound_off, not Save.music_off)
+	if not Save.music_off:
+		Audio.play_music("music")
+	_refresh_audio()
+	Audio.play("choose")
+
+
+func _toggle_sound() -> void:
+	Save.set_audio(not Save.sound_off, Save.music_off)
+	_refresh_audio()
+	# After the switch, so turning sound back ON is audible and turning it off
+	# is silent, which is the feedback a child expects.
+	Audio.play("choose")
 
 
 func _press(id: String) -> void:

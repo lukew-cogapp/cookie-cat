@@ -166,10 +166,11 @@ func test_slow_on_a_dead_row_is_ignored() -> void:
 func test_continuous_damage_does_not_pin_the_flash() -> void:
 	_swarm.spawn(Vector2.ZERO, 2)
 	_swarm.hp[0] = 9999.0
+	_swarm.flash[0] = -Tuning.HIT_FLASH_GAP
 	_swarm.damage(0, 0.1, Vector2.ONE)
 	assert_gt(_swarm.flash[0], 0.0, "the first hit flashes")
 	# Damage first, then run the timer down, which is the real frame order.
 	for _frame in 20:
 		_swarm.damage(0, 0.1, Vector2.ONE)
 		_swarm.flash[0] = maxf(_swarm.flash[0] - 0.02, 0.0)
-	assert_eq(_swarm.flash[0], 0.0, "and it is allowed to end")
+	assert_lte(_swarm.flash[0], 0.0, "and it is allowed to end")
