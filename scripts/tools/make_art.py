@@ -1635,6 +1635,19 @@ GLYPHS = {
     "T": ["XXXXX", "..X..", "..X..", "..X..", "..X.."],
     "U": ["X..X", "X..X", "X..X", "X..X", ".XX."],
     "V": ["X...X", "X...X", "X...X", ".X.X.", "..X.."],
+    "D": ["XXX.", "X..X", "X..X", "X..X", "XXX."],
+    "N": ["X..X", "XX.X", "X.XX", "X..X", "X..X"],
+    "O": [".XX.", "X..X", "X..X", "X..X", ".XX."],
+    "P": ["XXX.", "X..X", "XXX.", "X...", "X..."],
+    "I": ["XXX", ".X.", ".X.", ".X.", "XXX"],
+    "R": ["XXX.", "X..X", "XXX.", "X.X.", "X..X"],
+    "H": ["X..X", "X..X", "XXXX", "X..X", "X..X"],
+    "E": ["XXXX", "X...", "XXX.", "X...", "XXXX"],
+    "Y": ["X...X", ".X.X.", "..X..", "..X..", "..X.."],
+    "L": ["X...", "X...", "X...", "X...", "XXXX"],
+    "M": ["X...X", "XX.XX", "X.X.X", "X...X", "X...X"],
+    "F": ["XXXX", "X...", "XXX.", "X...", "X..."],
+    "W": ["X...X", "X...X", "X.X.X", "XX.XX", "X...X"],
     " ": ["..", "..", "..", "..", ".."],
 }
 
@@ -1691,6 +1704,88 @@ def blit(rows, grid, left, top, scale):
                 for x in range(left + gx * scale, left + (gx + 1) * scale):
                     if 0 <= x < len(row):
                         row[x] = colour
+
+
+def tagline_shot(source, text):
+    """A gameplay screenshot with one line of text along the bottom.
+
+    Play wants screenshots to show the game rather than sell it, and caps a
+    tagline at a fifth of the image, so this is a strip rather than a poster:
+    the game fills the frame and the claim sits under it.
+    """
+    rows = read_png_rows(source)
+    height = len(rows)
+    width = len(rows[0])
+    grid = text_grid(text)
+    scale = max(1, width // (len(grid[0]) * 2))
+    band = len(grid) * scale + scale * 4
+    top = height - band
+    dark = PALETTE["o"]
+    for y in range(top, height):
+        # Not a flat bar: the game showing through is what keeps this a
+        # screenshot with a caption rather than a slide.
+        blend = 0.78
+        for x in range(width):
+            r, g, b, a = rows[y][x]
+            rows[y][x] = (
+                int(r * (1 - blend) + dark[0] * blend),
+                int(g * (1 - blend) + dark[1] * blend),
+                int(b * (1 - blend) + dark[2] * blend),
+                a,
+            )
+    left = (width - len(grid[0]) * scale) // 2
+    blit(rows, grid, left, top + scale * 2, scale)
+    return rows
+
+
+def read_png_rows(path):
+    """A written PNG back as rows of RGBA, so a shot can be drawn over."""
+    data = path.read_bytes()
+    width, height = struct.unpack(">II", data[16:24])
+    idat = b""
+    i = 8
+    while i < len(data):
+        length = struct.unpack(">I", data[i : i + 4])[0]
+        tag = data[i + 4 : i + 8]
+        if tag == b"IDAT":
+            idat += data[i + 8 : i + 8 + length]
+        i += 12 + length
+    raw = zlib.decompress(idat)
+    # Godot writes the screenshots as 24-bit RGB and this tool writes 32-bit
+    # RGBA, so the channel count comes from the data rather than an assumption.
+    depth = 3 if len(raw) == height * (width * 3 + 1) else 4
+    stride = width * depth
+    rows = []
+    prev = bytearray(stride)
+    pos = 0
+    for _y in range(height):
+        filt = raw[pos]
+        line = bytearray(raw[pos + 1 : pos + 1 + stride])
+        pos += 1 + stride
+        # Godot writes filtered scanlines, so they are undone here rather than
+        # refused: the spec's five filters all read back a few bytes.
+        for i in range(stride):
+            a = line[i - depth] if i >= depth else 0
+            b = prev[i]
+            c = prev[i - depth] if i >= depth else 0
+            if filt == 1:
+                line[i] = (line[i] + a) & 0xFF
+            elif filt == 2:
+                line[i] = (line[i] + b) & 0xFF
+            elif filt == 3:
+                line[i] = (line[i] + (a + b) // 2) & 0xFF
+            elif filt == 4:
+                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
+                best = a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
+                line[i] = (line[i] + best) & 0xFF
+        rows.append(
+            [
+                tuple(line[x * depth : x * depth + depth]) + ((255,) if depth == 3 else ())
+                for x in range(width)
+            ]
+        )
+        prev = line
+    return rows
 
 
 def write_canvas(path, rows, alpha):
@@ -1830,6 +1925,18 @@ def main():
     print("store/icon_512.png 512x512", flush=True)
     write_canvas(STORE / "feature.png", feature_graphic(), alpha=False)
     print("store/feature.png 1024x500", flush=True)
+    # One screenshot carries the claim that matters most to a parent scanning
+    # the shelf. Play allows a tagline on a fifth of the image and forbids
+    # price and promotional text, so this states a fact about the app and
+    # leaves the rest of the frame as the game.
+    shot = STORE / "screenshots" / "01_toys_firing.png"
+    if shot.exists():
+        write_canvas(
+            STORE / "screenshots" / "07_no_ads.png",
+            tagline_shot(shot, "NO ADS  NO IN APP BUYS"),
+            alpha=False,
+        )
+        print("store/screenshots/07_no_ads.png", flush=True)
 
 
 if __name__ == "__main__":

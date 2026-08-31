@@ -8,6 +8,17 @@ The app label under the icon is `config/name` in `project.godot` and stays
 truncates at about twelve characters on a home screen, so the keyword version
 would render as "Cat vs Bug...".
 
+## Promo video
+
+```
+https://youtube.com/watch?v=IErxMtCPEUI
+```
+
+Unlisted, silent, eight seconds, with the title read over the end. Play takes
+a link rather than a file and will not show a video with ads on it. Recorded
+with `store/trailer.mp4` still in the repo, so it can be re-cut and re-uploaded
+without rebuilding the run.
+
 ## Title (30 char limit)
 
 ```
