@@ -40,8 +40,12 @@ var best_kills := 0
 var runs := 0
 ## The audio switches. Kept here so quiet survives closing the window: a child
 ## who turned the sound off did not mean only for one run.
+##
+## Music starts off. Ten minutes of one looping phrase wears thin on whoever is
+## in the room, and the sound effects are what actually tell a child what just
+## happened. It is one button on the title screen for anyone who wants it.
 var sound_off := false
-var music_off := false
+var music_off := true
 
 
 func _ready() -> void:
@@ -107,7 +111,7 @@ func load_now() -> void:
 	best_kills = 0
 	runs = 0
 	sound_off = false
-	music_off = false
+	music_off = true
 	var raw := _read_raw()
 	if raw == "":
 		return
@@ -119,7 +123,7 @@ func load_now() -> void:
 		return
 	cookies = int(d.get("cookies", 0))
 	sound_off = bool(d.get("sound_off", false))
-	music_off = bool(d.get("music_off", false))
+	music_off = bool(d.get("music_off", true))
 	Audio.set_muted(sound_off, music_off)
 	best_time = float(d.get("best_time", 0.0))
 	best_kills = int(d.get("best_kills", 0))

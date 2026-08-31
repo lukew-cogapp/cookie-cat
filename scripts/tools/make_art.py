@@ -1612,6 +1612,12 @@ def main():
     print("icons/icon_foreground.png 432x432", flush=True)
     write_icon(ICONS / "icon_background.png", [["T"] * 16] * 16, 432)
     print("icons/icon_background.png 432x432", flush=True)
+    # The web app's icons, for a browser that offers to keep the game on a
+    # home screen. Same cat on the same lawn, at the three sizes Godot asks
+    # for; 144 and 512 divide by 16, and 180 needs the pad to reach a multiple.
+    for size, pad in ((144, 0), (180, 2), (512, 0)):
+        write_icon(ICONS / f"web_{size}.png", CAT_STAND, size, pad=pad, background=lawn)
+        print(f"icons/web_{size}.png {size}x{size}", flush=True)
 
 
 if __name__ == "__main__":
