@@ -135,13 +135,16 @@ func _card(id: String) -> Button:
 	col.add_child(art)
 
 	# The equipped hat, over the portrait: hat and cat are both 16x16 sharing
-	# an origin, so a full-rect overlay lines the pixels up.
+	# an origin, so a full-rect overlay lines the pixels up. It is then lifted
+	# by HAT_LIFT, scaled from the art's 16px to the portrait's drawn size.
 	var hat := TextureRect.new()
 	hat.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hat.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	hat.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	hat.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hat.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hat.offset_top = Tuning.HAT_LIFT * Tuning.START_CAT_SIZE.y / 16.0
+	hat.offset_bottom = hat.offset_top
 	_cat_hats[id] = hat
 	art.add_child(hat)
 

@@ -1125,6 +1125,10 @@ const HATS := {
 }
 ## Hat cards share the band with the map row, so five must fit half a screen.
 ## The hat art is 16x16 drawn at a whole 3x.
+## Hats are drawn rows 0-4 of their 16x16 frame and the cat's head starts at
+## row 1, so an origin-aligned overlay lands the brim on the eyes. Lifting it
+## three rows rests the brim on the top of the head instead.
+const HAT_LIFT := -3.0
 const START_HAT_CARD_SIZE := Vector2(104, 122)
 const START_HAT_ART_SIZE := Vector2(48, 48)
 const START_HAT_COOKIE_SIZE := Vector2(24, 24)

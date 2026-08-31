@@ -58,6 +58,8 @@ func _ready() -> void:
 	if hat_art != "":
 		_hat = Sprite2D.new()
 		_hat.texture = load(hat_art)
+		# A child of the sprite, so this offset is in the art's own 16px units.
+		_hat.position = Vector2(0, Tuning.HAT_LIFT)
 		_sprite.add_child(_hat)
 	max_hp = Tuning.PLAYER_MAX_HP
 	hp = max_hp
