@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
 
       # GitHub secrets hold text, so the keystore travels as base64. It is
       # decoded outside the checkout so that no later step can commit it.
@@ -129,7 +129,7 @@ jobs:
 
       - name: Attach the APK to the release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: build/android/cat-vs-bugs.apk
 
