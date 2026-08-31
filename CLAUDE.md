@@ -381,6 +381,17 @@ through. Per-scene players cannot know what another player is already doing, so
 they produce exactly the wall of noise this exists to stop. Tones are
 synthesised at startup rather than shipped, so there is nothing to license.
 
+`stop()` does not release a stream. The player keeps it, and the audio server
+keeps a playback instance beside it, so a headless run ends on `2 ObjectDB
+instances were leaked` naming an `AudioStreamWAV` and its
+`AudioStreamPlaybackWAV`. `stop_sounds` clears the reference too, and
+`_exit_tree` calls it. A residue of the warning survives that and is a race with
+the audio server's own thread rather than anything the game holds: it comes and
+goes between identical runs. Do not clear `_bank` chasing it, which frees the
+streams a live voice is still mixing and makes every suite leak instead of some.
+Verify with `--verbose`, which names the types; the count alone tells you
+nothing.
+
 `Run.cat` is set by the start screen before `world.tscn` loads, and decides the
 opening weapon. `Save` keeps the file in `user://save.json` and writes on every
 change, because a child closes the window rather than using a menu.
