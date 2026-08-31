@@ -1092,7 +1092,10 @@ const GROUND_SCALE := [1.7, 1.5, 0.9, 0.55]
 ## Patches are translucent, so the lawn shows through and nothing on the ground
 ## competes with the bugs standing on it.
 const GROUND_ALPHA := [0.82, 0.45, 1.0, 0.9]
-const GROUND_COUNT := 460
+## Above what the cull radius holds (~480), for the reason `PROP_COUNT` gives.
+## This one also sizes the MultiMesh and its arrays, so it is the only one of
+## the three that costs memory rather than nodes.
+const GROUND_COUNT := 640
 const GROUND_SIZE_MIN := 44.0
 const GROUND_SIZE_MAX := 84.0
 ## A little tone variation per patch, so a field of mud is not one stamp
@@ -1165,7 +1168,8 @@ const TRAP_COOLDOWN := 1.4
 ## ground has to stay walkable in every direction.
 const TRAP_PER_CELL := 1
 const TRAP_CELL := 300.0
-const TRAP_COUNT := 40
+## Above what the cull radius holds (~80), for the reason `PROP_COUNT` gives.
+const TRAP_COUNT := 160
 const TRAP_SEED := 20260903
 ## Two overlapping holes read as one, and the gap between them has to be wider
 ## than the cat. Kept under `TRAP_CELL` or nearly every placement is rejected.
@@ -1182,7 +1186,12 @@ const TRAP_SPLASH_COUNT := 10
 const TRAP_SPLASH_SPEED := 96.0
 const TRAP_SPLASH_COLOUR := Color(0.78, 0.9, 1.0)
 
-const PROP_COUNT := 120
+## A ceiling a long walk cannot reach, not a budget the field spends. It has to
+## sit above what the cull radius actually holds (~220 at `PROP_PER_CELL` over
+## `PROP_FORGET_DISTANCE`), because the cap is checked inside `_fill_cell`: if
+## it can fire mid-cell then how much of a cell survives depends on how many
+## cells came before it, and the seeded garden stops being the same garden.
+const PROP_COUNT := 320
 ## Seeded, so the garden is the same every run: a child who learns where the
 ## pots are should find them there again.
 const PROP_SEED := 20260901

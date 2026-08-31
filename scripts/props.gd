@@ -25,6 +25,8 @@ var _rng := RandomNumberGenerator.new()
 var _filled: Dictionary[Vector2i, bool] = {}
 ## Where the cat started, kept clear of props.
 var _clear_around := Vector2.ZERO
+## Where the field was last topped up, so it is not rebuilt every frame.
+var _last_refill := Vector2.ZERO
 var _player: Node2D
 ## The map's prop table, read once at load: a map cannot change mid-run.
 var _table: Array = []
@@ -61,6 +63,7 @@ func scatter(clear_around: Vector2) -> void:
 		_drop(c)
 	_filled.clear()
 	_clear_around = clear_around
+	_last_refill = clear_around
 	_refill_around(clear_around)
 
 
@@ -140,9 +143,15 @@ func _too_close(p: Vector2) -> bool:
 
 
 func _physics_process(delta: float) -> void:
-	if not Run.alive:
+	if not Run.alive or _player == null:
 		return
-	_refill_around(_player.global_position)
+	# Only once the cat has walked far enough to need new ground, the way the
+	# traps do it. Refilling every frame re-walks 49 cells and rebuilds a key
+	# array for nothing on the frames the cat has not left its cell.
+	var here := _player.global_position
+	if here.distance_to(_last_refill) > Tuning.PROP_REFILL_DISTANCE:
+		_last_refill = here
+		_refill_around(here)
 	for c in get_children():
 		(c as Prop).tick(delta)
 

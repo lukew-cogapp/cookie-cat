@@ -31,7 +31,11 @@ func _spots() -> Array[Vector2]:
 
 
 func test_scatter_fills_the_lawn() -> void:
-	assert_eq(_props.count(), Tuning.PROP_COUNT, "every prop was placed")
+	# Populated and under the ceiling, not exactly at it. How many pots land
+	# depends on how far the scatter reaches, and PROP_COUNT is the limit a long
+	# walk cannot exceed rather than a quota the field fills.
+	assert_gt(_props.count(), 0, "the lawn has pots on it")
+	assert_lte(_props.count(), Tuning.PROP_COUNT, "and never more than the cap")
 
 
 ## Seeded, so a child who learns where the pots are finds them there again. The
@@ -47,6 +51,30 @@ func test_the_garden_is_the_same_every_run() -> void:
 	assert_eq(_spots(), first, "the same layout")
 	for n in _props.count():
 		assert_eq(_props.at(n).kind, kinds[n], "prop %d is the same thing" % n)
+
+
+## Walking away and back finds the same garden, which is the whole point of
+## seeding a cell by its own coordinates. The re-scatter above never leaves the
+## origin, so it passed while this did not: the count cap used to be checked
+## inside the per-cell loop, and how much of a cell survived depended on how
+## many cells had been filled before it.
+func test_walking_away_and_back_finds_the_same_garden() -> void:
+	var here := Vector2.ZERO
+	# Compared as a set of positions: culling and refilling brings the same pots
+	# back in a different tree order, and what must not change is which pots
+	# exist, not the order the tree happens to hold them in.
+	var before := {}
+	for p: Vector2 in _spots():
+		before[p] = true
+	# Far enough to refill several times over, and back by a different route.
+	for step in [Vector2(2600, 0), Vector2(0, 2600), Vector2(-2600, 0), Vector2(0, -2600)]:
+		here += step
+		_props._refill_around(here)
+	var missing := 0
+	for p: Vector2 in _spots():
+		if not before.has(p):
+			missing += 1
+	assert_eq(missing, 0, "every pot is one that was there before")
 
 
 ## The cat is never walled in: being cornered against an invisible edge with

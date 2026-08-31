@@ -147,7 +147,8 @@ func test_the_ground_swaps_with_the_map() -> void:
 	await wait_process_frames(1)
 	assert_eq(ground._art, Tuning.MAPS["beach"]["ground_art"], "beach decals")
 	ground.scatter(Vector2.ZERO)
-	assert_eq(ground.alive, Tuning.GROUND_COUNT, "and the field still fills")
+	assert_gt(ground.alive, 0, "and the field still fills")
+	assert_lte(ground.alive, Tuning.GROUND_COUNT, "without passing the cap")
 
 
 func test_the_props_swap_with_the_map() -> void:
@@ -158,4 +159,5 @@ func test_the_props_swap_with_the_map() -> void:
 	props.set_physics_process(false)
 	assert_eq(props._table, Tuning.MAPS["arctic"]["props"], "arctic props")
 	props.scatter(Vector2.ZERO)
-	assert_eq(props.count(), Tuning.PROP_COUNT, "and the field still fills")
+	assert_gt(props.count(), 0, "and the field still fills")
+	assert_lte(props.count(), Tuning.PROP_COUNT, "without passing the cap")
