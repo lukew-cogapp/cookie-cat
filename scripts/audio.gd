@@ -17,6 +17,22 @@ extends Node
 ## wall of noise the throttle is here to prevent.
 
 const RATE := 22050.0
+## The music's two voices, kept as data because the stream itself is not built
+## until something asks for it. Thirty-two beats of bass, then the melody over
+## it, where a 0.0 is a rest.
+const MUSIC_BASS := [
+	130.81, 130.81, 164.81, 196.0, 110.0, 110.0, 130.81, 164.81,
+	174.61, 174.61, 220.0, 174.61, 196.0, 196.0, 246.94, 196.0,
+	130.81, 164.81, 196.0, 164.81, 110.0, 130.81, 164.81, 130.81,
+	174.61, 220.0, 196.0, 246.94, 196.0, 164.81, 146.83, 130.81,
+]
+const MUSIC_MELODY := [
+	523.25, 0.0, 659.25, 0.0, 440.0, 523.25, 0.0, 659.25,
+	698.46, 0.0, 880.0, 0.0, 783.99, 0.0, 987.77, 0.0,
+	523.25, 659.25, 0.0, 783.99, 659.25, 0.0, 523.25, 0.0,
+	698.46, 0.0, 783.99, 987.77, 0.0, 659.25, 0.0, 523.25,
+]
+const MUSIC_BEAT := 0.34
 ## A swarm fires and dies in bursts, so the pool is wider than the 3D game's.
 const VOICES := 16
 const MUSIC_VOLUME_DB := -12.0
@@ -95,17 +111,6 @@ func _ready() -> void:
 	# Sixteen at 0.36 still came round every 5.8 seconds, which a child hears
 	# as one phrase repeating; this runs twice as long and moves through I-vi-
 	# IV-V so the return lands rather than just restarting.
-	_bank["music"] = _music(
-		[130.81, 130.81, 164.81, 196.0, 110.0, 110.0, 130.81, 164.81,
-		174.61, 174.61, 220.0, 174.61, 196.0, 196.0, 246.94, 196.0,
-		130.81, 164.81, 196.0, 164.81, 110.0, 130.81, 164.81, 130.81,
-		174.61, 220.0, 196.0, 246.94, 196.0, 164.81, 146.83, 130.81],
-		[523.25, 0.0, 659.25, 0.0, 440.0, 523.25, 0.0, 659.25,
-		698.46, 0.0, 880.0, 0.0, 783.99, 0.0, 987.77, 0.0,
-		523.25, 659.25, 0.0, 783.99, 659.25, 0.0, 523.25, 0.0,
-		698.46, 0.0, 783.99, 987.77, 0.0, 659.25, 0.0, 523.25],
-		0.34,
-	)
 	for _i in VOICES:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
@@ -158,8 +163,16 @@ func _bank_pop(now: float) -> void:
 	play("pop_big")
 
 
+## Built here rather than at startup. Synthesising the whole bank up front cost
+## a third of a second on a fast desktop before the first frame appeared, and
+## the music is most of that: it is the longest stream by far and nothing needs
+## it until a screen that plays it is up.
 func play_music(sound: String) -> void:
-	if music_muted or not _bank.has(sound):
+	if music_muted:
+		return
+	if sound == "music" and not _bank.has(sound):
+		_bank["music"] = _music(MUSIC_BASS, MUSIC_MELODY, MUSIC_BEAT)
+	if not _bank.has(sound):
 		return
 	if _music_player.playing and _music_player.stream == _bank[sound]:
 		return

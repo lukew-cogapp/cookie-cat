@@ -70,6 +70,10 @@ func test_death_has_a_sound() -> void:
 ## The loop was eight beats at 3.2 seconds, which a child hears as one bar
 ## repeating for ten minutes.
 func test_the_music_loop_is_long_enough() -> void:
+	# Asked for rather than read out of the bank: the music is synthesised on
+	# first request, so it is not there until something plays it.
+	Audio.set_muted(false, false)
+	Audio.play_music("music")
 	var music: AudioStreamWAV = Audio._bank["music"]
 	var seconds := float(music.data.size() / 2) / float(Audio.RATE)
 	assert_gt(seconds, 4.5, "the loop runs %.1fs before repeating" % seconds)

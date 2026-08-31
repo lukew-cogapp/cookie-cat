@@ -67,9 +67,14 @@ func _ready() -> void:
 	_pulse_play()
 	for _i in Tuning.START_BUG_COUNT:
 		_launch_bug(_make_bug(), true)
-	# `play_music` is idempotent, so the loop carries into the run unbroken.
-	Audio.play_music("music")
 	_play.grab_focus()
+	# After a frame, not during this one. The music is synthesised on first
+	# request and that takes long enough to see, so it waits until the cats are
+	# on screen rather than holding up the first paint.
+	#
+	# `play_music` is idempotent, so the loop carries into the run unbroken.
+	await get_tree().process_frame
+	Audio.play_music("music")
 
 
 ## Places the map-and-hat strip against the width the screen actually has.
