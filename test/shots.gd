@@ -14,6 +14,22 @@ func _init() -> void:
 	await process_frame
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 
+	# Play's promotion bar is 16:9 at 1920x1080 or better, and the root window
+	# is the capture surface, so it is sized here rather than in project.godot.
+	get_root().mode = Window.MODE_WINDOWED
+	get_root().size = Vector2i(1920, 1080)
+	await process_frame
+
+	# The shop first: cats, maps and hats are half the game, and the store
+	# listing needs a picture of them.
+	var shop: Node = load("res://scenes/start_screen.tscn").instantiate()
+	get_root().add_child(shop)
+	await _wait(30)
+	await _shoot("00_shop")
+	shop.queue_free()
+	await process_frame
+	await process_frame
+
 	var world: Node = load("res://scenes/world.tscn").instantiate()
 	get_root().add_child(world)
 	var run: Node = get_root().get_node("Run")

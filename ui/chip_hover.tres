@@ -4,6 +4,10 @@
 ; and a fuller fill, so a gamepad's focus is obvious without the button moving.
 
 [resource]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
 bg_color = Color(0.26, 0.21, 0.3, 1)
 border_width_left = 3
 border_width_top = 3

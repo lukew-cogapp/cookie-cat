@@ -1719,18 +1719,20 @@ def feature_graphic():
     for ty in range(4):
         for tx in range(8):
             blit(rows, LAWN_SCATTER, tx * 128, ty * 128, 8)
+    # Placed by hand so nothing overlaps: two sprites sharing pixels read as
+    # one merged creature at this size.
     for grid, x, y, scale in (
-        (GROUND_FLOWERS, 40, 330, 6),
+        (GROUND_FLOWERS, 30, 340, 6),
         (GROUND_PATCH, 730, 40, 6),
-        (GROUND_STONES, 240, 390, 6),
+        (GROUND_STONES, 180, 400, 6),
         (GRUB, 60, 110, 7),
         (SPIDER, 250, 120, 6),
         (WASP, 800, 120, 7),
-        (SNAIL, 120, 290, 7),
-        (BEETLE, 850, 300, 7),
-        (SLIME, 690, 360, 6),
-        (STAR, 320, 340, 5),
-        (COOKIE, 640, 330, 6),
+        (SNAIL, 140, 280, 7),
+        (BEETLE, 872, 270, 7),
+        (SLIME, 765, 370, 6),
+        (STAR, 315, 350, 5),
+        (COOKIE, 655, 320, 6),
         (CAT_STAND, 400, 180, 14),
     ):
         blit(rows, grid, x, y, scale)

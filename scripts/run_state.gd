@@ -154,6 +154,18 @@ func _choices() -> Array:
 		for id: String in Tuning.CONSUMABLES:
 			pool.append(id)
 	pool.shuffle()
+	# One card is held for something already owned and not yet maxed. A flat
+	# shuffle over ten weapons means a child's favourite toy can go several
+	# levels without being offered, which reads as the game ignoring the thing
+	# they chose. The other cards stay random, so a run still opens up.
+	var owned: Array[String] = []
+	for id: String in pool:
+		if weapons.has(id) or passives.has(id):
+			owned.append(id)
+	if not owned.is_empty():
+		var pick: String = owned[0]
+		pool.erase(pick)
+		pool.insert(0, pick)
 	# Everything maxed: the level still has to resolve, and the caller draws
 	# nothing rather than hanging on an empty pick screen.
 	return pool.slice(0, Tuning.LEVEL_CHOICES)

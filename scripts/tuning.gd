@@ -1062,7 +1062,7 @@ const MIN_TOUCH := 96.0
 ## Wide enough for "Fish Friends" beside its icon with room to spare. At 168 it
 ## fitted only exactly, and the next longer weapon name would have wrapped to a
 ## second line and pushed the card taller than its neighbours.
-const START_CARD_SIZE := Vector2(182, 212)
+const START_CARD_SIZE := Vector2(190, 222)
 ## Keeps the contents off the card's outline, as `CARD_PAD` does on the pick
 ## screen.
 const START_CARD_PAD := 8
@@ -1415,7 +1415,7 @@ const MAPS := {
 ## One size for both the map and hat rows, so the strip under the cats reads as
 ## one band rather than two of slightly different widths. Sized by "Party Hat",
 ## the longest label either row carries.
-const START_MAP_CARD_SIZE := Vector2(140, 122)
+const START_MAP_CARD_SIZE := Vector2(140, 134)
 const START_MAP_ART_SIZE := Vector2(64, 64)
 
 

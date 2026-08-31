@@ -75,11 +75,12 @@ theme_override_constants/outline_size = 7
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -216.0
+offset_left = -22.0
 offset_top = 22.0
 offset_right = -22.0
-offset_bottom = 94.0
+offset_bottom = 22.0
 grow_horizontal = 0
+grow_vertical = 1
 theme_override_styles/panel = ExtResource("2")
 
 [node name="Pad" type="MarginContainer" parent="Cookies"]
@@ -202,7 +203,6 @@ theme_override_constants/separation = 10
 
 [node name="Music" type="Button" parent="Audio"]
 layout_mode = 2
-custom_minimum_size = Vector2(104, 44)
 icon = ExtResource("7")
 text = "Music"
 theme_override_font_sizes/font_size = 20
@@ -212,7 +212,6 @@ expand_icon = true
 
 [node name="Sound" type="Button" parent="Audio"]
 layout_mode = 2
-custom_minimum_size = Vector2(112, 44)
 icon = ExtResource("8")
 text = "Sound"
 theme_override_font_sizes/font_size = 20
