@@ -572,6 +572,78 @@ static func rush_count(t: float) -> int:
 	return int(round(lerpf(float(RUSH_COUNT_MIN), float(RUSH_COUNT_MAX), f)))
 
 
+# --- The eclipse ---
+## Once a run, at the halfway mark: the sky dims to a starry night and a warm
+## lamp of light stays on the cat. Scenery on a timer, never a difficulty: the
+## dark is see-through, no number here feeds a bug, and the director holds its
+## rushes while it lasts so nothing charges out of the gloom.
+const ECLIPSE_AT := 300.0
+## Half a minute. Long enough to notice the moon and the fireflies, short
+## enough that a child who is unsure about the dark is out of it quickly.
+const ECLIPSE_TIME := 30.0
+## Dusk and dawn, not a light switch. The fade is also the telegraph: the
+## banner lands as the first shade appears, and nothing else happens at all.
+const ECLIPSE_FADE := 2.5
+## See-through on purpose. Every bug stays visible in the dim, because a dark
+## screen with unseen things in it is the definition of scary at five.
+const ECLIPSE_NIGHT := Color(0.09, 0.10, 0.27, 0.70)
+## The fully lit circle around the cat. Past the paw's full-grown reach, so
+## the starting toy always works in the light.
+const ECLIPSE_SPOT_RADIUS := 100.0
+## How far the light falls off to night beyond the lit circle.
+const ECLIPSE_SPOT_FADE := 90.0
+## A warm ring where the lamp meets the night, which is what makes it read as
+## lamplight rather than a hole in the dark.
+const ECLIPSE_RIM_COLOUR := Color(1.0, 0.78, 0.42, 0.22)
+## How far across the falloff the warm ring sits, as a fraction of the fade.
+const ECLIPSE_RIM_AT := 0.35
+## The shade texture's width in world units, centred on the cat. It has to
+## out-reach the corner of the widest view (about 350 world units at `ZOOM`
+## on a 20:9 handset), or the corners stay daylight.
+const ECLIPSE_COVER := 820.0
+const ECLIPSE_SHADE_RES := 256
+## The sky. Star radii sit outside the lamp and inside the widest view; stars
+## near the lamp dim with the light, so none sits bright in the lit circle.
+const ECLIPSE_STARS := 80
+const ECLIPSE_STAR_NEAR := 150.0
+const ECLIPSE_STAR_FAR := 340.0
+const ECLIPSE_STAR_COLOUR := Color(1.0, 0.97, 0.88)
+const ECLIPSE_STAR_SIZE_MIN := 1.2
+const ECLIPSE_STAR_SIZE_MAX := 2.6
+## How much of a star's light the twinkle takes, and how fast.
+const ECLIPSE_TWINKLE := 0.45
+const ECLIPSE_TWINKLE_RATE := 2.2
+## Screen-space, since the overlay rides the camera: up and left of the cat,
+## outside the lamp, under the health bar and clear of the loadout list, which
+## owns the top-right corner.
+const ECLIPSE_MOON_AT := Vector2(-185, -80)
+const ECLIPSE_MOON_RADIUS := 20.0
+const ECLIPSE_MOON_COLOUR := Color(0.99, 0.96, 0.82)
+const ECLIPSE_MOON_CRATER_COLOUR := Color(0.9, 0.85, 0.68)
+## x, y, radius per crater, in moon-local units.
+const ECLIPSE_MOON_CRATERS := [Vector3(-6.0, -3.0, 4.5), Vector3(5.0, 6.0, 3.2), Vector3(7.0, -7.0, 2.4)]
+const ECLIPSE_MOON_GLOW_COLOUR := Color(1.0, 0.97, 0.8, 0.08)
+const ECLIPSE_MOON_GLOW_RINGS := 3
+const ECLIPSE_MOON_GLOW_STEP := 0.35
+## Fireflies drift around the lamp's rim, so the edge of the light is alive
+## rather than a boundary.
+const ECLIPSE_FIREFLIES := 6
+const ECLIPSE_FLY_RADIUS := 130.0
+const ECLIPSE_FLY_WOBBLE := 26.0
+const ECLIPSE_FLY_BOB_RATE := 0.7
+## Radians per second around the lamp, rolled per fly so they never bunch.
+const ECLIPSE_FLY_SPEED_MIN := 0.25
+const ECLIPSE_FLY_SPEED_MAX := 0.5
+const ECLIPSE_FLY_PULSE_RATE := 2.6
+## A firefly never quite goes out; below this floor the blink reads as one
+## vanishing rather than breathing.
+const ECLIPSE_FLY_PULSE_FLOOR := 0.45
+const ECLIPSE_FLY_COLOUR := Color(1.0, 0.9, 0.45)
+const ECLIPSE_FLY_SIZE := 2.4
+const ECLIPSE_FLY_GLOW_SIZE := 7.0
+const ECLIPSE_FLY_GLOW_ALPHA := 0.22
+const ECLIPSE_SEED := 20260904
+
 # --- Pickups ---
 const GEM_MAX := 300
 ## Pickups, keyed by name. `GEM_ORDER` is what fixes them to the indices in

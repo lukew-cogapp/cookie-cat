@@ -104,6 +104,8 @@ func _init() -> void:
 
 	# The boomerang, alone, so both legs and the catch can be judged. Clearing
 	# the loadout also stops the other toys popping the target bugs first.
+	hud._pending.clear()
+	hud._picker.visible = false
 	run.weapons = _loadout({"boomer": 3})
 	weapons._ready_in.clear()
 	weapons.shots = 0
@@ -111,24 +113,36 @@ func _init() -> void:
 	for i in 8:
 		swarm.spawn(player.global_position + Vector2(190, -70 + 20.0 * float(i)), i % 5)
 	await _wait(10)
+	hud._pending.clear()
+	hud._picker.visible = false
 	await _shoot("12_boomer_out")
 	await _wait(28)
+	hud._pending.clear()
+	hud._picker.visible = false
 	await _shoot("13_boomer_return")
 	await _wait(20)
+	hud._pending.clear()
+	hud._picker.visible = false
 	await _shoot("14_boomer_catch")
 
 	# The crumb trail: walk the cat so a line of crumbs drops, then let bugs
 	# reach it and eat.
+	hud._pending.clear()
+	hud._picker.visible = false
 	run.weapons = _loadout({"trail": 3})
 	weapons._ready_in.clear()
 	weapons.shots = 0
 	for _step in 6:
 		player.position += Vector2(28, 0)
 		await _wait(14)
+	hud._pending.clear()
+	hud._picker.visible = false
 	await _shoot("15_crumbs")
 	for i in 6:
 		swarm.spawn(player.global_position + Vector2(-80.0 - 20.0 * float(i), 40), 0)
 	await _wait(40)
+	hud._pending.clear()
+	hud._picker.visible = false
 	await _shoot("16_crumb_eaten")
 
 	# Minute-eight density: the full quota of bugs and a full loadout, which is
@@ -148,6 +162,31 @@ func _init() -> void:
 	await _shoot("17_minute8_crowd")
 	await _wait(15)
 	await _shoot("18_minute8_crowd_later")
+
+	# The eclipse: full night with the lamp, the moon, stars and fireflies
+	# over the minute-eight crowd, which is what "pretty, not scary" is judged
+	# on: every bug must stay readable in the dim.
+	hud._pending.clear()
+	hud._picker.visible = false
+	# Standing in the minute-eight crowd for the whole night kills the cat,
+	# and the end screen would sit over both shots.
+	player.heal(Tuning.PLAYER_MAX_HP)
+	world._on_eclipse_started()
+	await _wait(int(Tuning.ECLIPSE_FADE * 60.0) + 12)
+	hud._pending.clear()
+	hud._picker.visible = false
+	await _wait(2)
+	await _shoot("20_eclipse")
+	player.heal(Tuning.PLAYER_MAX_HP)
+	world._on_eclipse_ended()
+	await _wait(int(Tuning.ECLIPSE_FADE * 30.0))
+	# The crowd's xp can level up during the fade, and the picker would sit
+	# over the dawn this shot exists to show.
+	hud._pending.clear()
+	hud._picker.visible = false
+	await _wait(2)
+	await _shoot("21_eclipse_dawn")
+	await _wait(int(Tuning.ECLIPSE_FADE * 40.0) + 10)
 
 	# The pick screen, which is the one piece of UI a child has to use.
 	hud._pending.clear()

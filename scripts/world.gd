@@ -14,6 +14,7 @@ extends Node2D
 @onready var _ground: Ground = $Ground
 @onready var _traps: Traps = $Traps
 @onready var _camera: Camera2D = $Player/Camera
+@onready var _eclipse: Eclipse = $Eclipse
 @onready var _hud: CanvasLayer = $Hud
 
 ## Kills inside the combo window, and when the window opened.
@@ -45,6 +46,9 @@ func _ready() -> void:
 	_gems.collected.connect(_on_collected)
 	_director.boss_arrived.connect(_on_boss)
 	_director.rush_arrived.connect(_on_rush)
+	_eclipse.set_player(_player)
+	_director.eclipse_started.connect(_on_eclipse_started)
+	_director.eclipse_ended.connect(_on_eclipse_ended)
 	_player.health_changed.connect(_hud.set_health)
 	_player.health_changed.connect(_on_health)
 	Run.consumed.connect(_on_consumed)
@@ -238,6 +242,20 @@ func _on_rush(at: Vector2) -> void:
 		Tuning.RUSH_RING_RADIUS,
 		Tuning.RUSH_RING_SPEED
 	)
+
+
+## Night falls. The banner points at the sky, and the fade is the telegraph:
+## nothing arrives, nothing speeds up, so there is nothing else to warn about.
+func _on_eclipse_started() -> void:
+	_hud.flash("Look! The moon!")
+	Audio.play("chest")
+	_eclipse.begin()
+
+
+func _on_eclipse_ended() -> void:
+	_hud.flash("The sun is back!")
+	Audio.play("heal")
+	_eclipse.finish()
 
 
 func _on_died() -> void:

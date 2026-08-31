@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/world.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://scripts/ground.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/touch_stick.gd" id="12"]
 [ext_resource type="Script" path="res://scripts/traps.gd" id="13"]
+[ext_resource type="Script" path="res://scripts/eclipse.gd" id="14"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1")
@@ -46,6 +47,9 @@ script = ExtResource("5")
 
 [node name="Puffs" type="Node2D" parent="."]
 script = ExtResource("10")
+
+[node name="Eclipse" type="Node2D" parent="."]
+script = ExtResource("14")
 
 [node name="Director" type="Node" parent="."]
 script = ExtResource("6")

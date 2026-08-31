@@ -9,6 +9,8 @@ extends Node
 
 signal boss_arrived(at: Vector2)
 signal rush_arrived(at: Vector2)
+signal eclipse_started
+signal eclipse_ended
 
 var _swarm: Swarm
 var _player: Node2D
@@ -33,6 +35,11 @@ var _boss_in := -1.0
 var _rush_next := 0.0
 var _rush_from := Vector2.ZERO
 var _rush_in := -1.0
+## When the falling night lifts. Negative means no eclipse is running, the
+## same shape as the countdowns above.
+var _eclipse_until := -1.0
+## Whether the night has already been, so it comes once a run.
+var _eclipse_done := false
 ## Fractional spawns owed by the quota top-up, so its rate is independent of
 ## the frame rate.
 var _refill_credit := 0.0
@@ -48,6 +55,8 @@ func setup(swarm: Swarm, player: Node2D) -> void:
 	_boss_in = -1.0
 	_rush_in = -1.0
 	_rush_next = Tuning.RUSH_AFTER + _roll_rush_gap()
+	_eclipse_until = -1.0
+	_eclipse_done = false
 	_refill_credit = 0.0
 
 
@@ -61,6 +70,7 @@ func _physics_process(delta: float) -> void:
 		if _boss_in < 0.0:
 			var at := _player.global_position + Vector2.from_angle(_boss_from) * Tuning.SPAWN_RING
 			_swarm.spawn(at, Swarm.Kind.BIG)
+	_check_eclipse()
 	_check_rush(delta)
 	# Top up towards the quota, but at a limited rate. The quota is what fills
 	# the screen; unthrottled it also refills every kill in the same frame, so
@@ -101,6 +111,11 @@ func _check_rush(delta: float) -> void:
 		if _rush_in < 0.0:
 			_spawn_rush()
 		return
+	# The dark holds the rushes: a pack charging out of the gloom is exactly
+	# the fright the eclipse must never be. One already announced still lands.
+	if eclipse_active():
+		_rush_next = maxf(_rush_next, Run.clock + Tuning.RUSH_GAP_MIN)
+		return
 	if Run.clock < Tuning.RUSH_AFTER or Run.clock < _rush_next:
 		return
 	_rush_next = Run.clock + _roll_rush_gap()
@@ -122,6 +137,26 @@ func _spawn_rush() -> void:
 		var r := Tuning.SPAWN_RING + _rng.randf_range(0.0, Tuning.RUSH_RING_JITTER)
 		var at := _player.global_position + Vector2.from_angle(a) * r
 		_swarm.spawn(at, Tuning.RUSH_KIND, Tuning.RUSH_HURRY)
+
+
+## The eclipse: the one timed event that spawns nothing. The schedule lives
+## here with the bosses and rushes, so the clock has a single owner; the
+## world owns what the night looks like.
+func _check_eclipse() -> void:
+	if _eclipse_until >= 0.0:
+		if Run.clock >= _eclipse_until:
+			_eclipse_until = -1.0
+			eclipse_ended.emit()
+		return
+	if _eclipse_done or Run.clock < Tuning.ECLIPSE_AT:
+		return
+	_eclipse_done = true
+	_eclipse_until = Run.clock + Tuning.ECLIPSE_TIME
+	eclipse_started.emit()
+
+
+func eclipse_active() -> bool:
+	return _eclipse_until >= 0.0
 
 
 func _check_boss() -> void:

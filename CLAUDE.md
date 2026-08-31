@@ -46,7 +46,8 @@ scripts/trap.gd            one hole, a node rather than a row
 scripts/props.gd           the breakable field, one prop set per map
 scripts/prop.gd            one pot, a node rather than a row
 scripts/ground.gd          scattered decals, decoration only
-scripts/director.gd        the wave table, rushes and bosses
+scripts/director.gd        the wave table, rushes, bosses and the eclipse
+scripts/eclipse.gd         night at the halfway mark, one gradient texture
 scripts/player.gd          the cat: movement, mercy time, health
 scripts/touch_stick.gd     the on-screen thumbstick
 scripts/world.gd           wires the run together
@@ -399,6 +400,17 @@ fits the arrays, the spawn ring clears the screen corner, and every weapon has
 art and a blurb and gets better with levels. `hats_test.gd` owns the one about
 the cheapest thing being reachable in a few runs, since hats are what cookies
 buy. Retuning freely is the point; breaking one of those is a bug.
+
+The eclipse rides the same clock: once, at `ECLIPSE_AT`, the sky dims to a
+starry night for `ECLIPSE_TIME` with a warm lamp of light on the cat, a moon,
+and fireflies on the lamp's rim. It is scenery, never difficulty: the dark is
+see-through so every bug stays visible, and the director holds new rushes
+while it lasts so nothing charges out of the gloom. The whole night is one
+radial gradient texture centred on the cat (`eclipse.gd`): the camera is
+pinned to the cat, so a world-space overlay doubles as a screen-space one, and
+no Light2D or shader is needed, which is what keeps it working on
+gl_compatibility. The moon sits top-left because the loadout list owns the
+top-right corner.
 
 Cookies are banked by `Save` when a run **ends**, not as they are picked up, so
 quitting halfway pays nothing. Surviving the full ten minutes pays
