@@ -220,6 +220,9 @@ func _redraw() -> void:
 		var mm := _mm[k]
 		mm.visible_instance_count = rows.size()
 		var s := Tuning.enemy_radius(k) * 2.0
+		# The art is square, so one scale keeps every bug's own proportions;
+		# scaling x and y apart stretched the snail, whose drawing is wider
+		# than it is tall inside the same 16x16 grid.
 		for n in rows.size():
 			var i: int = rows[n]
 			# Bugs face the way they walk, like the cat: art is drawn facing

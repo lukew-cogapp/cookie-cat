@@ -20,6 +20,10 @@ const PLAYER_SPEED := 118.0
 ## Every enemy is slower than this. A child who runs away must always escape;
 ## the genre's tension comes from being surrounded, not from being outrun.
 const PLAYER_RADIUS := 15.0
+## The cat is drawn this many world units across. It must be the biggest thing
+## in the garden: rendered at the sprite's own 16 it was smaller than every bug
+## and hard to find in a crowd.
+const PLAYER_DRAW_SIZE := 30.0
 ## A long blink after a hit. Standing in a crowd otherwise costs all three
 ## hearts in a second, which teaches nothing.
 const PLAYER_MERCY_TIME := 1.6
@@ -235,12 +239,12 @@ const ZONE_FADE_TIME := 1.0
 ## HP is flat per kind and grows with the clock, not with player level: a
 ## child who levels fast should feel stronger, not meet tougher bugs.
 const ENEMIES := [
-	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 1.0, "radius": 15.0, "xp": 1, "knock": 46.0},
-	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 1.0, "radius": 17.0, "xp": 2, "knock": 38.0},
-	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 1.0, "radius": 20.0, "xp": 4, "knock": 22.0},
-	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 1.0, "radius": 14.0, "xp": 3, "knock": 60.0},
-	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 1.0, "radius": 19.0, "xp": 3, "knock": 34.0},
-	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 1.0, "radius": 46.0, "xp": 60, "knock": 6.0},
+	{"name": "Grub", "hp": 6.0, "speed": 46.0, "damage": 1.0, "radius": 9.0, "xp": 1, "knock": 46.0},
+	{"name": "Beetle", "hp": 14.0, "speed": 62.0, "damage": 1.0, "radius": 10.0, "xp": 2, "knock": 38.0},
+	{"name": "Snail", "hp": 34.0, "speed": 28.0, "damage": 1.0, "radius": 12.0, "xp": 4, "knock": 22.0},
+	{"name": "Wasp", "hp": 10.0, "speed": 104.0, "damage": 1.0, "radius": 8.5, "xp": 3, "knock": 60.0},
+	{"name": "Slime", "hp": 22.0, "speed": 52.0, "damage": 1.0, "radius": 11.0, "xp": 3, "knock": 34.0},
+	{"name": "Big Bug", "hp": 340.0, "speed": 44.0, "damage": 1.0, "radius": 26.0, "xp": 60, "knock": 6.0},
 ]
 const ENEMY_MAX := 220
 ## Past this from the player an enemy is forgotten. Over a screen and a half,
@@ -296,7 +300,7 @@ const GEM_TEXTURES := [
 	"res://assets/heart.png",
 	"res://assets/cookie.png",
 ]
-const GEM_SIZES := [16.0, 20.0, 22.0]
+const GEM_SIZES := [12.0, 15.0, 17.0]
 ## A bob, not a spin: a flat sprite turned edge-on vanishes.
 const GEM_BOB := 2.5
 const GEM_BOB_RATE := 3.0
@@ -391,6 +395,35 @@ const CARD_BLURB_COLOUR := Color(0.78, 0.74, 0.82)
 ## The pick panel pops from this fraction of full size.
 const MODAL_POP_FROM := 0.75
 const MODAL_POP_TIME := 0.28
+
+# --- Start screen ---
+## Five cards plus gaps must fit a 1280 design width.
+const START_CARD_SIZE := Vector2(168, 212)
+## All 16x16 art, scaled by whole numbers so the pixels stay square: the cat
+## at 6x, weapon and cost icons at 2x, the cookie counter and bugs at 3x.
+const START_CAT_SIZE := Vector2(96, 96)
+const START_ICON_SIZE := Vector2(32, 32)
+const START_COOKIE_SIZE := Vector2(48, 48)
+const START_BUG_SIZE := Vector2(48, 48)
+## A locked cat is a shadow of itself; the price stays bright so it reads.
+const START_LOCKED_TINT := Color(0.42, 0.4, 0.5)
+const START_COST_COLOUR := Color(1.0, 0.84, 0.36)
+## Idle life on the lawn. Slow enough to be scenery, not a chase.
+const START_BUG_COUNT := 6
+const START_BUG_TIME_MIN := 16.0
+const START_BUG_TIME_MAX := 30.0
+const START_BUG_ALPHA := 0.9
+const START_TITLE_BOB := 6.0
+const START_TITLE_BOB_TIME := 1.3
+const START_PLAY_PULSE := 1.05
+const START_PLAY_PULSE_TIME := 0.7
+## The chosen cat hops once, so the pick reads without words.
+const START_HOP := 10.0
+const START_HOP_TIME := 0.3
+## A card the player cannot afford shakes its head.
+const START_WOBBLE := 7.0
+const START_WOBBLE_TIME := 0.07
+
 
 # --- Lookups the swarm calls every frame ---
 func enemy_hp(kind: int, clock: float) -> float:

@@ -25,10 +25,10 @@ script = ExtResource("4")
 [node name="Swarm" type="Node2D" parent="."]
 script = ExtResource("3")
 
+[node name="Player" parent="." instance=ExtResource("2")]
+
 [node name="Weapons" type="Node2D" parent="."]
 script = ExtResource("5")
-
-[node name="Player" parent="." instance=ExtResource("2")]
 
 [node name="Director" type="Node" parent="."]
 script = ExtResource("6")

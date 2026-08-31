@@ -31,6 +31,10 @@ var _step := 0.0
 
 func _ready() -> void:
 	_camera.zoom = Vector2(Tuning.ZOOM, Tuning.ZOOM)
+	# The cat must be the biggest thing on screen; the art is 16px, so it is
+	# scaled up here rather than drawn again at a second size.
+	var grow := Tuning.PLAYER_DRAW_SIZE / 16.0
+	_sprite.scale = Vector2(grow, grow)
 	_sprite.texture = load(String(Tuning.CATS[Run.cat]["art"]))
 	_walk = [
 		_sprite.texture,

@@ -54,6 +54,7 @@ PALETTE = {
     "l": (214, 240, 255, 255),
     "T": (126, 186, 108, 255),  # lawn
     "t": (134, 194, 116, 255),  # lawn, a shade lighter
+    "d": (116, 176, 100, 255),  # lawn, a shade darker
 }
 
 # The cat, facing right, three frames: stand, step, step-other. Chunky enough
@@ -120,16 +121,16 @@ GRUB = [
     "................",
     "................",
     "................",
-    "....oooooo......",
-    "...ogGGGGoo.....",
-    "..oGGGGGGGGo....",
-    ".oGgGGGGGGGGo...",
-    ".oGGoGGoGGGGo...",
-    ".oGGKGGKGGGGo...",
-    ".oGGGGGGGGGGo...",
-    "..oGGGGGGGGo....",
-    "...oooooooo.....",
     "................",
+    "....ooo.ooo.oo..",
+    "...oGGGoGGGoGGo.",
+    "..oGgGGoGGGoGGo.",
+    ".oGgGGGoGGGoWKo.",
+    ".oGGGGGoGGGoGGo.",
+    ".oGGGGGoGGGoGGo.",
+    "..oGGGGoGGGoGGo.",
+    "...ooooooooooo..",
+    "..o..o.o..o.....",
     "................",
     "................",
 ]
@@ -153,20 +154,20 @@ BEETLE = [
 ]
 SNAIL = [
     "................",
-    "............o.o.",
-    "...........o.o..",
-    "......oooo.ooo..",
-    ".....oOOOOoLLo..",
-    "....oOObbOOLLLo.",
-    "....oObOObOLKLo.",
-    "....oObOObOLLLo.",
-    "...ooOObbOOLLLo.",
-    "..o..oOOOOoLLLo.",
-    ".oll..oooo.LLLo.",
-    ".ollloooooooLLo.",
-    ".olLLlllllllllo.",
-    "..ollllllllllo..",
-    "...ooooooooooo..",
+    "................",
+    "..........o..o..",
+    "...ooooo..o..o..",
+    "..oOOOOOo.o..o..",
+    ".oOObbbOOo.oo...",
+    ".oObOOObOo.ooo..",
+    ".oObOoOObOoWKWo.",
+    ".oOObbbOOOoWWWo.",
+    ".oOOOOOOOOoWWWo.",
+    ".ooOOOOOOooWWWo.",
+    "..oWWWWWWWWWWWo.",
+    ".oWWWWWWWWWWWWo.",
+    ".oWWWWWWWWWWWo..",
+    "..ooooooooooo...",
     "................",
 ]
 WASP = [
@@ -200,9 +201,9 @@ SLIME = [
     ".oSSSSSSSSSSo...",
     ".oSSSSooSSSSo...",
     ".oSSSSSSSSSSo...",
-    "..oooooooooo....",
-    "................",
-    "................",
+    ".oSSSSSSSSSSo...",
+    "..ooSoSSoSooo...",
+    "....ooooooo.....",
     "................",
 ]
 # The boss: the same slime shape scaled up in-engine would read as a big
@@ -681,13 +682,29 @@ def main():
         print(f"{name}.png {w}x{h}", flush=True)
     # The lawn is a tile, not a sprite: two greens in a soft check so movement
     # over open ground is visible without drawing grass.
+    # Four tones in a fixed pseudo-random scatter, so the ground has texture
+    # without a visible grid: the earlier two-tone check read as graph paper
+    # and fought with the bugs standing on it.
     tile = []
-    for y in range(16):
-        row = ""
-        for x in range(16):
-            # 8px squares, and only a hair apart in tone: at zoom the earlier
-            # 2px check read as static and fought with the bugs on top of it.
-            row += "t" if (x // 8 + y // 8) % 2 == 0 else "T"
+    scatter = [
+        "TTtTTTTtTTTTtTTT",
+        "TTTTTdTTTTtTTTTT",
+        "tTTTTTTTTTTTTdTT",
+        "TTTTtTTTdTTTTTTt",
+        "TTdTTTTTTTTtTTTT",
+        "TTTTTTtTTTTTTTTT",
+        "TdTTTTTTTTTTtTdT",
+        "TTTTtTTTTdTTTTTT",
+        "TTTTTTTTTTTTTTtT",
+        "TtTTTdTTtTTTTTTT",
+        "TTTTTTTTTTTdTTTT",
+        "TTTdTTTtTTTTTTtT",
+        "tTTTTTTTTTTTTTTT",
+        "TTTTTtTTTTdTTTTT",
+        "TTdTTTTTTTTTtTTT",
+        "TTTTTTTtTTTTTTTT",
+    ]
+    for row in scatter:
         tile.append(row)
     write_png(OUT / "lawn.png", tile)
     print("lawn.png 16x16", flush=True)
