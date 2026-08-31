@@ -1194,8 +1194,8 @@ const GROUND_REFILL_DISTANCE := 1100.0
 ## meaningless and the run trivial, so most give the xp gem a bug would.
 const PROPS := [
 	{
-		"name": "Flower Pot",
-		"art": "res://assets/prop_pot.png",
+		"name": "Biscuit Bowl",
+		"art": "res://assets/prop_bowl_food.png",
 		"hp": 12.0,
 		"radius": 13.0,
 		"heart_chance": 0.14,
@@ -1203,8 +1203,8 @@ const PROPS := [
 		"xp": 3,
 	},
 	{
-		"name": "Berry Bush",
-		"art": "res://assets/prop_bush.png",
+		"name": "Milk Bowl",
+		"art": "res://assets/prop_bowl_milk.png",
 		"hp": 20.0,
 		"radius": 15.0,
 		"heart_chance": 0.22,
@@ -1212,8 +1212,8 @@ const PROPS := [
 		"xp": 5,
 	},
 	{
-		"name": "Cookie Box",
-		"art": "res://assets/prop_box.png",
+		"name": "Fish Bowl",
+		"art": "res://assets/prop_bowl_fish.png",
 		"hp": 34.0,
 		"radius": 14.0,
 		"heart_chance": 0.10,
