@@ -326,3 +326,16 @@ func test_nothing_one_shots_the_cat() -> void:
 			Tuning.PLAYER_MAX_HP,
 			"%s does not end a run in one touch" % Tuning.ENEMIES[kind]["name"],
 		)
+
+
+## Big Bowl says every toy gets bigger, so every toy has to have something for
+## it to enlarge. Yarn Ball and the Feather Wand have no radius of their own
+## and were getting nothing at all while the card promised otherwise.
+func test_every_weapon_can_be_made_bigger() -> void:
+	for id: String in Tuning.WEAPONS:
+		var w: Dictionary = Tuning.WEAPONS[id]
+		var travels := String(w["kind"]) in ["shot", "chaser", "boomer"]
+		assert_true(
+			w.has("radius") or travels,
+			"%s has a radius, or is a shot whose sweep the bowl widens" % id,
+		)

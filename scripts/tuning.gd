@@ -837,7 +837,7 @@ const BLURBS := {
 	"bell": "Attack more often",
 	"magnet": "Pick things up further away",
 	"snack": "Get a heart back",
-	"bowl": "Everything gets bigger",
+	"bowl": "All your toys get bigger",
 }
 ## The card art is 16x16, so it is drawn at this size with no filtering.
 ## Inset from a card's border. Without it a wrapped blurb touches the outline.

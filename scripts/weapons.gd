@@ -167,6 +167,13 @@ func _damage(id: String, level: int) -> float:
 	return Tuning.weapon_stat(id, "damage", level) * Run.passive("claw")
 
 
+## How wide a travelling shot sweeps. Yarn and the feather wand have no radius
+## of their own, so without this the Big Bowl did nothing for them at all while
+## the card promised everything gets bigger.
+func _shot_reach() -> float:
+	return Tuning.SHOT_HIT_RADIUS * Run.passive("bowl")
+
+
 func _radius(id: String, level: int) -> float:
 	return Tuning.weapon_stat(id, "radius", level) * Run.passive("bowl")
 
@@ -375,7 +382,7 @@ func _sweep_orbit(level: int) -> void:
 	for n in count:
 		var a := orbit_angle + TAU * float(n) / float(count)
 		var p := at + Vector2.from_angle(a) * r
-		_swarm.near(p, Tuning.ORBIT_HIT_RADIUS, _hits)
+		_swarm.near(p, Tuning.ORBIT_HIT_RADIUS * Run.passive("bowl"), _hits)
 		for i in _hits:
 			_hit(i, dmg, p)
 
@@ -427,7 +434,7 @@ func _tick_shots(delta: float) -> void:
 		if shot_life[s] <= 0.0:
 			_shot_dead.append(s)
 			continue
-		_swarm.near(shot_pos[s], Tuning.SHOT_HIT_RADIUS, _hits)
+		_swarm.near(shot_pos[s], _shot_reach(), _hits)
 		var landed := false
 		for i in _hits:
 			if shot_pierce[s] <= 0:
@@ -446,7 +453,7 @@ func _tick_shots(delta: float) -> void:
 					_shot_tint(s),
 				)
 			_hit(i, shot_damage[s], shot_pos[s])
-		_break_props(shot_pos[s], Tuning.SHOT_HIT_RADIUS, shot_damage[s])
+		_break_props(shot_pos[s], _shot_reach(), shot_damage[s])
 		if shot_pierce[s] <= 0:
 			_shot_dead.append(s)
 	_compact_shots()
