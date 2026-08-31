@@ -29,12 +29,12 @@ const THROTTLED := {
 	"hit": 0.05, "pop": 0.06, "pickup": 0.04, "shoot": 0.07, "crumb": 0.2, "catch": 0.1
 }
 
-var _bank: Dictionary = {}
+var _bank: Dictionary[String, AudioStreamWAV] = {}
 var _players: Array[AudioStreamPlayer] = []
 var _next := 0
 var _music_player: AudioStreamPlayer
 ## Cue name -> the time it last played, for THROTTLED.
-var _last: Dictionary = {}
+var _last: Dictionary[String, float] = {}
 ## Pops the throttle swallowed since the last big pop, and when that was.
 ## Enough swallowed pops earn one deep pop that cuts through: mowing a crowd
 ## should sound bigger, not busier.
@@ -255,6 +255,8 @@ func _chime(notes: Array, secs: float) -> AudioStreamWAV:
 	var frames := int(RATE * secs)
 	var data := PackedByteArray()
 	data.resize(frames * 2)
+	# One note per `per` samples; the remainder is absorbed by the last note.
+	@warning_ignore("integer_division")
 	var per := frames / notes.size()
 	for i in frames:
 		# Deliberate integer division: `per` samples map to one note.

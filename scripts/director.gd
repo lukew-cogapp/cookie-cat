@@ -7,6 +7,9 @@ extends Node
 ## A child who levels fast should feel it, and a wave table is also the one
 ## kind of difficulty that can be read and retuned without playing.
 
+signal boss_arrived(at: Vector2)
+signal rush_arrived(at: Vector2)
+
 var _swarm: Swarm
 var _player: Node2D
 var _next_spawn := 0.0
@@ -29,9 +32,6 @@ var _rush_in := -1.0
 ## the frame rate.
 var _refill_credit := 0.0
 var _rng := RandomNumberGenerator.new()
-
-signal boss_arrived(at: Vector2)
-signal rush_arrived(at: Vector2)
 
 
 func setup(swarm: Swarm, player: Node2D) -> void:

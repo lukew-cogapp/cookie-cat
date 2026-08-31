@@ -59,8 +59,10 @@ func set_player(p: Node2D) -> void:
 
 
 func drop(at: Vector2, of_kind: int, worth: int) -> void:
-	# The oldest gem goes rather than the new drop being lost: the field only
+	# A standing gem goes rather than the new drop being lost: the field only
 	# fills up during a big fight, which is exactly when the player is earning.
+	# Not necessarily the oldest, since a swap-remove can have moved any row
+	# into index 0, and which one goes does not matter here.
 	if alive >= Tuning.GEM_MAX:
 		_dead.append(0)
 		_compact()

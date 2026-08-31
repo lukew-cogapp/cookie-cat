@@ -18,9 +18,9 @@ extends Control
 @onready var _stats: Label = $Stats
 @onready var _bugs: Control = $Bugs
 
-var _card_style := load("res://ui/card.tres")
-var _card_hover := load("res://ui/card_hover.tres")
-var _card_selected := load("res://ui/card_selected.tres")
+var _card_style := preload("res://ui/card.tres")
+var _card_hover := preload("res://ui/card_hover.tres")
+var _card_selected := preload("res://ui/card_selected.tres")
 
 ## Cat id -> its card, and -> its portrait, for selection and the hop.
 var _buttons: Dictionary = {}
@@ -111,24 +111,24 @@ func _relayout(at_width := 0.0) -> void:
 		Tuning.MAPS.size() * Tuning.START_MAP_CARD_SIZE.x
 		+ Tuning.HATS.size() * Tuning.START_HAT_CARD_SIZE.x
 	)
-	var scale := clampf((room - fixed) / per_scale, Tuning.START_BAND_MIN_SCALE, 1.0)
+	var band_scale := clampf((room - fixed) / per_scale, Tuning.START_BAND_MIN_SCALE, 1.0)
 	for id: String in _map_buttons:
 		(_map_buttons[id] as Control).custom_minimum_size = (
-			Tuning.START_MAP_CARD_SIZE * scale
+			Tuning.START_MAP_CARD_SIZE * band_scale
 		)
 	for id: String in _hat_buttons:
 		(_hat_buttons[id] as Control).custom_minimum_size = (
-			Tuning.START_HAT_CARD_SIZE * scale
+			Tuning.START_HAT_CARD_SIZE * band_scale
 		)
 	# The two groups' own widths, from the tables rather than measured: a
 	# container's `size` is an output of the layout pass and is stale on the
 	# frame its contents changed.
 	var maps_w := (
-		Tuning.MAPS.size() * Tuning.START_MAP_CARD_SIZE.x * scale
+		Tuning.MAPS.size() * Tuning.START_MAP_CARD_SIZE.x * band_scale
 		+ (Tuning.MAPS.size() - 1) * Tuning.START_MAP_SEPARATION
 	)
 	var hats_w := (
-		Tuning.HATS.size() * Tuning.START_HAT_CARD_SIZE.x * scale
+		Tuning.HATS.size() * Tuning.START_HAT_CARD_SIZE.x * band_scale
 		+ (Tuning.HATS.size() - 1) * Tuning.START_HAT_SEPARATION
 	)
 	# Centred as one strip, so the gap between the groups stays in the middle
@@ -164,6 +164,7 @@ func _refresh() -> void:
 		# A first-time player has no history worth printing.
 		_stats.text = ""
 		return
+	@warning_ignore("integer_division")
 	var m := int(Save.best_time) / 60
 	var s := int(Save.best_time) % 60
 	_stats.text = (

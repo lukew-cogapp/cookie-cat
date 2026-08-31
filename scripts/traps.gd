@@ -23,7 +23,7 @@ signal fell_in(at: Vector2)
 var _art: Texture2D
 var _rng := RandomNumberGenerator.new()
 ## Cells already filled, so a cell is never filled twice.
-var _filled: Dictionary = {}
+var _filled: Dictionary[Vector2i, bool] = {}
 ## Where the cat started, kept clear of holes.
 var _clear_around := Vector2.ZERO
 var _player: Node2D

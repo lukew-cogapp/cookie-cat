@@ -22,7 +22,7 @@ signal broke(at: Vector2, kind: int)
 
 var _rng := RandomNumberGenerator.new()
 ## Cells already filled, so a cell is never filled twice.
-var _filled: Dictionary = {}
+var _filled: Dictionary[Vector2i, bool] = {}
 ## Where the cat started, kept clear of props.
 var _clear_around := Vector2.ZERO
 var _player: Node2D

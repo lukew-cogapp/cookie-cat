@@ -21,11 +21,9 @@ extends CanvasLayer
 @onready var _resume: Button = $Paused/Panel/Pad/Col/Resume
 @onready var _quit: Button = $Paused/Panel/Pad/Col/Quit
 
-var _pending: Array = []
-## True while the slow-mo ramp runs, so a second level in that window queues
-## rather than restarting the ramp.
-var _card_style := load("res://ui/card.tres")
-var _card_hover := load("res://ui/card_hover.tres")
+var _pending: Array[Array] = []
+var _card_style := preload("res://ui/card.tres")
+var _card_hover := preload("res://ui/card_hover.tres")
 
 
 func _ready() -> void:
@@ -85,6 +83,8 @@ func _fill_stats() -> void:
 	var left := int(maxf(Tuning.RUN_SECONDS - Run.clock, 0.0))
 	_add_stat(grid, Tuning.PAUSE_KILL_ICON, str(Run.kills))
 	_add_stat(grid, Tuning.PAUSE_COOKIE_ICON, str(Run.cookies))
+	# Deliberate: minutes and seconds off a whole-second count.
+	@warning_ignore("integer_division")
 	_add_stat(grid, "", "%d:%02d" % [left / 60, left % 60])
 	_stats.add_child(grid)
 
@@ -124,6 +124,7 @@ func _process(_delta: float) -> void:
 	# The clock counts DOWN. "Two minutes left" is a fact a child can act on;
 	# "eight minutes elapsed" is arithmetic.
 	var left: float = maxf(Tuning.RUN_SECONDS - Run.clock, 0.0)
+	@warning_ignore("integer_division")
 	_clock.text = "%d:%02d" % [int(left) / 60, int(left) % 60]
 
 
@@ -400,12 +401,12 @@ func _card(id: String) -> Button:
 	art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(art)
 
-	var name := Label.new()
-	name.text = String(data["name"])
-	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name.add_theme_font_size_override("font_size", Tuning.TEXT_BODY)
-	col.add_child(name)
+	var name_label := Label.new()
+	name_label.text = String(data["name"])
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.add_theme_font_size_override("font_size", Tuning.TEXT_BODY)
+	col.add_child(name_label)
 
 	var blurb := Label.new()
 	# A new toy says what it is; an upgrade says what the level actually gives,

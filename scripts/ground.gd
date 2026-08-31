@@ -25,7 +25,7 @@ var _mm: Array[MultiMesh] = []
 var _by_kind: Array[Array] = []
 var _rng := RandomNumberGenerator.new()
 ## Cells already filled, so a cell is never filled twice.
-var _filled: Dictionary = {}
+var _filled: Dictionary[Vector2i, bool] = {}
 var _player: Node2D
 
 ## The map's decal tables, read once at load: a map cannot change mid-run.

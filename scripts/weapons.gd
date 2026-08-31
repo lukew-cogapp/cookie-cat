@@ -11,6 +11,10 @@ extends Node2D
 ## `swarm.near` already answers the only question any of them asks. Scenes
 ## would add eight files and a node per shot for no gain.
 
+## Kills this frame, so the world can drop gems and count combos in one place
+## rather than every weapon knowing about pickups.
+signal killed(at: Vector2, kind: int)
+
 ## Live projectiles, for the kinds that have travel time. Same parallel-array
 ## shape as the swarm, and pre-sized, so a full screen of yarn allocates
 ## nothing.
@@ -22,7 +26,7 @@ var _player: Node2D
 var _props: Props
 
 ## Weapon id -> seconds until it fires again.
-var _ready_in: Dictionary = {}
+var _ready_in: Dictionary[String, float] = {}
 ## Reused by every query. One array, cleared per call, never reallocated.
 var _hits: Array[int] = []
 
@@ -59,13 +63,17 @@ var _crumb_puff_in := 0.0
 ## Where the orbiting fish are this frame, for the drawing code.
 var orbit_angle := 0.0
 
-## Loaded once in `_ready`: a load() per shot per frame would hit the cache and
-## still cost a lookup for every ball on screen.
 ## Where the next paw sweep begins, so consecutive swipes do not restart from
 ## the same angle.
 var _paw_from := 0.0
 ## Where the last crumb went, so a standing cat drops none.
 var _last_crumb := Vector2.ZERO
+## Reused by `_draw_puddle` rather than built per puddle per frame. The seed is
+## set from the puddle's position on every call, so the shape is unchanged.
+var _edge_rng := RandomNumberGenerator.new()
+var _edge := PackedVector2Array()
+## Loaded once in `_ready`: a load() per shot per frame would hit the cache and
+## still cost a lookup for every ball on screen.
 var _fish_art: Texture2D
 var _shot_art: Array[Texture2D] = []
 
@@ -85,10 +93,6 @@ var fx := 0
 ## Set by the world so hits can throw pooled particles. Optional: tests build
 ## a Weapons with no puff layer, and everything here degrades to no sparkle.
 var _puffs: Puffs
-
-## Kills this frame, so the world can drop gems and count combos in one place
-## rather than every weapon knowing about pickups.
-signal killed(at: Vector2, kind: int)
 
 
 func _ready() -> void:
@@ -709,15 +713,13 @@ func _draw_puddle(z: int, at: Vector2, fade: float) -> void:
 	# attempts at overlapping blobs all read as clouds from above, however they
 	# were spaced or squashed: a spill is a single outline, so it is drawn as
 	# one, flattened so it lies on the grass rather than floating over it.
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(absf(zone_pos[z].x) * 31.0 + absf(zone_pos[z].y) * 17.0)
-	var edge := PackedVector2Array()
-	edge.resize(Tuning.ZONE_EDGE_POINTS)
+	_edge_rng.seed = int(absf(zone_pos[z].x) * 31.0 + absf(zone_pos[z].y) * 17.0)
+	_edge.resize(Tuning.ZONE_EDGE_POINTS)
 	for n in Tuning.ZONE_EDGE_POINTS:
 		var a := TAU * float(n) / float(Tuning.ZONE_EDGE_POINTS)
-		var reach := r * rng.randf_range(Tuning.ZONE_EDGE_MIN, 1.0)
-		edge[n] = at + Vector2(cos(a) * reach, sin(a) * reach * Tuning.ZONE_SQUASH)
-	draw_colored_polygon(edge, body)
+		var reach := r * _edge_rng.randf_range(Tuning.ZONE_EDGE_MIN, 1.0)
+		_edge[n] = at + Vector2(cos(a) * reach, sin(a) * reach * Tuning.ZONE_SQUASH)
+	draw_colored_polygon(_edge, body)
 	# A bright fleck off centre, which is what makes a flat shape read as wet.
 	var gleam: Color = Tuning.ZONE_GLEAM_COLOUR
 	draw_circle(
