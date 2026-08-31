@@ -1,0 +1,77 @@
+<!--
+Injected into the web export's <head> via html/head_include in export_presets.cfg.
+
+Asks for landscape rather than forcing it, because nothing on the web can force
+it: see CLAUDE.md, Deploying. The canvas is covered, never rotated, so touch
+coordinates stay exactly where Godot expects them.
+
+No words: the audience is five. A phone turning, and an arrow.
+-->
+<style>
+	#rotate-please {
+		display: none;
+	}
+
+	@media (orientation: portrait) and (max-width: 900px) {
+		#rotate-please {
+			display: flex;
+			position: fixed;
+			inset: 0;
+			z-index: 100;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 8vh;
+			/* The garden's green, so the wait looks like part of the game. */
+			background: #7cc45a;
+		}
+
+		/* A phone, stood upright, tipping over to lie down. */
+		#rotate-please .phone {
+			width: 26vw;
+			height: 44vw;
+			border: 1.4vw solid #33361f;
+			border-radius: 3vw;
+			background: #2b2b3c;
+			animation: rotate-tip 2.4s ease-in-out infinite;
+		}
+
+		#rotate-please .arrow {
+			width: 34vw;
+			height: 34vw;
+			/* An arrow bending clockwise, drawn rather than a font glyph: the
+			   built-in font covers a subset of Latin-1 and no arrow is safe. */
+			background: no-repeat center/contain
+				url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">\
+<path d="M10 30a15 15 0 1 1 28-8" fill="none" stroke="%2333361f" \
+stroke-width="5" stroke-linecap="round"/>\
+<path d="M38 10v13H25z" fill="%2333361f"/></svg>');
+		}
+	}
+
+	@keyframes rotate-tip {
+		0%, 40% { transform: rotate(0deg); }
+		70%, 100% { transform: rotate(-90deg); }
+	}
+
+	/* A child holds a tablet still for a long time. Nothing here moves fast,
+	   and a reduced-motion setting stops it moving at all. */
+	@media (prefers-reduced-motion: reduce) {
+		#rotate-please .phone {
+			animation: none;
+			transform: rotate(-90deg);
+		}
+	}
+</style>
+<script>
+	// head_include lands in <head>, before <body> exists, so the overlay is
+	// added on DOMContentLoaded. Editing the export's HTML shell instead would
+	// have to be re-diffed against Godot's own every time it changes.
+	document.addEventListener("DOMContentLoaded", function () {
+		var ask = document.createElement("div");
+		ask.id = "rotate-please";
+		ask.innerHTML = '<div class="phone"></div><div class="arrow"></div>';
+		document.body.appendChild(ask);
+	});
+</script>

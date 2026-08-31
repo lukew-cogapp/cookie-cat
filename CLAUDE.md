@@ -307,3 +307,19 @@ act on.
 `.github/workflows/web.yml`. Tags rather than pushes, so a half-finished build
 never replaces the live one. The web export needs no renderer change: Godot
 4.7 forces `gl_compatibility` on the web through `rendering_method.web`.
+
+**Nothing can lock a phone to landscape here, and three things that look like
+they would do not.** `window/handheld/orientation` is Android and iOS only:
+`DisplayServer.screen_get_orientation` returns `SCREEN_LANDSCAPE` on every
+other platform, so it is a no-op on web. The PWA manifest's `orientation` key
+only binds a page launched from the home screen in standalone display mode, and
+this game is opened from a shared link in a normal tab, so it is inert.
+`screen.orientation.lock()` needs fullscreen, which needs a tap, and Safari
+does not implement it at all (mdn/browser-compat-data#19355 tested it: `"lock"
+in screen.orientation` is false on iOS).
+
+That leaves asking. A `@media (orientation: portrait)` overlay through the
+export's `html/head_include` works the same on both platforms and, unlike
+rotating the canvas with a CSS transform, cannot break touch input: the browser
+reports touches in the untransformed layout box, so a rotated canvas puts every
+`InputEventScreenTouch` in the wrong place and takes the thumbstick with it.
