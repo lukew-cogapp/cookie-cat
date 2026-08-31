@@ -72,3 +72,25 @@ func test_pause_is_on_start() -> void:
 ## is what makes mashing one key enough to play.
 func test_confirm_has_a_key() -> void:
 	assert_true(_has_key("confirm"), "space or enter confirms")
+
+
+## Half the stick's travel doing nothing is the default, and it feels broken to
+## a thumb that cannot push far.
+func test_the_stick_deadzone_is_small() -> void:
+	for action in ["move_up", "move_down", "move_left", "move_right"]:
+		assert_lte(
+			InputMap.action_get_deadzone(action),
+			0.25,
+			"%s responds to a light push" % action,
+		)
+
+
+## A light push must still outrun every bug, or walking gently is a trap.
+func test_the_slowest_walk_still_escapes() -> void:
+	var slowest := Tuning.PLAYER_SPEED * Tuning.STICK_WALK_FLOOR
+	for kind in Tuning.ENEMIES.size():
+		assert_lt(
+			Tuning.enemy_speed(kind),
+			slowest,
+			"a gentle push outruns the %s" % Tuning.ENEMIES[kind]["name"],
+		)

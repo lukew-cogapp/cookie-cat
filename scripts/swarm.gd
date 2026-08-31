@@ -26,7 +26,14 @@ var knock: Array[Vector2] = []
 ## When each row may next touch the player. Contact damage is on a per-enemy
 ## cooldown, not a global one, or standing in a crowd is survivable.
 var touch: Array[float] = []
+## Seconds of scale-in left after spawning, so nothing appears at full size.
+var grow: Array[float] = []
 var _facing_left: Array[bool] = []
+## Seconds left of walking slowly, and how slowly. Set by the milk puddle; kept
+## per row rather than recomputed, so a bug that leaves the puddle slows back up
+## over SLOW_LINGER instead of snapping to full speed at the edge.
+var slow_for: Array[float] = []
+var slow_by: Array[float] = []
 
 ## One MultiMesh per kind, so each kind draws its own texture in its own
 ## draw call. Six calls for any number of bugs, and a kind is told apart by
@@ -70,7 +77,10 @@ func _grow(to: int) -> void:
 	flash.resize(to)
 	knock.resize(to)
 	touch.resize(to)
+	grow.resize(to)
 	_facing_left.resize(to)
+	slow_for.resize(to)
+	slow_by.resize(to)
 
 
 func set_player(p: Node2D) -> void:
@@ -88,7 +98,10 @@ func spawn(at: Vector2, of_kind: int) -> void:
 	flash[i] = 0.0
 	knock[i] = Vector2.ZERO
 	touch[i] = 0.0
+	grow[i] = Tuning.SPAWN_GROW_TIME
 	_facing_left[i] = false
+	slow_for[i] = 0.0
+	slow_by[i] = 1.0
 
 
 func _physics_process(delta: float) -> void:
@@ -105,7 +118,11 @@ func _physics_process(delta: float) -> void:
 		if d * d > cull:
 			_dead.append(i)
 			continue
-		var step := to / maxf(d, 0.001) * Tuning.enemy_speed(k)
+		var speed := Tuning.enemy_speed(k)
+		if slow_for[i] > 0.0:
+			slow_for[i] = maxf(slow_for[i] - delta, 0.0)
+			speed *= slow_by[i]
+		var step := to / maxf(d, 0.001) * speed
 		if knock[i] != Vector2.ZERO:
 			step += knock[i]
 			knock[i] = knock[i].lerp(Vector2.ZERO, Tuning.KNOCKBACK_DECAY * delta)
@@ -118,6 +135,8 @@ func _physics_process(delta: float) -> void:
 			flash[i] = maxf(flash[i] - delta, 0.0)
 		if touch[i] > 0.0:
 			touch[i] = maxf(touch[i] - delta, 0.0)
+		if grow[i] > 0.0:
+			grow[i] = maxf(grow[i] - delta, 0.0)
 		# Contact. The player's own radius is folded into the constant, so
 		# this is one distance test rather than a physics query.
 		if d < Tuning.enemy_radius(k) + Tuning.PLAYER_RADIUS and touch[i] <= 0.0:
@@ -158,6 +177,16 @@ func push_from(point: Vector2, radius: float, force: float) -> void:
 		# It may not touch again until it has been pushed clear, or it lands a
 		# second hit the moment mercy ends and the push bought nothing.
 		touch[i] = Tuning.ENEMY_TOUCH_COOLDOWN
+
+
+## Slows one row, for as long as the puddle keeps refreshing it. The strongest
+## slow wins while two puddles overlap, rather than the last one applied.
+func slow(i: int, by: float, secs: float) -> void:
+	if i < 0 or i >= alive:
+		return
+	if slow_for[i] <= 0.0 or by < slow_by[i]:
+		slow_by[i] = by
+	slow_for[i] = maxf(slow_for[i], secs)
 
 
 ## Rows within `radius` of a point, nearest first. The one query weapons use.
@@ -206,7 +235,10 @@ func _compact() -> void:
 			flash[i] = flash[alive]
 			knock[i] = knock[alive]
 			touch[i] = touch[alive]
+			grow[i] = grow[alive]
 			_facing_left[i] = _facing_left[alive]
+			slow_for[i] = slow_for[alive]
+			slow_by[i] = slow_by[alive]
 	_dead.clear()
 
 
@@ -228,14 +260,20 @@ func _redraw() -> void:
 			# Bugs face the way they walk, like the cat: art is drawn facing
 			# right, so a bug heading left is mirrored by a negative x scale.
 			var face := -1.0 if _facing_left[i] else 1.0
-			mm.set_instance_transform_2d(
-				n, Transform2D(0.0, Vector2(s * face, s), 0.0, pos[i])
-			)
-			# White while flashing: a hit has to read on a small bug in a
-			# crowd of them, and scaling or rotating one row does not.
+			# White plus a squash while flashing: the flash says hit, the
+			# squash says hit HARD, and both cost only this transform.
 			var c := Color.WHITE
+			var squash := 0.0
 			if flash[i] > 0.0:
 				c = Tuning.HIT_FLASH_COLOUR
+				squash = flash[i] / Tuning.HIT_FLASH_TIME * Tuning.HIT_SQUASH
+			var g := 1.0 - grow[i] / Tuning.SPAWN_GROW_TIME
+			mm.set_instance_transform_2d(
+				n,
+				Transform2D(
+					0.0, Vector2(s * face * (1.0 + squash) * g, s * (1.0 - squash) * g), 0.0, pos[i]
+				)
+			)
 			mm.set_instance_color(n, c)
 
 

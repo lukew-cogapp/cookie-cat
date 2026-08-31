@@ -127,3 +127,35 @@ func test_push_moves_a_row_at_zero_distance() -> void:
 	_swarm.spawn(Vector2.ZERO, 0)
 	_swarm.push_from(Vector2.ZERO, 100.0, 200.0)
 	assert_gt(_swarm.knock[0].length(), 0.0, "shoved somewhere")
+
+
+## The milk puddle is the only crowd control in the game, so the slow is worth
+## pinning: without it milk is a second purr ring.
+func test_slow_reduces_speed() -> void:
+	_swarm.spawn(Vector2.ZERO, 0)
+	_swarm.slow(0, 0.5, 1.0)
+	assert_lt(_swarm.slow_by[0], 1.0, "slowed")
+	assert_gt(_swarm.slow_for[0], 0.0, "for a while")
+
+
+## Two overlapping puddles must not leave a bug at the weaker slow.
+func test_the_strongest_slow_wins() -> void:
+	_swarm.spawn(Vector2.ZERO, 0)
+	_swarm.slow(0, 0.4, 1.0)
+	_swarm.slow(0, 0.9, 1.0)
+	assert_eq(_swarm.slow_by[0], 0.4, "the deeper slow holds")
+
+
+## Driven by hand rather than by letting the swarm tick: `_physics_process`
+## needs a live run and a player it can damage, and this is asserting the timer,
+## not the movement it gates.
+func test_slow_wears_off() -> void:
+	_swarm.spawn(Vector2.ZERO, 0)
+	_swarm.slow(0, 0.5, 0.1)
+	_swarm.slow_for[0] = maxf(_swarm.slow_for[0] - 0.2, 0.0)
+	assert_eq(_swarm.slow_for[0], 0.0, "the timer runs out")
+
+
+func test_slow_on_a_dead_row_is_ignored() -> void:
+	_swarm.slow(3, 0.5, 1.0)
+	assert_eq(_swarm.alive, 0, "nothing was created")

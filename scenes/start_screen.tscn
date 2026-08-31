@@ -1,6 +1,11 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/start_screen.gd" id="1"]
+[ext_resource type="StyleBox" path="res://ui/panel.tres" id="2"]
+[ext_resource type="StyleBox" path="res://ui/play.tres" id="3"]
+[ext_resource type="StyleBox" path="res://ui/play_hover.tres" id="4"]
+[ext_resource type="Texture2D" path="res://assets/lawn.png" id="5"]
+[ext_resource type="Texture2D" path="res://assets/cookie.png" id="6"]
 
 [node name="StartScreen" type="Control"]
 anchors_preset = 15
@@ -16,30 +21,145 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.42, 0.66, 0.34, 1)
 
-[node name="Col" type="VBoxContainer" parent="."]
+[node name="Lawn" type="TextureRect" parent="."]
+texture_filter = 1
+offset_right = 480.0
+offset_bottom = 270.0
+scale = Vector2(4, 4)
+texture = ExtResource("5")
+stretch_mode = 1
+
+[node name="Bugs" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -500.0
+offset_top = 28.0
+offset_right = 500.0
+offset_bottom = 140.0
+grow_horizontal = 2
+text = "Cookie Cat"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 84
+theme_override_colors/font_color = Color(1, 0.83, 0.88, 1)
+theme_override_colors/font_outline_color = Color(0.33, 0.14, 0.24, 1)
+theme_override_constants/outline_size = 16
+
+[node name="Hint" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 168.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+text = "Pick your cat!"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 0.97, 0.88, 1)
+theme_override_colors/font_outline_color = Color(0.18, 0.32, 0.12, 1)
+theme_override_constants/outline_size = 7
+
+[node name="Cookies" type="PanelContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -216.0
+offset_top = 22.0
+offset_right = -22.0
+offset_bottom = 94.0
+grow_horizontal = 0
+theme_override_styles/panel = ExtResource("2")
+
+[node name="Pad" type="MarginContainer" parent="Cookies"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="Row" type="HBoxContainer" parent="Cookies/Pad"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Icon" type="TextureRect" parent="Cookies/Pad/Row"]
+texture_filter = 1
+layout_mode = 2
+custom_minimum_size = Vector2(48, 48)
+texture = ExtResource("6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Count" type="Label" parent="Cookies/Pad/Row"]
+layout_mode = 2
+text = "0"
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 38
+theme_override_colors/font_color = Color(1, 0.84, 0.36, 1)
+theme_override_colors/font_outline_color = Color(0.15, 0.1, 0.05, 1)
+theme_override_constants/outline_size = 6
+
+[node name="Cards" type="HBoxContainer" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -260.0
-offset_top = -140.0
-offset_right = 260.0
-offset_bottom = 140.0
+offset_left = -460.0
+offset_top = -136.0
+offset_right = 460.0
+offset_bottom = 84.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 40
+alignment = 1
+theme_override_constants/separation = 16
 
-[node name="Title" type="Label" parent="Col"]
-layout_mode = 2
-text = "Cat Garden"
+[node name="Play" type="Button" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = 128.0
+offset_right = 170.0
+offset_bottom = 212.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Play!"
+theme_override_font_sizes/font_size = 50
+theme_override_colors/font_color = Color(1, 0.98, 0.95, 1)
+theme_override_colors/font_outline_color = Color(0.42, 0.13, 0.24, 1)
+theme_override_constants/outline_size = 8
+theme_override_styles/normal = ExtResource("3")
+theme_override_styles/hover = ExtResource("4")
+theme_override_styles/pressed = ExtResource("4")
+theme_override_styles/focus = ExtResource("4")
+
+[node name="Stats" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -58.0
+offset_right = 400.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+text = ""
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 72
-theme_override_colors/font_color = Color(1, 0.98, 0.85, 1)
-theme_override_colors/font_outline_color = Color(0.15, 0.3, 0.1, 1)
-theme_override_constants/outline_size = 10
-
-[node name="Play" type="Button" parent="Col"]
-layout_mode = 2
-text = "Play"
-theme_override_font_sizes/font_size = 44
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.97, 0.9, 0.85)
+theme_override_colors/font_outline_color = Color(0.18, 0.32, 0.12, 1)
+theme_override_constants/outline_size = 5

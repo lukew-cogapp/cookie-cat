@@ -13,9 +13,14 @@ var _next_spawn := 0.0
 ## Boss minutes already used, so one boss arrives per minute rather than one
 ## per frame of that minute.
 var _bosses_done: Array[int] = []
+## Where the pending boss will walk in, and seconds until it does. Negative
+## means none pending: the boss is announced before it exists, so a child is
+## never surprise-bitten by the biggest bug in the game.
+var _boss_pos := Vector2.ZERO
+var _boss_in := -1.0
 var _rng := RandomNumberGenerator.new()
 
-signal boss_arrived
+signal boss_arrived(at: Vector2)
 
 
 func setup(swarm: Swarm, player: Node2D) -> void:
@@ -24,6 +29,7 @@ func setup(swarm: Swarm, player: Node2D) -> void:
 	_rng.seed = Tuning.SWARM_SEED
 	_bosses_done.clear()
 	_next_spawn = 0.0
+	_boss_in = -1.0
 
 
 func _physics_process(delta: float) -> void:
@@ -31,6 +37,10 @@ func _physics_process(delta: float) -> void:
 		return
 	var wave := Tuning.wave_for(Run.clock)
 	_check_boss()
+	if _boss_in >= 0.0:
+		_boss_in -= delta
+		if _boss_in < 0.0:
+			_swarm.spawn(_boss_pos, Swarm.Kind.BIG)
 	# Top up to the quota first: the quota is what fills the screen, and the
 	# interval only decides how lumpy the filling looks.
 	var quota := int(wave["min_alive"]) - _swarm.alive
@@ -61,5 +71,6 @@ func _check_boss() -> void:
 	if minute not in Tuning.BOSS_MINUTES or minute in _bosses_done:
 		return
 	_bosses_done.append(minute)
-	_swarm.spawn(_ring_point(), Swarm.Kind.BIG)
-	boss_arrived.emit()
+	_boss_pos = _ring_point()
+	_boss_in = Tuning.BOSS_TELEGRAPH_TIME
+	boss_arrived.emit(_boss_pos)

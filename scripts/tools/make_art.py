@@ -589,8 +589,109 @@ ICON_BOWL = [
     "................",
 ]
 
+# A four-point twinkle for pickups and kill bursts. White core so an instance
+# tint can turn one grid gold, pink or mint.
+SPARKLE = [
+    "................",
+    "................",
+    "................",
+    ".......W........",
+    ".......W........",
+    "......yWy.......",
+    ".....yWWWy......",
+    "...WWWWWWWWW....",
+    ".....yWWWy......",
+    "......yWy.......",
+    ".......W........",
+    ".......W........",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+
+# A soft cloud for spawns and the boss telegraph. Also tinted per instance.
+POOF = [
+    "................",
+    "................",
+    "................",
+    "....llll........",
+    "...lWWWWll......",
+    "..lWWWWWWWl.....",
+    ".lWWWWWWWWWl....",
+    ".lWWWWWWWWWWl...",
+    ".lWWWWWWWWWl....",
+    "..lWWWWWWWl.....",
+    "...llWWWll......",
+    ".....lll........",
+    "................",
+    "................",
+    "................",
+    "................",
+]
+
+# Breakable props. Each is bigger and stiller than a bug, so nothing is
+# mistaken for one, and each looks like something a cat would knock over.
+PROP_POT = [
+    "................",
+    "................",
+    "..oooooooooo....",
+    ".oOOOOOOOOOOo...",
+    ".oObbbbbbbbOo...",
+    ".oOOOOOOOOOOo...",
+    "..oooooooooo....",
+    "..oOOOOOOOOo....",
+    "..oObOOOObOo....",
+    "..oOOOOOOOOo....",
+    "...oOOOOOOo.....",
+    "...oOObbOOo.....",
+    "....oOOOOo......",
+    "....oooooo......",
+    "................",
+    "................",
+]
+PROP_BUSH = [
+    "................",
+    "................",
+    "......oooo......",
+    "....ooGGGGoo....",
+    "...oGgGGGGGGo...",
+    "..oGGGGGGGGGGo..",
+    ".oGgGGGGGGGGGGo.",
+    ".oGGGGGRGGGGGGo.",
+    ".oGGGRGGGGGRGGo.",
+    ".oGgGGGGGGGGGGo.",
+    "..oGGGGGGGGGGo..",
+    "...oGGGGGGGGo...",
+    "....ooGGGGoo....",
+    "......oooo......",
+    "................",
+    "................",
+]
+PROP_BOX = [
+    "................",
+    "................",
+    "..oooooooooooo..",
+    "..oBbBBBBBBbBo..",
+    "..oBBBBBBBBBBo..",
+    "..oBBooooooBBo..",
+    "..oBBoWWWWoBBo..",
+    "..oBBoWKKWoBBo..",
+    "..oBBoWWWWoBBo..",
+    "..oBBooooooBBo..",
+    "..oBBBBBBBBBBo..",
+    "..oBbBBBBBBbBo..",
+    "..oooooooooooo..",
+    "................",
+    "................",
+    "................",
+]
+
 SPRITES = {
     "cat": CAT_STAND,
+    "prop_pot": PROP_POT,
+    "prop_bush": PROP_BUSH,
+    "prop_box": PROP_BOX,
     "icon_paw": ICON_PAW,
     "icon_purr": ICON_PURR,
     "icon_milk": ICON_MILK,
@@ -617,6 +718,8 @@ SPRITES = {
     "mouse": MOUSE,
     "fish": FISH,
     "star": STAR,
+    "sparkle": SPARKLE,
+    "poof": POOF,
 }
 
 

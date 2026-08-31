@@ -19,6 +19,7 @@ const SHOT_MAX := 120
 var _swarm: Swarm
 var _gems: Gems
 var _player: Node2D
+var _props: Props
 
 ## Weapon id -> seconds until it fires again.
 var _ready_in: Dictionary = {}
@@ -39,6 +40,7 @@ var zone_pos: Array[Vector2] = []
 var zone_radius: Array[float] = []
 var zone_damage: Array[float] = []
 var zone_life: Array[float] = []
+var zone_slow: Array[float] = []
 var zones := 0
 var _zone_dead: Array[int] = []
 
@@ -73,12 +75,17 @@ func _ready() -> void:
 	zone_radius.resize(SHOT_MAX)
 	zone_damage.resize(SHOT_MAX)
 	zone_life.resize(SHOT_MAX)
+	zone_slow.resize(SHOT_MAX)
 	fx_pos.resize(SHOT_MAX)
 	fx_to.resize(SHOT_MAX)
 	fx_radius.resize(SHOT_MAX)
 	fx_life.resize(SHOT_MAX)
 	fx_full.resize(SHOT_MAX)
 	fx_kind.resize(SHOT_MAX)
+
+
+func set_props(props: Props) -> void:
+	_props = props
 
 
 func setup(swarm: Swarm, gems: Gems, player: Node2D) -> void:
@@ -155,6 +162,7 @@ func _fire_arc(id: String, level: int, at: Vector2) -> void:
 		if absf(facing.angle_to(_swarm.pos[i] - at)) <= half:
 			_hit(i, _damage(id, level), at)
 			dealt = true
+	_break_props(at, r, _damage(id, level))
 	_add_fx(at, facing, r, Tuning.FX_ARC, Tuning.FX_TIME_ARC)
 	if dealt:
 		Audio.play("shoot")
@@ -168,6 +176,7 @@ func _fire_circle(id: String, level: int, at: Vector2) -> void:
 		_hit(i, _damage(id, level), at)
 	# The purr ring is drawn every frame as a standing circle, so only the
 	# yawn needs a burst of its own.
+	_break_props(at, r, _damage(id, level))
 	if String(Tuning.WEAPONS[id]["kind"]) == "burst":
 		_add_fx(at, Vector2.ZERO, r, Tuning.FX_RING, Tuning.FX_TIME_RING)
 	if not _hits.is_empty():
@@ -229,6 +238,7 @@ func _fire_zone(id: String, level: int, at: Vector2) -> void:
 	zone_radius[z] = _radius(id, level)
 	zone_damage[z] = _damage(id, level)
 	zone_life[z] = float(Tuning.WEAPONS[id]["life"])
+	zone_slow[z] = float(Tuning.WEAPONS[id].get("slow", 1.0))
 
 
 ## Static Fur: hits `count` bugs anywhere on screen at once, no travel. The
@@ -290,6 +300,7 @@ func _tick_shots(delta: float) -> void:
 				break
 			shot_pierce[s] -= 1
 			_hit(i, shot_damage[s], shot_pos[s])
+		_break_props(shot_pos[s], Tuning.SHOT_HIT_RADIUS, shot_damage[s])
 		if shot_pierce[s] <= 0:
 			_shot_dead.append(s)
 	_compact_shots()
@@ -302,7 +313,9 @@ func _tick_zones(delta: float) -> void:
 			_zone_dead.append(z)
 			continue
 		_swarm.near(zone_pos[z], zone_radius[z], _hits)
+		_break_props(zone_pos[z], zone_radius[z], zone_damage[z] * delta)
 		for i in _hits:
+			_swarm.slow(i, zone_slow[z], Tuning.SLOW_LINGER)
 			_hit(i, zone_damage[z] * delta, zone_pos[z])
 	_compact_zones()
 
@@ -337,6 +350,11 @@ func _tick_fx(delta: float) -> void:
 				fx_kind[f] = fx_kind[fx]
 			continue
 		f += 1
+
+
+func _break_props(at: Vector2, radius: float, amount: float) -> void:
+	if _props != null:
+		_props.damage_near(at, radius, amount)
 
 
 ## The one place damage is dealt, so a kill is counted once however it died.
@@ -384,6 +402,7 @@ func _compact_zones() -> void:
 			zone_radius[z] = zone_radius[zones]
 			zone_damage[z] = zone_damage[zones]
 			zone_life[z] = zone_life[zones]
+			zone_slow[z] = zone_slow[zones]
 	_zone_dead.clear()
 
 

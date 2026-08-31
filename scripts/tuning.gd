@@ -14,8 +14,9 @@ const WORLD_HALF := Vector2(900, 900)
 const ZOOM := 2.5
 
 # --- Player ---
-## Hearts, not a health bar: three big icons a five-year-old can count.
-const PLAYER_MAX_HP := 3.0
+## Hearts, not a health bar: big icons a five-year-old can count. Five, not
+## three, so a bad minute is a setback rather than the end of the run.
+const PLAYER_MAX_HP := 5.0
 const PLAYER_SPEED := 118.0
 ## Every enemy is slower than this. A child who runs away must always escape;
 ## the genre's tension comes from being surrounded, not from being outrun.
@@ -39,6 +40,11 @@ const PLAYER_BOB_RATE := 11.0
 ## Walk frames per second. The step frames are shared by every flavour, so a
 ## new cat is one sprite rather than three.
 const PLAYER_STEP_RATE := 8.0
+## The slowest a stick push may move the cat, as a fraction of full speed.
+## Keyboard input is always 1.0; this only floors a light analogue push. It has
+## to clear the fastest bug: at 0.55 a gentle push gave 65 against a wasp's 104,
+## so a child who was moving still got caught.
+const STICK_WALK_FLOOR := 0.95
 const CAT_STEP_A := "res://assets/cat_step_a.png"
 const CAT_STEP_B := "res://assets/cat_step_b.png"
 
@@ -162,6 +168,10 @@ const WEAPONS := {
 		"cooldown": 2.2,
 		"radius": 44.0,
 		"life": 3.2,
+		## Bugs in the puddle walk at this fraction of their speed. The puddle
+		## is the only crowd control in the game, and without it milk was a
+		## second purr ring: damage over an area, which already exists.
+		"slow": 0.45,
 		"damage_gain": 1.4,
 		"radius_gain": 6.0,
 	},
@@ -233,6 +243,9 @@ const AURA_WIDTH := 3.0
 const ZONE_COLOUR := Color(0.95, 0.95, 1.0, 0.5)
 ## A puddle fades over its last seconds rather than blinking out.
 const ZONE_FADE_TIME := 1.0
+## How long a bug keeps walking slowly after leaving a puddle. Long enough that
+## the slow does not flicker as it crosses the edge.
+const SLOW_LINGER := 0.35
 
 # --- Enemies ---
 ## Rows in swarm.gd read these by Kind. Speed is always under PLAYER_SPEED.
@@ -347,6 +360,80 @@ const FX_BOLT_WIDTH := 2.5
 const COMBO_WINDOW := 4.0
 const COMBO_EVERY := 25
 
+# --- Juice ---
+## Burst particles (puffs.gd): pooled rows drawn by one MultiMesh per shape,
+## like the swarm. Decorative only, so a full pool drops the burst rather
+## than growing.
+const PUFF_MAX := 240
+## In Puffs.Kind order: star, sparkle, poof.
+const PUFF_TEXTURES := [
+	"res://assets/star.png",
+	"res://assets/sparkle.png",
+	"res://assets/poof.png",
+]
+const PUFF_LIFE := 0.45
+## Velocity halves roughly every 1/damping seconds, so a burst blooms and
+## settles rather than flying off screen.
+const PUFF_DAMPING := 5.0
+const PUFF_SIZE := 11.0
+## A kill bursts into this many stars; the boss gets a bigger send-off.
+const PUFF_KILL_COUNT := 5
+const PUFF_KILL_SPEED := 120.0
+const PUFF_BOSS_COUNT := 16
+## Pickup sparkles rise a little, like the collect was worth something.
+const PUFF_PICKUP_COUNT := 3
+const PUFF_PICKUP_SPEED := 55.0
+const PUFF_PICKUP_DRIFT := Vector2(0.0, -40.0)
+## Instance tints over the white sparkle art.
+const PUFF_GOLD := Color(1.0, 0.85, 0.4)
+const PUFF_PINK := Color(1.0, 0.6, 0.75)
+const PUFF_MINT := Color(0.6, 1.0, 0.9)
+const PUFF_WHITE := Color(1.0, 1.0, 1.0)
+
+## Floating reward numbers: only for hauls a child would ask about. Small
+## gems stay wordless sparkles.
+const NUMBER_MAX := 12
+const NUMBER_MIN_WORTH := 4
+const NUMBER_LIFE := 0.9
+const NUMBER_RISE := 42.0
+const NUMBER_FONT_SIZE := 20
+const NUMBER_COLOUR := Color(1.0, 0.95, 0.55)
+
+## A claimed gem darts away before homing, so the magnet reads as a grab
+## rather than a teleport. Negative initial speed on the same homing line.
+const GEM_DART_SPEED := 140.0
+## Consecutive pickups step the pickup chime up in pitch; the streak resets
+## after this long without one.
+const GEM_STREAK_GAP := 1.0
+const GEM_STREAK_SEMITONES := 1.0
+const GEM_STREAK_CAP := 12
+
+## Hit squash: bugs flatten by this fraction while the white flash runs.
+const HIT_SQUASH := 0.3
+## Spawns scale in over this long, so nothing appears at full size and bites.
+const SPAWN_GROW_TIME := 0.35
+
+## The world slows to this for a beat before the level-up pause, so the
+## moment lands rather than the screen just stopping.
+const LEVELUP_SLOWMO := 0.3
+const LEVELUP_SLOWMO_TIME := 0.45
+## Pick cards pop in one after another.
+const CARD_POP_FROM := 0.5
+const CARD_STAGGER := 0.09
+const CARD_POP_TIME := 0.22
+
+## The boss is announced this long before it walks in, with a poof ring at
+## the spot it will arrive.
+const BOSS_TELEGRAPH_TIME := 1.2
+const BOSS_RING_COUNT := 12
+const BOSS_RING_RADIUS := 30.0
+const BOSS_RING_SPEED := 60.0
+
+## The combo cheer: a ring of gold stars around the cat.
+const COMBO_STARS := 12
+const COMBO_RING_RADIUS := 34.0
+const COMBO_RING_SPEED := 110.0
+
 
 # --- HUD ---
 const BANNER_TIME := 1.6
@@ -377,7 +464,7 @@ const BLURBS := {
 	"purr": "Hurts bugs that come close",
 	"fish": "Fish circle around you",
 	"mouse": "A mouse chases bugs",
-	"milk": "Leaves milk puddles",
+	"milk": "Milk puddles slow bugs down",
 	"zap": "Zaps far away bugs",
 	"nap": "A big sleepy blast",
 	"boots": "Run faster",
@@ -423,6 +510,52 @@ const START_HOP_TIME := 0.3
 ## A card the player cannot afford shakes its head.
 const START_WOBBLE := 7.0
 const START_WOBBLE_TIME := 0.07
+
+
+# --- Breakable props ---
+## Things on the lawn to knock over. An empty lawn makes every direction
+## identical, so between waves a child has nothing to walk towards; a pot worth
+## a heart is a small errand.
+##
+## Drops are deliberately stingy. A heart from every pot would make hearts
+## meaningless and the run trivial, so most give the xp gem a bug would.
+const PROPS := [
+	{
+		"name": "Flower Pot",
+		"art": "res://assets/prop_pot.png",
+		"hp": 12.0,
+		"radius": 13.0,
+		"heart_chance": 0.14,
+		"cookie_chance": 0.10,
+		"xp": 3,
+	},
+	{
+		"name": "Berry Bush",
+		"art": "res://assets/prop_bush.png",
+		"hp": 20.0,
+		"radius": 15.0,
+		"heart_chance": 0.22,
+		"cookie_chance": 0.08,
+		"xp": 5,
+	},
+	{
+		"name": "Cookie Box",
+		"art": "res://assets/prop_box.png",
+		"hp": 34.0,
+		"radius": 14.0,
+		"heart_chance": 0.10,
+		"cookie_chance": 0.40,
+		"xp": 8,
+	},
+]
+const PROP_COUNT := 120
+## Seeded, so the garden is the same every run: a child who learns where the
+## pots are should find them there again.
+const PROP_SEED := 20260901
+## Nothing spawns within this of the cat's starting spot, or the run opens with
+## a pot in the player's face.
+const PROP_CLEAR_RADIUS := 90.0
+const PROP_SPACING := 78.0
 
 
 # --- Lookups the swarm calls every frame ---

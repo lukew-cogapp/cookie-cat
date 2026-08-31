@@ -55,6 +55,11 @@ func _physics_process(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if dir != Vector2.ZERO:
 		var speed := Tuning.PLAYER_SPEED * Run.passive("boots")
+		# `dir` keeps the stick's magnitude, so a gentle push walks. Below the
+		# floor it is treated as full tilt, or a child pushing softly creeps
+		# and cannot get away from anything.
+		if dir.length() < Tuning.STICK_WALK_FLOOR:
+			dir = dir.normalized() * Tuning.STICK_WALK_FLOOR
 		position += dir * speed * delta
 		position = position.clamp(-Tuning.WORLD_HALF, Tuning.WORLD_HALF)
 		# Face travel by flipping, not rotating: a rotated gardener reads as

@@ -9,6 +9,10 @@ extends Node2D
 
 enum Kind { GEM, HEART, COOKIE }
 
+## Fired on collect, so the world can sparkle and show numbers without this
+## layer knowing what a particle is.
+signal collected(at: Vector2, of_kind: int, worth: int)
+
 var alive := 0
 var pos: Array[Vector2] = []
 var kind: Array[int] = []
@@ -22,6 +26,9 @@ var _mm: Array[MultiMesh] = []
 var _player: Node2D
 var _dead: Array[int] = []
 var _by_kind: Array[Array] = []
+## Consecutive pickups inside GEM_STREAK_GAP; steps the chime up in pitch.
+var _streak := 0
+var _streak_until := 0.0
 
 
 func _ready() -> void:
@@ -77,11 +84,13 @@ func _physics_process(delta: float) -> void:
 		var d2 := to.length_squared()
 		if not flying[i] and d2 <= pull2:
 			flying[i] = true
-			speed[i] = Tuning.GEM_FLY_SPEED
+			# The VS wiggle: a claimed gem darts away first (negative speed on
+			# the homing line), then the acceleration hauls it in.
+			speed[i] = -Tuning.GEM_DART_SPEED
 		if flying[i]:
 			speed[i] += Tuning.GEM_FLY_ACCEL * delta
 			pos[i] += to.normalized() * speed[i] * delta
-			if d2 <= take2:
+			if d2 <= take2 and speed[i] > 0.0:
 				_collect(i)
 				_dead.append(i)
 	_compact()
@@ -89,16 +98,24 @@ func _physics_process(delta: float) -> void:
 
 
 func _collect(i: int) -> void:
+	if Run.clock > _streak_until:
+		_streak = 0
+	_streak_until = Run.clock + Tuning.GEM_STREAK_GAP
+	_streak += 1
 	match kind[i]:
 		Kind.GEM:
 			Run.add_xp(value[i])
-			Audio.play("pickup")
+			# Each pickup in a streak chimes a semitone higher: the classic
+			# coin-run reward, and it tells a child the streak is a thing.
+			var step := mini(_streak - 1, Tuning.GEM_STREAK_CAP)
+			Audio.play("pickup", pow(2.0, float(step) * Tuning.GEM_STREAK_SEMITONES / 12.0))
 		Kind.HEART:
 			_player.heal(float(value[i]))
 		Kind.COOKIE:
 			# Cookies buy cats between runs; they are banked when the run ends.
 			Run.cookies += value[i]
 			Audio.play("chest")
+	collected.emit(pos[i], kind[i], value[i])
 
 
 func _compact() -> void:

@@ -1,0 +1,174 @@
+class_name Props
+extends Node2D
+## Breakable garden things: pots, bushes and boxes scattered on the lawn.
+##
+## They exist to give the ground a reason to be walked across. An empty lawn
+## makes every direction identical, so a child has nothing to aim at between
+## waves; a pot worth a heart is a small errand.
+##
+## Same parallel-array and MultiMesh shape as `swarm.gd`, for the same reason,
+## and they are hit by the same weapon queries: `world.gd` passes each weapon's
+## damage through `damage_near`, so anything that hurts a bug breaks a pot
+## without a single weapon knowing props exist.
+
+## Prop kinds, indices into Tuning.PROPS.
+enum Kind { POT, BUSH, BOX }
+
+signal broke(at: Vector2, kind: int)
+
+var alive := 0
+var pos: Array[Vector2] = []
+var hp: Array[float] = []
+var kind: Array[int] = []
+var flash: Array[float] = []
+
+var _mm: Array[MultiMesh] = []
+var _by_kind: Array[Array] = []
+var _dead: Array[int] = []
+var _rng := RandomNumberGenerator.new()
+## Reused by `damage_near`, so a weapon firing every frame allocates nothing.
+var _hits: Array[int] = []
+
+
+func _ready() -> void:
+	_rng.seed = Tuning.PROP_SEED
+	var q := QuadMesh.new()
+	q.size = Vector2.ONE
+	for k in Tuning.PROPS.size():
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_2D
+		mm.use_colors = true
+		mm.mesh = q
+		mm.instance_count = Tuning.PROP_COUNT
+		mm.visible_instance_count = 0
+		var node := MultiMeshInstance2D.new()
+		node.multimesh = mm
+		node.texture = load(String(Tuning.PROPS[k]["art"]))
+		add_child(node)
+		_mm.append(mm)
+		_by_kind.append([])
+	pos.resize(Tuning.PROP_COUNT)
+	hp.resize(Tuning.PROP_COUNT)
+	kind.resize(Tuning.PROP_COUNT)
+	flash.resize(Tuning.PROP_COUNT)
+
+
+## Scatters the lawn. Seeded, so the garden is the same every run: a child who
+## learns where the pots are should find them there again.
+func scatter(clear_around: Vector2) -> void:
+	alive = 0
+	_dead.clear()
+	_rng.seed = Tuning.PROP_SEED
+	var tries := 0
+	while alive < Tuning.PROP_COUNT and tries < Tuning.PROP_COUNT * 20:
+		tries += 1
+		var p := Vector2(
+			_rng.randf_range(-Tuning.WORLD_HALF.x, Tuning.WORLD_HALF.x),
+			_rng.randf_range(-Tuning.WORLD_HALF.y, Tuning.WORLD_HALF.y),
+		)
+		# Never on top of where the cat starts, or the run opens with a pot in
+		# the player's face.
+		if p.distance_to(clear_around) < Tuning.PROP_CLEAR_RADIUS:
+			continue
+		if _too_close(p):
+			continue
+		var k := _rng.randi_range(0, Tuning.PROPS.size() - 1)
+		var i := alive
+		alive += 1
+		pos[i] = p
+		kind[i] = k
+		hp[i] = float(Tuning.PROPS[k]["hp"])
+		flash[i] = 0.0
+	_redraw()
+
+
+func _too_close(p: Vector2) -> bool:
+	for i in alive:
+		if pos[i].distance_squared_to(p) < Tuning.PROP_SPACING * Tuning.PROP_SPACING:
+			return true
+	return false
+
+
+func _physics_process(delta: float) -> void:
+	if not Run.alive:
+		return
+	var faded := false
+	for i in alive:
+		if flash[i] > 0.0:
+			flash[i] = maxf(flash[i] - delta, 0.0)
+			faded = true
+	if faded or not _dead.is_empty():
+		_compact()
+		_redraw()
+
+
+## Damages every prop within `radius`. Weapons call this through `world.gd`
+## rather than knowing about props, so a new weapon breaks pots for free.
+func damage_near(point: Vector2, radius: float, amount: float) -> void:
+	if alive == 0:
+		return
+	var r2 := radius * radius
+	_hits.clear()
+	for i in alive:
+		if pos[i].distance_squared_to(point) <= r2:
+			_hits.append(i)
+	for i in _hits:
+		hp[i] -= amount
+		flash[i] = Tuning.HIT_FLASH_TIME
+		if hp[i] <= 0.0:
+			_dead.append(i)
+			broke.emit(pos[i], kind[i])
+			Audio.play("pop")
+
+
+## What a prop drops, as a Gems.Kind. Mostly nothing: a heart from every pot
+## would make the hearts meaningless and the run trivial.
+func roll_drop(k: int) -> int:
+	var d: Dictionary = Tuning.PROPS[k]
+	var r := _rng.randf()
+	if r < float(d["heart_chance"]):
+		return Gems.Kind.HEART
+	if r < float(d["heart_chance"]) + float(d["cookie_chance"]):
+		return Gems.Kind.COOKIE
+	return Gems.Kind.GEM
+
+
+func radius_of(k: int) -> float:
+	return float(Tuning.PROPS[k]["radius"])
+
+
+func _compact() -> void:
+	if _dead.is_empty():
+		return
+	_dead.sort()
+	_dead.reverse()
+	var last := -1
+	for i in _dead:
+		# One prop can be queued twice by two weapons in a frame; dropping it
+		# twice would delete a standing one.
+		if i == last:
+			continue
+		last = i
+		alive -= 1
+		if i != alive:
+			pos[i] = pos[alive]
+			hp[i] = hp[alive]
+			kind[i] = kind[alive]
+			flash[i] = flash[alive]
+	_dead.clear()
+
+
+func _redraw() -> void:
+	for k in _by_kind.size():
+		_by_kind[k].clear()
+	for i in alive:
+		_by_kind[kind[i]].append(i)
+	for k in _mm.size():
+		var rows: Array = _by_kind[k]
+		var mm := _mm[k]
+		mm.visible_instance_count = rows.size()
+		var s := radius_of(k) * 2.0
+		for n in rows.size():
+			var i: int = rows[n]
+			mm.set_instance_transform_2d(n, Transform2D(0.0, Vector2(s, s), 0.0, pos[i]))
+			mm.set_instance_color(n, Tuning.HIT_FLASH_COLOUR if flash[i] > 0.0 else Color.WHITE)

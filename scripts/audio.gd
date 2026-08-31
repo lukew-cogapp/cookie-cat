@@ -54,6 +54,8 @@ func _ready() -> void:
 	# not a punishment.
 	_bank["run_over"] = _chime([784.0, 659.0, 523.0], 0.8)
 	_bank["win"] = _chime([523.0, 659.0, 784.0, 1047.0, 1319.0, 1568.0], 1.1)
+	# A big one is coming: low but major, an announcement rather than a scare.
+	_bank["boss"] = _chime([130.8, 164.8, 196.0, 261.6], 0.8)
 	# C-major bass under a sparse melody; loops seamlessly (see _music).
 	_bank["music"] = _music(
 		[65.41, 65.41, 87.31, 65.41, 73.42, 73.42, 98.0, 87.31],
@@ -73,7 +75,7 @@ func _ready() -> void:
 	add_child(_music_player)
 
 
-func play(sound: String) -> void:
+func play(sound: String, pitch := 1.0) -> void:
 	if not _bank.has(sound):
 		return
 	if THROTTLED.has(sound):
@@ -87,6 +89,8 @@ func play(sound: String) -> void:
 	var p := _players[_next]
 	_next = (_next + 1) % VOICES
 	p.stream = _bank[sound]
+	# Always set: voices are recycled, and a stale pitch would carry over.
+	p.pitch_scale = pitch
 	p.play()
 
 
