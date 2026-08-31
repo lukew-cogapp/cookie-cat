@@ -980,6 +980,9 @@ const PAUSE_VALUE_WIDTH := 96.0
 ## child has already seen hundreds of by the time they pause.
 const PAUSE_KILL_ICON := "res://assets/grub.png"
 const PAUSE_COOKIE_ICON := "res://assets/cookie.png"
+## The time left. A bare number is the one stat a child who cannot read has no
+## way into, and every other line on that screen already has a picture.
+const PAUSE_CLOCK_ICON := "res://assets/clock.png"
 ## The loadout list, top right. Pips rather than a number: a level is a
 ## quantity a child reads by counting.
 const LOADOUT_ICON_SIZE := Vector2(26, 26)
@@ -1103,6 +1106,9 @@ const START_BAND_GAP := 56.0
 const START_EDGE_PAD := 18.0
 ## The engine credit along the bottom of the start screen, which is also how
 ## the licence is reached. Deliberately quiet: it has to be findable, not seen.
+## The lawn's small controls: the same warm off-white the run stats use, rather
+## than the default white, which is brighter than anything else on the screen.
+const START_CHIP_TEXT := Color(1.0, 0.97, 0.9, 1.0)
 const START_CREDIT_SIZE := 15
 const START_CREDIT_WIDTH := 260.0
 ## Shorter than MIN_TOUCH: this is a credit that happens to be tappable, not a

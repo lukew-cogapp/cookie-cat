@@ -26,6 +26,8 @@ var _pending: Array[Array] = []
 var _banner_fade: Tween = null
 var _card_style := preload("res://ui/card.tres")
 var _card_hover := preload("res://ui/card_hover.tres")
+var _chip_style := preload("res://ui/chip.tres")
+var _chip_hover := preload("res://ui/chip_hover.tres")
 
 
 func _ready() -> void:
@@ -44,6 +46,13 @@ func _ready() -> void:
 	# at font 22 is a third of what a small finger can reliably hit.
 	for b: Button in [_resume, _quit, _again]:
 		b.custom_minimum_size.y = maxf(b.custom_minimum_size.y, Tuning.MIN_TOUCH)
+		# Godot's default button is a grey rectangle with square corners, which
+		# is the one thing inside these panels that does not match the cards
+		# beside it.
+		b.add_theme_stylebox_override("normal", _chip_style)
+		b.add_theme_stylebox_override("hover", _chip_hover)
+		b.add_theme_stylebox_override("focus", _chip_hover)
+		b.add_theme_stylebox_override("pressed", _chip_hover)
 	_inset_for_cutouts()
 	get_viewport().size_changed.connect(_inset_for_cutouts)
 	_refresh()
@@ -107,15 +116,14 @@ func _fill_stats() -> void:
 	_add_stat(grid, Tuning.PAUSE_COOKIE_ICON, str(Run.cookies))
 	# Deliberate: minutes and seconds off a whole-second count.
 	@warning_ignore("integer_division")
-	_add_stat(grid, "", "%d:%02d" % [left / 60, left % 60])
+	_add_stat(grid, Tuning.PAUSE_CLOCK_ICON, "%d:%02d" % [left / 60, left % 60])
 	_stats.add_child(grid)
 
 
 ## One line of the tally: a picture, then the number.
 func _add_stat(grid: GridContainer, art: String, value: String) -> void:
-	# The clock has no sprite of its own, and borrowing another would lie about
-	# what the number means, so its cell is left empty. The grid still holds the
-	# column, which is what keeps the time under the numbers above it.
+	# A line with no art of its own still holds its column, which is what keeps
+	# the numbers under each other.
 	if art == "":
 		var gap := Control.new()
 		gap.custom_minimum_size = Tuning.PAUSE_ICON_SIZE

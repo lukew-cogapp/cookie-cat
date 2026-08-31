@@ -1,0 +1,18 @@
+[gd_resource type="StyleBoxFlat" format=3]
+
+; The lit version of `chip.tres`, for hover, focus and press. Brighter border
+; and a fuller fill, so a gamepad's focus is obvious without the button moving.
+
+[resource]
+bg_color = Color(0.26, 0.21, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.88, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 6

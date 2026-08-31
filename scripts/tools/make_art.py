@@ -22,6 +22,7 @@ from pathlib import Path
 
 OUT = Path(__file__).resolve().parents[2] / "assets"
 ICONS = Path(__file__).resolve().parents[2] / "icons"
+STORE = Path(__file__).resolve().parents[2] / "store"
 
 # Cookie Cat: a pink ice-cream cat sandwiched in biscuit. The palette is the
 # whole game's, so a new sprite reuses these letters rather than adding a hue.
@@ -1371,8 +1372,36 @@ TRAP_ICEHOLE = [
     "................",
 ]
 
+
+# A clock for the pause screen's time-left line. The number beside it is the
+# one stat with no picture, and a bare number is exactly what a child who
+# cannot read has no way into.
+#
+# One hand up and one to the right, meeting at the middle. Tick marks were
+# tried at every hour and read as a keypad at this size: four is enough to say
+# "clock face" and leaves the hands somewhere to be.
+CLOCK = [
+    "................",
+    ".....oooooo.....",
+    "...ooyyyyyyoo...",
+    "..oyyyyyyyyyyo..",
+    ".oyyyyyKyyyyyyo.",
+    ".oyyyyyKyyyyyyo.",
+    "oyyyyyyKyyyyyyyo",
+    "oyKyyyyKyyyyKyyo",
+    "oyyyyyyKKKKKyyyo",
+    "oyyyyyyyyyyyyyyo",
+    ".oyyyyyKyyyyyyo.",
+    ".oyyyyyyyyyyyyo.",
+    "..oyyyyyyyyyyo..",
+    "...ooyyyyyyoo...",
+    ".....oooooo.....",
+    "................",
+]
+
 SPRITES = {
     "cat": CAT_STAND,
+    "clock": CLOCK,
     "web": WEB,
     "trap_pond": TRAP_POND,
     "trap_sandpit": TRAP_SANDPIT,
@@ -1448,6 +1477,30 @@ RECOLOURED = {
     "ground_ice": (GROUND_MUD, {"M": "u", "m": "U", "n": "l"}),
     "ground_drift": (GROUND_PATCH, {"t": "j", "d": "W"}),
 }
+
+
+# The lawn is a tile, not a sprite: four tones in a fixed pseudo-random
+# scatter, so the ground has texture without a visible grid. The earlier
+# two-tone check read as graph paper and fought with the bugs standing on it.
+# Module-level because the store's feature graphic tiles the same ground.
+LAWN_SCATTER = [
+    "TTtTTTTtTTTTtTTT",
+    "TTTTTdTTTTtTTTTT",
+    "tTTTTTTTTTTTTdTT",
+    "TTTTtTTTdTTTTTTt",
+    "TTdTTTTTTTTtTTTT",
+    "TTTTTTtTTTTTTTTT",
+    "TdTTTTTTTTTTtTdT",
+    "TTTTtTTTTdTTTTTT",
+    "TTTTTTTTTTTTTTtT",
+    "TtTTTdTTtTTTTTTT",
+    "TTTTTTTTTTTdTTTT",
+    "TTTdTTTtTTTTTTtT",
+    "tTTTTTTTTTTTTTTT",
+    "TTTTTtTTTTdTTTTT",
+    "TTdTTTTTTTTTtTTT",
+    "TTTTTTTtTTTTTTTT",
+]
 
 
 def write_png(path, grid):
@@ -1544,6 +1597,148 @@ def recolour(grid, swap):
     return [[mapping.get(ch, ch) for ch in row] for row in grid], extra
 
 
+# The Play listing title, five rows per glyph. Only the letters the title
+# needs: this is banner lettering, not a font.
+GLYPHS = {
+    "A": [".XX.", "X..X", "XXXX", "X..X", "X..X"],
+    "B": ["XXX.", "X..X", "XXX.", "X..X", "XXX."],
+    "C": [".XXX", "X...", "X...", "X...", ".XXX"],
+    "G": [".XXX", "X...", "X.XX", "X..X", ".XX."],
+    "S": [".XXX", "X...", ".XX.", "...X", "XXX."],
+    "T": ["XXXXX", "..X..", "..X..", "..X..", "..X.."],
+    "U": ["X..X", "X..X", "X..X", "X..X", ".XX."],
+    "V": ["X...X", "X...X", "X...X", ".X.X.", "..X.."],
+    " ": ["..", "..", "..", "..", ".."],
+}
+
+
+def text_grid(text):
+    """A line of title text as a sprite grid, white with the game's outline.
+
+    Outlined because flat white on the mid-green lawn reads as gaps between
+    the letters; the dark edge is what every sprite here already wears.
+    """
+    rows = ["", "", "", "", ""]
+    for ch in text:
+        glyph = GLYPHS[ch]
+        for i in range(5):
+            rows[i] += glyph[i] + "."
+    height = len(rows) + 2
+    width = len(rows[0]) + 2
+    grid = [["."] * width for _ in range(height)]
+    for y, line in enumerate(rows):
+        for x, ch in enumerate(line):
+            if ch == "X":
+                grid[y + 1][x + 1] = "W"
+    for y in range(height):
+        for x in range(width):
+            if grid[y][x] != ".":
+                continue
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    ny, nx = y + dy, x + dx
+                    if 0 <= ny < height and 0 <= nx < width and grid[ny][nx] == "W":
+                        grid[y][x] = "o"
+    return grid
+
+
+def blank_canvas(width, height, letter):
+    return [[PALETTE[letter]] * width for _ in range(height)]
+
+
+def blit(rows, grid, left, top, scale):
+    """Nearest-neighbour paste of a grid onto a canvas, skipping transparency.
+
+    Clips at the canvas edge, which is what lets the feature graphic's ground
+    tiles overhang the 500px height without a special last row.
+    """
+    for gy, line in enumerate(grid):
+        for gx, ch in enumerate(line):
+            colour = PALETTE[ch]
+            if not colour[3]:
+                continue
+            for y in range(top + gy * scale, top + (gy + 1) * scale):
+                if not 0 <= y < len(rows):
+                    continue
+                row = rows[y]
+                for x in range(left + gx * scale, left + (gx + 1) * scale):
+                    if 0 <= x < len(row):
+                        row[x] = colour
+
+
+def write_canvas(path, rows, alpha):
+    """A composed canvas as PNG.
+
+    Play's feature graphic must be a 24-bit PNG with no alpha channel, so
+    `alpha=False` emits colour type 2; the listing icon keeps the 32-bit
+    type the rest of the art uses.
+    """
+    height = len(rows)
+    width = len(rows[0])
+    out = []
+    for line in rows:
+        row = bytearray([0])
+        for pixel in line:
+            row += bytes(pixel if alpha else pixel[:3])
+        out.append(bytes(row))
+    raw = zlib.compress(b"".join(out), 9)
+
+    def chunk(tag, data):
+        head = struct.pack(">I", len(data)) + tag
+        return head + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6 if alpha else 2, 0, 0, 0)
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", raw)
+        + chunk(b"IEND", b"")
+    )
+
+
+def store_icon():
+    """The Play listing icon: the launcher cat with a margin.
+
+    Play rounds the corners at about thirty percent of the width, and the
+    full-bleed web_512 puts the ear outline within a few pixels of that arc.
+    32px of lawn all round clears it without shrinking the cat much.
+    """
+    rows = blank_canvas(512, 512, "T")
+    blit(rows, CAT_STAND, 32, 32, 28)
+    return rows
+
+
+def feature_graphic():
+    """The 1024x500 Play banner: title, cat and bugs on the lawn.
+
+    Composed from the game's own grids so the banner shows what the screen
+    shows. Title and cat sit centred because Play crops the edges in some
+    placements.
+    """
+    rows = blank_canvas(1024, 500, "T")
+    for ty in range(4):
+        for tx in range(8):
+            blit(rows, LAWN_SCATTER, tx * 128, ty * 128, 8)
+    for grid, x, y, scale in (
+        (GROUND_FLOWERS, 40, 330, 6),
+        (GROUND_PATCH, 730, 40, 6),
+        (GROUND_STONES, 240, 390, 6),
+        (GRUB, 60, 110, 7),
+        (SPIDER, 250, 120, 6),
+        (WASP, 800, 120, 7),
+        (SNAIL, 120, 290, 7),
+        (BEETLE, 850, 300, 7),
+        (SLIME, 690, 360, 6),
+        (STAR, 320, 340, 5),
+        (COOKIE, 640, 330, 6),
+        (CAT_STAND, 400, 180, 14),
+    ):
+        blit(rows, grid, x, y, scale)
+    title = text_grid("CAT VS BUGS")
+    blit(rows, title, (1024 - len(title[0]) * 12) // 2, 40, 12)
+    return rows
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name, grid in SPRITES.items():
@@ -1566,27 +1761,7 @@ def main():
     # Four tones in a fixed pseudo-random scatter, so the ground has texture
     # without a visible grid: the earlier two-tone check read as graph paper
     # and fought with the bugs standing on it.
-    tile = []
-    scatter = [
-        "TTtTTTTtTTTTtTTT",
-        "TTTTTdTTTTtTTTTT",
-        "tTTTTTTTTTTTTdTT",
-        "TTTTtTTTdTTTTTTt",
-        "TTdTTTTTTTTtTTTT",
-        "TTTTTTtTTTTTTTTT",
-        "TdTTTTTTTTTTtTdT",
-        "TTTTtTTTTdTTTTTT",
-        "TTTTTTTTTTTTTTtT",
-        "TtTTTdTTtTTTTTTT",
-        "TTTTTTTTTTTdTTTT",
-        "TTTdTTTtTTTTTTtT",
-        "tTTTTTTTTTTTTTTT",
-        "TTTTTtTTTTdTTTTT",
-        "TTdTTTTTTTTTtTTT",
-        "TTTTTTTtTTTTTTTT",
-    ]
-    for row in scatter:
-        tile.append(row)
+    tile = LAWN_SCATTER
     write_png(OUT / "lawn.png", tile)
     print("lawn.png 16x16", flush=True)
     # The beach and arctic floors are the same scatter in that map's tones, so
@@ -1618,6 +1793,13 @@ def main():
     for size, pad in ((144, 0), (180, 2), (512, 0)):
         write_icon(ICONS / f"web_{size}.png", CAT_STAND, size, pad=pad, background=lawn)
         print(f"icons/web_{size}.png {size}x{size}", flush=True)
+    # Play Store listing assets. store/.gdignore keeps them out of the import
+    # cache and the export; they exist for the Play Console, not the game.
+    STORE.mkdir(parents=True, exist_ok=True)
+    write_canvas(STORE / "icon_512.png", store_icon(), alpha=True)
+    print("store/icon_512.png 512x512", flush=True)
+    write_canvas(STORE / "feature.png", feature_graphic(), alpha=False)
+    print("store/feature.png 1024x500", flush=True)
 
 
 if __name__ == "__main__":

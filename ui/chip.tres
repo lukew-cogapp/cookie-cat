@@ -1,0 +1,20 @@
+[gd_resource type="StyleBoxFlat" format=3]
+
+; The small controls that sit on the lawn rather than in a panel: the audio
+; switches and Quit. Same plum and pink as the cards, so they read as part of
+; the same set, but a thinner border and tighter corners keep them quieter than
+; the Play button they sit beside.
+
+[resource]
+bg_color = Color(0.176, 0.145, 0.208, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.686, 0.8, 0.75)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.25)
+shadow_size = 4

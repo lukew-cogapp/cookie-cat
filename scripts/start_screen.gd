@@ -21,6 +21,8 @@ extends Control
 var _card_style := preload("res://ui/card.tres")
 var _card_hover := preload("res://ui/card_hover.tres")
 var _card_selected := preload("res://ui/card_selected.tres")
+var _chip_style := preload("res://ui/chip.tres")
+var _chip_hover := preload("res://ui/chip_hover.tres")
 
 ## Cat id -> its card, and -> its portrait, for selection and the hop.
 var _buttons: Dictionary = {}
@@ -40,6 +42,15 @@ var _hop: Tween
 func _ready() -> void:
 	_music_button.pressed.connect(_toggle_music)
 	_sound_button.pressed.connect(_toggle_sound)
+	# The three controls that sit on the lawn rather than in a panel. Left to
+	# Godot's default they are grey rectangles with square corners, which is
+	# the one thing on this screen that does not look like the same game.
+	for b: Button in [_music_button, _sound_button, _quit]:
+		b.add_theme_stylebox_override("normal", _chip_style)
+		b.add_theme_stylebox_override("hover", _chip_hover)
+		b.add_theme_stylebox_override("focus", _chip_hover)
+		b.add_theme_stylebox_override("pressed", _chip_hover)
+		b.add_theme_color_override("font_color", Tuning.START_CHIP_TEXT)
 	_refresh_audio()
 	_title.text = ProjectSettings.get_setting("application/config/name")
 	# An edited save or a version bump can orphan the remembered cat or map.
