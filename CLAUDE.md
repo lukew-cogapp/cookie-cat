@@ -153,6 +153,19 @@ crossing out does not flicker.
 
 ## Godot facts worth not relearning
 
+**Web saves use `localStorage`, not `user://`.** On a web export `user://` is
+an in-memory filesystem synced to IndexedDB asynchronously, so `close()` only
+queues the write: a tab closed straight after a run loses its cookies
+(godot#39643). `save_state.gd` branches on `OS.get_name() == "Web"` and goes
+through `JavaScriptBridge` to `localStorage`, which is synchronous, so there is
+no race to lose. Both arguments to `eval` are `JSON.stringify`d rather than
+interpolated, since the payload is full of quotes and braces.
+
+The key is namespaced (`WEB_KEY`) because every game published under one
+`github.io` account shares an origin and therefore one storage bucket. Safari
+also evicts script-writable storage after seven days without a visit, which no
+code here can prevent; it is worth knowing before wondering where a save went.
+
 **There is no wall, on purpose.** The cat used to be clamped to `WORLD_HALF`,
 and the edge was about eight seconds of walking away. Being cornered against an
 invisible edge with bugs closing in is the one situation a child cannot escape,

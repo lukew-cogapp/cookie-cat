@@ -3,11 +3,23 @@ extends Node
 ## so far. Autoloaded as `Save`.
 ##
 ## A rogue-like has to remember, or every run starts from the same place and
-## the cookies mean nothing. One JSON file in `user://`, written whenever it
-## changes rather than only on quit: a child closes the window, they do not
-## use a menu, and a run's cookies must not depend on how the game ended.
+## the cookies mean nothing. Written whenever it changes rather than only on
+## quit: a child closes the window, they do not use a menu, and a run's cookies
+## must not depend on how the game ended.
+##
+## Two backends. On desktop it is one JSON file in `user://`. On the web it is
+## `localStorage`, NOT `user://`: there, `user://` is an in-memory filesystem
+## synced to IndexedDB asynchronously, so `close()` only queues the write and a
+## tab closed straight after a run loses its cookies (godot#39643).
+## `localStorage` is synchronous, so the save is committed the moment it is
+## written and there is no race to lose.
 
 const PATH := "user://save.json"
+## The browser localStorage key used instead of a file on the web. Namespaced,
+## because every game published under the same github.io account shares one
+## origin and therefore one storage bucket: an unprefixed "save" would be
+## clobbered by the next game published beside this one.
+const WEB_KEY := "cookie_cat_save_v1"
 ## Bumped when a field's meaning changes. An older file is discarded rather
 ## than migrated: there is nothing here worth a migration path.
 const VERSION := 1
@@ -25,19 +37,55 @@ func _ready() -> void:
 	load_now()
 
 
+func _is_web() -> bool:
+	return OS.get_name() == "Web"
+
+
+## The stored JSON, or an empty string when there is nothing saved.
+func _read_raw() -> String:
+	if _is_web():
+		var got: Variant = JavaScriptBridge.eval(
+			"window.localStorage.getItem(%s) || ''" % JSON.stringify(WEB_KEY), true
+		)
+		return "" if got == null else String(got)
+	if not FileAccess.file_exists(PATH):
+		return ""
+	var f := FileAccess.open(PATH, FileAccess.READ)
+	if f == null:
+		return ""
+	var text := f.get_as_text()
+	f.close()
+	return text
+
+
+func _write_raw(text: String) -> void:
+	if _is_web():
+		# Both arguments are JSON-encoded rather than interpolated raw: the
+		# payload contains quotes and braces, and pasting it into a JS string
+		# would end the string early and run whatever followed.
+		JavaScriptBridge.eval(
+			"window.localStorage.setItem(%s, %s)"
+			% [JSON.stringify(WEB_KEY), JSON.stringify(text)],
+			true,
+		)
+		return
+	var f := FileAccess.open(PATH, FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(text)
+	f.close()
+
+
 func load_now() -> void:
 	unlocked = [Tuning.STARTER_CAT]
 	cookies = 0
 	best_time = 0.0
 	best_kills = 0
 	runs = 0
-	if not FileAccess.file_exists(PATH):
+	var raw := _read_raw()
+	if raw == "":
 		return
-	var f := FileAccess.open(PATH, FileAccess.READ)
-	if f == null:
-		return
-	var parsed: Variant = JSON.parse_string(f.get_as_text())
-	f.close()
+	var parsed: Variant = JSON.parse_string(raw)
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return
 	var d: Dictionary = parsed
@@ -57,10 +105,7 @@ func load_now() -> void:
 
 
 func save_now() -> void:
-	var f := FileAccess.open(PATH, FileAccess.WRITE)
-	if f == null:
-		return
-	f.store_string(
+	_write_raw(
 		JSON.stringify(
 			{
 				"version": VERSION,
@@ -72,7 +117,6 @@ func save_now() -> void:
 			}
 		)
 	)
-	f.close()
 
 
 func add_cookies(amount: int) -> void:

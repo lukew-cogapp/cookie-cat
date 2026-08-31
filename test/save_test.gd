@@ -121,3 +121,39 @@ func test_a_stale_version_is_discarded() -> void:
 	f.close()
 	Save.load_now()
 	assert_eq(Save.cookies, 0, "a file from another version is not read")
+
+
+## The web build must not use `user://`. There it is an in-memory filesystem
+## synced to IndexedDB asynchronously, so a tab closed straight after a run
+## loses its cookies (godot#39643); localStorage is synchronous.
+func test_the_web_key_is_namespaced() -> void:
+	# Every game published under one github.io account shares an origin and
+	# therefore one storage bucket, so an unprefixed key would be clobbered by
+	# the next game published beside this one.
+	assert_true(Save.WEB_KEY.begins_with("cookie_cat"), "the key names this game")
+
+
+## Whatever the backend, a round trip has to survive. On desktop this exercises
+## the file; on web it exercises localStorage, which is what CI cannot reach.
+func test_a_round_trip_survives_the_backend() -> void:
+	Save.cookies = 137
+	Save.unlocked = [Tuning.STARTER_CAT, "mint"]
+	Save.best_kills = 412
+	Save.save_now()
+	Save.cookies = 0
+	Save.unlocked = []
+	Save.best_kills = 0
+	Save.load_now()
+	assert_eq(Save.cookies, 137, "cookies came back")
+	assert_eq(Save.best_kills, 412, "so did the best run")
+	assert_true(Save.is_unlocked("mint"), "and the cat")
+
+
+## An empty store must read as a fresh save rather than throwing: a first-time
+## player has nothing stored at all.
+func test_nothing_stored_reads_as_a_fresh_save() -> void:
+	if not Save._is_web():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(Save.PATH))
+	Save.load_now()
+	assert_eq(Save.cookies, 0, "no cookies yet")
+	assert_true(Save.is_unlocked(Tuning.STARTER_CAT), "but there is always one cat")
