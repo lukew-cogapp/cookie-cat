@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Bug Garden"
+config/name="Cookie Cat"
 run/main_scene="res://scenes/start_screen.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Tuning="*res://scripts/tuning.gd"
+Save="*res://scripts/save_state.gd"
 Audio="*res://scripts/audio.gd"
 Run="*res://scripts/run_state.gd"
 
@@ -73,18 +74,11 @@ pause={
 ]
 }
 
-[layer_names]
-
-2d_physics/layer_1="player"
-2d_physics/layer_2="enemy"
-2d_physics/layer_3="player_shot"
-2d_physics/layer_4="pickup"
-
 [physics]
 
-; Enemies are moved by hand in one loop, not by the physics server. Only the
-; overlap queries need it, and 30 ticks is plenty for hundreds of Area2Ds.
-common/physics_ticks_per_second=30
+; Enemies are moved by hand in one loop and hit by distance checks, so nothing
+; here uses the physics server. 60 keeps the cat's movement smooth.
+common/physics_ticks_per_second=60
 
 [rendering]
 
