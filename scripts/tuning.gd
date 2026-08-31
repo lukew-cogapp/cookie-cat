@@ -985,7 +985,13 @@ const START_AUDIO_OFF_ALPHA := 0.4
 ## smallest screen this will meet, and is generous on anything larger.
 const MIN_TOUCH := 96.0
 
-const START_CARD_SIZE := Vector2(168, 212)
+## Wide enough for "Fish Friends" beside its icon with room to spare. At 168 it
+## fitted only exactly, and the next longer weapon name would have wrapped to a
+## second line and pushed the card taller than its neighbours.
+const START_CARD_SIZE := Vector2(182, 212)
+## Keeps the contents off the card's outline, as `CARD_PAD` does on the pick
+## screen.
+const START_CARD_PAD := 8
 ## All 16x16 art, scaled by whole numbers so the pixels stay square: the cat
 ## at 6x, weapon and cost icons at 2x, the cookie counter and bugs at 3x.
 const START_CAT_SIZE := Vector2(96, 96)
@@ -1320,7 +1326,10 @@ const MAPS := {
 }
 ## Map cards sit under the cat row: smaller, since three must read at once,
 ## with the postcard art at a whole 4x so the pixels stay square.
-const START_MAP_CARD_SIZE := Vector2(148, 122)
+## One size for both the map and hat rows, so the strip under the cats reads as
+## one band rather than two of slightly different widths. Sized by "Party Hat",
+## the longest label either row carries.
+const START_MAP_CARD_SIZE := Vector2(140, 122)
 const START_MAP_ART_SIZE := Vector2(64, 64)
 
 
@@ -1346,9 +1355,7 @@ const HATS := {
 ## row 1, so an origin-aligned overlay lands the brim on the eyes. Lifting it
 ## three rows rests the brim on the top of the head instead.
 const HAT_LIFT := -3.0
-## Wide enough for "Party Hat" at `TEXT_TINY`, which the old 104 clipped once
-## the text grew for phones.
-const START_HAT_CARD_SIZE := Vector2(132, 122)
+const START_HAT_CARD_SIZE := START_MAP_CARD_SIZE
 const START_HAT_ART_SIZE := Vector2(48, 48)
 const START_HAT_COOKIE_SIZE := Vector2(24, 24)
 

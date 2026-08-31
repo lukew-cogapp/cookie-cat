@@ -208,13 +208,22 @@ func _card(id: String) -> Button:
 	b.add_theme_stylebox_override("pressed", _card_hover)
 	b.pressed.connect(_press.bind(id))
 
+	# Inset from the card's own border, the same way the pick screen's cards are:
+	# a column filling the card edge to edge puts a long weapon name against the
+	# outline, and "Fish Friends" crossed it.
+	var pad := MarginContainer.new()
+	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "top", "right", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, Tuning.START_CARD_PAD)
+	b.add_child(pad)
+
 	var col := VBoxContainer.new()
-	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 4)
 	# So the click lands on the button, not on the pictures sitting over it.
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(col)
+	pad.add_child(col)
 
 	var art := TextureRect.new()
 	art.texture = load(String(cat["art"]))
@@ -256,6 +265,11 @@ func _card(id: String) -> Button:
 	var wname := Label.new()
 	wname.text = String(Tuning.WEAPONS[weapon]["name"])
 	wname.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Wraps rather than running off the card. "Fish Friends" is four characters
+	# longer than any other starter and was cut off mid-word at the edge.
+	wname.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	wname.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wname.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	wname.add_theme_font_size_override("font_size", Tuning.TEXT_TINY)
 	wname.add_theme_color_override("font_color", Tuning.CARD_BLURB_COLOUR)
 	row.add_child(wname)
@@ -276,12 +290,18 @@ func _map_card(id: String) -> Button:
 	b.add_theme_stylebox_override("pressed", _card_hover)
 	b.pressed.connect(_press_map.bind(id))
 
+	var pad := MarginContainer.new()
+	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "top", "right", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, Tuning.START_CARD_PAD)
+	b.add_child(pad)
+
 	var col := VBoxContainer.new()
-	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 2)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(col)
+	pad.add_child(col)
 
 	var art := TextureRect.new()
 	art.texture = load(String(info["art"]))
@@ -316,12 +336,18 @@ func _hat_card(id: String) -> Button:
 	b.add_theme_stylebox_override("pressed", _card_hover)
 	b.pressed.connect(_press_hat.bind(id))
 
+	var pad := MarginContainer.new()
+	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "top", "right", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, Tuning.START_CARD_PAD)
+	b.add_child(pad)
+
 	var col := VBoxContainer.new()
-	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 2)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(col)
+	pad.add_child(col)
 
 	var art := TextureRect.new()
 	if String(info["art"]) != "":

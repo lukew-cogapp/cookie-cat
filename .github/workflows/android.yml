@@ -141,7 +141,7 @@ jobs:
         uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: uk.co.cogapp.lukew.catvsbugs
+          packageName: io.github.lukehmu.catvsbugs
           releaseFiles: build/android/cat-vs-bugs.aab
           track: internal
           status: completed
