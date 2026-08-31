@@ -126,11 +126,10 @@ func _refresh_loadout() -> void:
 			continue
 		var id := owned[n]
 		var art: TextureRect = row.get_node("Art")
-		var pips: Label = row.get_node("Pips")
+		var pips: HBoxContainer = row.get_node("Pips")
 		if Tuning.ICONS.has(id):
 			art.texture = load(Tuning.ICONS[id])
-		# Pips, not a number: a level is a quantity a child reads by counting.
-		pips.text = "●".repeat(Run.level_of(id))
+		_set_pips(pips, Run.level_of(id))
 
 
 func _loadout_row() -> HBoxContainer:
@@ -143,13 +142,38 @@ func _loadout_row() -> HBoxContainer:
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	row.add_child(art)
-	var pips := Label.new()
+	var pips := HBoxContainer.new()
 	pips.name = "Pips"
-	pips.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	pips.add_theme_font_size_override("font_size", Tuning.LOADOUT_PIP_SIZE)
-	pips.add_theme_color_override("font_color", Tuning.LOADOUT_PIP_COLOUR)
+	pips.custom_minimum_size = Vector2(0, Tuning.LOADOUT_ICON_SIZE.y)
+	pips.add_theme_constant_override("separation", Tuning.LOADOUT_PIP_GAP)
 	row.add_child(pips)
 	return row
+
+
+func _set_pips(pips: HBoxContainer, level: int) -> void:
+	while pips.get_child_count() < level:
+		pips.add_child(_pip(Tuning.LOADOUT_PIP_SIZE, Tuning.LOADOUT_PIP_COLOUR))
+	for n in pips.get_child_count():
+		pips.get_child(n).visible = n < level
+
+
+## A drawn circle, not a text glyph. The project ships no font, so every label
+## renders in the default one, and a web export falls back to whatever the
+## browser has: the bullet and star both come out as tofu when it has neither.
+func _pip(size: Vector2, colour: Color) -> Panel:
+	var pip := Panel.new()
+	pip.custom_minimum_size = size
+	pip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = colour
+	var radius := int(size.x * 0.5)
+	style.corner_radius_top_left = radius
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_right = radius
+	style.corner_radius_bottom_left = radius
+	pip.add_theme_stylebox_override("panel", style)
+	return pip
 
 
 ## A level-up pauses the game until a card is chosen. Two levels at once queue,
@@ -274,18 +298,26 @@ func _card(id: String) -> Button:
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pad.add_child(col)
 
-	var head := Label.new()
-	head.text = "★".repeat(level + 1)
-	if is_consumable:
-		head.text = "YUM!"
-	elif level == 0:
-		head.text = "NEW!"
-	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	head.add_theme_font_size_override("font_size", 22)
-	head.add_theme_color_override(
-		"font_color", Tuning.CARD_NEW_COLOUR if level == 0 else Tuning.CARD_UP_COLOUR
-	)
-	col.add_child(head)
+	# A snack is not an upgrade of anything owned, and a first pick has no level
+	# to count, so both say a word. Only an upgrade gets pips, one per level the
+	# card would take the toy to.
+	if is_consumable or level == 0:
+		var head := Label.new()
+		head.text = "YUM!" if is_consumable else "NEW!"
+		head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		head.add_theme_font_size_override("font_size", 22)
+		head.add_theme_color_override("font_color", Tuning.CARD_NEW_COLOUR)
+		col.add_child(head)
+	else:
+		var head := HBoxContainer.new()
+		head.name = "Pips"
+		head.alignment = BoxContainer.ALIGNMENT_CENTER
+		head.custom_minimum_size = Vector2(0, Tuning.CARD_PIP_SIZE.y)
+		head.add_theme_constant_override("separation", Tuning.CARD_PIP_GAP)
+		head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for _n in level + 1:
+			head.add_child(_pip(Tuning.CARD_PIP_SIZE, Tuning.CARD_UP_COLOUR))
+		col.add_child(head)
 
 	var art := TextureRect.new()
 	if Tuning.ICONS.has(id):

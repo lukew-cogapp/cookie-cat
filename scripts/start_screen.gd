@@ -78,7 +78,7 @@ func _refresh() -> void:
 	var m := int(Save.best_time) / 60
 	var s := int(Save.best_time) % 60
 	_stats.text = (
-		"Best %d:%02d   ·   %d bugs bopped   ·   %d runs"
+		"Best %d:%02d   -   %d bugs bopped   -   %d runs"
 		% [m, s, Save.best_kills, Save.runs]
 	)
 

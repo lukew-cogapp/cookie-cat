@@ -52,9 +52,37 @@ func test_every_card_names_itself() -> void:
 func test_a_snack_card_is_not_marked_as_an_upgrade() -> void:
 	for id: String in Tuning.CONSUMABLES:
 		var card: Button = _hud._card(id)
-		var found := _labels(card)
-		assert_false("★★" in found, "%s is not shown as a level up" % id)
+		assert_null(_find_pips(card), "%s counts no levels" % id)
 		card.free()
+
+
+## Web exports cannot rely on a star glyph either, so an upgrade card counts its
+## level in drawn pips. An unowned toy says NEW! instead and has none.
+func test_an_upgrade_card_counts_its_level_without_font_glyphs() -> void:
+	Run.cat = Tuning.STARTER_CAT
+	Run.start()
+	# start() grants the cat's own weapon at level one, so an unowned toy has to
+	# come from elsewhere in the table.
+	var id := String(Tuning.CATS[Run.cat]["weapon"])
+	var unowned := ""
+	for other: String in Tuning.WEAPONS:
+		if Run.level_of(other) == 0:
+			unowned = other
+			break
+	assert_ne(unowned, "", "the table holds a weapon the starter cat lacks")
+	if unowned != "":
+		var fresh: Button = _hud._card(unowned)
+		assert_null(_find_pips(fresh), "an unowned toy says NEW! rather than counting")
+		fresh.free()
+	Run.take(id)
+	var card: Button = _hud._card(id)
+	var pips := _find_pips(card)
+	assert_not_null(pips, "an owned toy's card counts in pips")
+	if pips != null:
+		assert_eq(_visible_child_count(pips), 3, "the card counts the level it grants")
+		assert_eq(_labels(card).contains("*"), false, "no star glyph")
+	card.free()
+	Run.alive = false
 
 
 func _labels(node: Node) -> String:
@@ -118,6 +146,20 @@ func test_the_loadout_lists_what_is_owned() -> void:
 	Run.alive = false
 
 
+## Web exports cannot rely on the filled-circle glyph being present in the
+## browser fallback font, so the level counters are drawn controls, not text.
+func test_the_loadout_level_counters_do_not_need_font_glyphs() -> void:
+	Run.cat = Tuning.STARTER_CAT
+	Run.start()
+	Run.take(String(Tuning.CATS[Run.cat]["weapon"]))
+	_hud._refresh_loadout()
+	var row: Control = _hud._loadout.get_child(0)
+	var pips: HBoxContainer = row.get_node("Pips")
+	assert_eq(_visible_child_count(pips), 2, "level two is two drawn pips")
+	assert_eq(_labels(pips), "", "no bullet glyph label")
+	Run.alive = false
+
+
 ## Rows are reused, so picking fewer things must hide the spare rows rather
 ## than leave a stale toy on screen.
 func test_spare_loadout_rows_are_hidden() -> void:
@@ -135,6 +177,24 @@ func test_spare_loadout_rows_are_hidden() -> void:
 	assert_eq(_hud._loadout.get_child_count(), many, "rows were kept")
 	assert_eq(shown, 1, "but only the starter is shown")
 	Run.alive = false
+
+
+func _find_pips(node: Node) -> HBoxContainer:
+	for child: Node in node.get_children():
+		if child.name == "Pips" and child is HBoxContainer:
+			return child as HBoxContainer
+		var found := _find_pips(child)
+		if found != null:
+			return found
+	return null
+
+
+func _visible_child_count(node: Node) -> int:
+	var count := 0
+	for child: Node in node.get_children():
+		if child is CanvasItem and (child as CanvasItem).visible:
+			count += 1
+	return count
 
 
 func _pause_event() -> InputEventAction:

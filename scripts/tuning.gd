@@ -797,7 +797,8 @@ const CARD_SIZE := Vector2(200, 250)
 ## The loadout list, top right. Pips rather than a number: a level is a
 ## quantity a child reads by counting.
 const LOADOUT_ICON_SIZE := Vector2(26, 26)
-const LOADOUT_PIP_SIZE := 15
+const LOADOUT_PIP_SIZE := Vector2(8, 8)
+const LOADOUT_PIP_GAP := 3
 const LOADOUT_PIP_COLOUR := Color(1.0, 0.86, 0.42)
 ## Card art, by weapon or passive id. A missing entry draws no picture rather
 ## than erroring, so a new weapon works before its icon is drawn.
@@ -848,6 +849,10 @@ const CARD_TAIL := 6
 const CARD_ICON_SIZE := Vector2(96, 96)
 const CARD_NEW_COLOUR := Color(1.0, 0.86, 0.36)
 const CARD_UP_COLOUR := Color(0.72, 0.92, 1.0)
+## An upgrade card counts its new level in pips, sized to read across the room
+## at the card's 22px heading rather than the loadout's 8px.
+const CARD_PIP_SIZE := Vector2(16, 16)
+const CARD_PIP_GAP := 5
 const CARD_BLURB_COLOUR := Color(0.78, 0.74, 0.82)
 ## The pick panel pops from this fraction of full size.
 const MODAL_POP_FROM := 0.75
