@@ -29,9 +29,12 @@ func before_each() -> void:
 	_clear_swarm()
 
 
+## `damage` queues a row in `_dead` and leaves `alive` alone: only `_compact`
+## drops it. So looping until `alive` reaches zero never ends, because nothing
+## inside the loop can change it. Kill every row once, then compact once.
 func _clear_swarm() -> void:
-	while _swarm.alive > 0:
-		_swarm.damage(0, 99999.0, Vector2.ZERO)
+	for i in range(_swarm.alive - 1, -1, -1):
+		_swarm.damage(i, 99999.0, Vector2.ZERO)
 	_swarm._compact()
 
 
@@ -39,22 +42,41 @@ func _clear_swarm() -> void:
 ## that does nothing when picked.
 func test_every_weapon_fires() -> void:
 	for id: String in Tuning.WEAPONS:
+		# The trail drops a crumb where the cat has been and waits for a bug to
+		# walk onto it, so it cannot hurt a ring of stationary bugs however long
+		# this runs. `test_crumbs_are_left_behind_while_walking` and
+		# `test_a_standing_cat_leaves_no_crumbs` are its cover.
+		if id == "trail":
+			continue
 		_clear_swarm()
 		var at: Vector2 = _player.global_position
+		# Ringed at each weapon's own reach, not at one arbitrary distance. The
+		# fish orbits at `radius` and a bug inside that ring is never touched,
+		# which read as three broken weapons when they were all working.
+		var ring: float = Tuning.weapon_stat(id, "radius", 1)
+		if ring <= 0.0:
+			ring = 40.0
 		for n in 6:
-			_swarm.spawn(at + Vector2.from_angle(TAU * float(n) / 6.0) * 40.0, 0)
-		var before := _swarm.hp[0] + _swarm.hp[1] + _swarm.hp[2]
+			_swarm.spawn(at + Vector2.from_angle(TAU * float(n) / 6.0) * ring, 0)
+		var before := _total_hp()
 		Run.weapons = {id: 1}
 		# Enough frames for the slowest cooldown to come round.
 		for i in 240:
 			_weapons._physics_process(1.0 / 60.0)
-		var after := 0.0
-		for i in mini(3, _swarm.alive):
-			after += _swarm.hp[i]
 		assert_true(
-			after < before or _swarm.alive < 6,
+			_total_hp() < before or _swarm.alive < 6,
 			"%s hurt something" % id,
 		)
+
+
+## Every living row, not the first three: `_compact` swap-removes, so a kill
+## moves an untouched row into a low index and a fixed window can miss the
+## damage entirely.
+func _total_hp() -> float:
+	var sum := 0.0
+	for i in _swarm.alive:
+		sum += _swarm.hp[i]
+	return sum
 
 
 ## A boomerang has to come back, or it is a worse yarn ball.
