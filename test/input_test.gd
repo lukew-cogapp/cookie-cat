@@ -45,11 +45,15 @@ func test_moving_works_on_the_dpad() -> void:
 		assert_true(_has_button(action, DPAD[action]), "%s is on the D-pad" % action)
 
 
-func test_moving_works_on_the_stick() -> void:
+func test_moving_works_on_both_sticks() -> void:
 	assert_true(_has_axis("move_left", JOY_AXIS_LEFT_X, -1.0), "left")
 	assert_true(_has_axis("move_right", JOY_AXIS_LEFT_X, 1.0), "right")
 	assert_true(_has_axis("move_up", JOY_AXIS_LEFT_Y, -1.0), "up")
 	assert_true(_has_axis("move_down", JOY_AXIS_LEFT_Y, 1.0), "down")
+	assert_true(_has_axis("move_left", JOY_AXIS_RIGHT_X, -1.0), "left on right stick")
+	assert_true(_has_axis("move_right", JOY_AXIS_RIGHT_X, 1.0), "right on right stick")
+	assert_true(_has_axis("move_up", JOY_AXIS_RIGHT_Y, -1.0), "up on right stick")
+	assert_true(_has_axis("move_down", JOY_AXIS_RIGHT_Y, 1.0), "down on right stick")
 
 
 func test_moving_works_on_the_keyboard() -> void:
@@ -72,6 +76,16 @@ func test_pause_is_on_start() -> void:
 ## is what makes mashing one key enough to play.
 func test_confirm_has_a_key() -> void:
 	assert_true(_has_key("confirm"), "space or enter confirms")
+
+
+func test_menus_accept_a_and_cancel_b() -> void:
+	assert_true(InputMap.has_action("ui_accept"), "menus have accept")
+	assert_true(InputMap.has_action("ui_cancel"), "menus have cancel")
+	assert_true(_has_button("ui_accept", JOY_BUTTON_A), "A presses focused buttons")
+	assert_true(_has_button("ui_cancel", JOY_BUTTON_B), "B cancels UI")
+	assert_true(_has_physical_key("ui_accept", KEY_SPACE), "space accepts")
+	assert_true(_has_physical_key("ui_accept", KEY_ENTER), "enter accepts")
+	assert_true(_has_physical_key("ui_cancel", KEY_ESCAPE), "escape cancels")
 
 
 ## Half the stick's travel doing nothing is the default, and it feels broken to
@@ -115,11 +129,14 @@ func test_menus_take_wasd_and_everything_else() -> void:
 		assert_true(_has_physical_key(action, letters[action]), "%s takes its letter" % action)
 		assert_true(_has_physical_key(action, arrows[action]), "%s takes its arrow" % action)
 		assert_true(_has_button(action, pad[action]), "%s takes the D-pad" % action)
-		var sticks := 0
-		for e: InputEvent in _events(action):
-			if e is InputEventJoypadMotion:
-				sticks += 1
-		assert_gt(sticks, 0, "%s takes the stick" % action)
+	assert_true(_has_axis("ui_left", JOY_AXIS_LEFT_X, -1.0), "ui_left takes left stick")
+	assert_true(_has_axis("ui_right", JOY_AXIS_LEFT_X, 1.0), "ui_right takes left stick")
+	assert_true(_has_axis("ui_up", JOY_AXIS_LEFT_Y, -1.0), "ui_up takes left stick")
+	assert_true(_has_axis("ui_down", JOY_AXIS_LEFT_Y, 1.0), "ui_down takes left stick")
+	assert_true(_has_axis("ui_left", JOY_AXIS_RIGHT_X, -1.0), "ui_left takes right stick")
+	assert_true(_has_axis("ui_right", JOY_AXIS_RIGHT_X, 1.0), "ui_right takes right stick")
+	assert_true(_has_axis("ui_up", JOY_AXIS_RIGHT_Y, -1.0), "ui_up takes right stick")
+	assert_true(_has_axis("ui_down", JOY_AXIS_RIGHT_Y, 1.0), "ui_down takes right stick")
 
 
 func _has_physical_key(action: String, code: int) -> bool:
