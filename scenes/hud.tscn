@@ -132,10 +132,10 @@ grow_vertical = 2
 
 [node name="Pad" type="MarginContainer" parent="Picker/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 22
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 22
-theme_override_constants/margin_bottom = 22
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
 
 [node name="Col" type="VBoxContainer" parent="Picker/Panel/Pad"]
 layout_mode = 2
@@ -266,10 +266,10 @@ grow_vertical = 2
 
 [node name="Pad" type="MarginContainer" parent="Over/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 26
-theme_override_constants/margin_top = 26
-theme_override_constants/margin_right = 26
-theme_override_constants/margin_bottom = 26
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
 
 [node name="Col" type="VBoxContainer" parent="Over/Panel/Pad"]
 layout_mode = 2
