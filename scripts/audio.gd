@@ -7,6 +7,14 @@ extends Node
 ## Players are plain AudioStreamPlayer, not 2D: everything that makes a sound
 ## in this game happens within a screen of the player, so panning by position
 ## would only make the same cue quieter at the edge of a fight.
+##
+## A global autoloaded sound bank is the worked example of what NOT to do on
+## Godot's "autoloads versus regular nodes" page, and it is kept anyway. The two
+## things this exists for both need one owner that can see every cue at once: a
+## hundred bugs popping in a frame have to collapse to one sound (`THROTTLED`),
+## and the music has to duck under it (`_duck_until`). Per-scene players cannot
+## know what another player is already doing, so they would produce exactly the
+## wall of noise the throttle is here to prevent.
 
 const RATE := 22050.0
 ## A swarm fires and dies in bursts, so the pool is wider than the 3D game's.
