@@ -36,7 +36,8 @@ scripts/run_state.gd       one run's state, autoloaded as `Run`
 scripts/swarm.gd           enemies as array rows, one MultiMesh per kind
 scripts/weapons.gd         all ten toys in one node
 scripts/gems.gd            pickups, same pattern as the swarm
-scripts/traps.gd           holes in the ground, one hazard per map
+scripts/traps.gd           the hole field, one hazard per map
+scripts/trap.gd            one hole, a node rather than a row
 scripts/director.gd        the wave table, and bosses
 scripts/world.gd           wires the run together
 scripts/hud.gd             health bar, clock, xp bar, the pick screen
@@ -75,6 +76,18 @@ This is the decision the genre lives or dies on in Godot: the documented
 failure mode is collision-pair explosion, where a few hundred overlapping
 bodies take a steady frame rate to single digits, and it bites long before
 rendering does. Gems, shots, puddles and effects all follow the same shape.
+
+**It does not extend to scenery.** Traps and props are nodes. The argument above
+is about a few hundred overlapping bodies on the physics server, and there are
+forty holes and a hundred and twenty pots that sit still: the array shape bought
+them nothing except an index that outlived the thing it pointed at. That index
+cost real bugs. A prop hit by two weapons in one frame paid its reward twice,
+because a row is not removed until `_compact` runs and the second hit still found
+it standing.
+
+The seeded-cell field is unchanged and is the part worth protecting: a cell is
+seeded by its own coordinates, so walking away and back finds the same garden.
+Nodes changed where a hole is stored, not how the field decides where holes go.
 
 **Rows are swap-removed.** A kill moves the last row into the dead one's index,
 so:
