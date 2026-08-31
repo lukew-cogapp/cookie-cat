@@ -16,8 +16,11 @@ func _init() -> void:
 
 	# Play's promotion bar is 16:9 at 1920x1080 or better, and the root window
 	# is the capture surface, so it is sized here rather than in project.godot.
+	# On top because macOS stops presenting a fully covered window, and every
+	# capture after that moment is the same stale frame.
 	get_root().mode = Window.MODE_WINDOWED
 	get_root().size = Vector2i(1920, 1080)
+	get_root().always_on_top = true
 	await process_frame
 
 	# The shop first: cats, maps and hats are half the game, and the store
