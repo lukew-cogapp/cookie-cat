@@ -979,6 +979,12 @@ const MODAL_POP_TIME := 0.28
 ## to stay readable to someone who cannot read it.
 const START_AUDIO_OFF_ALPHA := 0.4
 
+## Android asks for 48dp on anything tappable, and a five-year-old's aim is
+## worse than the adult that number was written for. The design height is 720,
+## so on a 720-tall phone at 320dpi one dp is two design units: 96 covers the
+## smallest screen this will meet, and is generous on anything larger.
+const MIN_TOUCH := 96.0
+
 const START_CARD_SIZE := Vector2(168, 212)
 ## All 16x16 art, scaled by whole numbers so the pixels stay square: the cat
 ## at 6x, weapon and cost icons at 2x, the cookie counter and bugs at 3x.
@@ -1016,6 +1022,15 @@ const START_HAT_SEPARATION := 8.0
 ## And between the map group and the hat group, so they read as two things to
 ## choose from rather than one row of eight.
 const START_BAND_GAP := 56.0
+## The inset the start screen's corner controls already sit at in the scene.
+const START_EDGE_PAD := 18.0
+
+## The HUD's own geometry, matching what `hud.tscn` sets, so the safe-area
+## inset has something to add to rather than a literal in two places.
+const DESIGN_WIDTH := 1280.0
+const HUD_EDGE_PAD := 18.0
+const HUD_TOP := 32.0
+const HUD_BAR_HEIGHT := 52.0
 ## The floor on that shrinking. Below this the cards are too small to tap on a
 ## phone, and a strip that will not fit is better cropped than unusable: the
 ## widths in play only reach here on a window nobody plays on.

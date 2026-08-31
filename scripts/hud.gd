@@ -37,6 +37,13 @@ func _ready() -> void:
 	_paused.visible = false
 	_resume.pressed.connect(_unpause)
 	_quit.pressed.connect(_restart)
+	# Sized here rather than in the scene, so the floor holds whatever the font
+	# does. A Button with no minimum is only as tall as its text, and "Give up"
+	# at font 22 is a third of what a small finger can reliably hit.
+	for b: Button in [_resume, _quit, _again]:
+		b.custom_minimum_size.y = maxf(b.custom_minimum_size.y, Tuning.MIN_TOUCH)
+	_inset_for_cutouts()
+	get_viewport().size_changed.connect(_inset_for_cutouts)
 	_refresh()
 
 
@@ -464,3 +471,28 @@ func _finish(won: bool) -> void:
 	# feels they lost stops asking to play.
 	var head := "You did it!" if won else "Nice try!"
 	_over_text.text = "%s\n\nBugs bopped: %d\nLevel reached: %d" % [head, Run.kills, Run.level]
+
+
+## Pushes the corner readouts clear of a notch or a gesture bar.
+##
+## `get_display_safe_area` is Android and iOS only, but it falls back to the
+## whole usable rect everywhere else, so this needs no platform check and is a
+## no-op on a screen with nothing in the way. The insets come back in pixels
+## and the HUD is laid out in design units, so they are divided by the scale
+## the stretch mode is applying.
+func _inset_for_cutouts() -> void:
+	var safe := DisplayServer.get_display_safe_area()
+	var whole := DisplayServer.screen_get_usable_rect()
+	if safe.size.x <= 0 or whole.size.x <= 0:
+		return
+	var scale := float(get_viewport().size.x) / float(Tuning.DESIGN_WIDTH)
+	if scale <= 0.0:
+		return
+	var left := float(safe.position.x - whole.position.x) / scale
+	var right := float(whole.end.x - safe.end.x) / scale
+	var top := float(safe.position.y - whole.position.y) / scale
+	var bar: MarginContainer = $Top
+	bar.add_theme_constant_override("margin_left", int(Tuning.HUD_EDGE_PAD + left))
+	bar.add_theme_constant_override("margin_right", int(Tuning.HUD_EDGE_PAD + right))
+	bar.offset_top = Tuning.HUD_TOP + top
+	bar.offset_bottom = Tuning.HUD_TOP + top + Tuning.HUD_BAR_HEIGHT

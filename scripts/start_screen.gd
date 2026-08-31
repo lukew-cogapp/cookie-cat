@@ -52,6 +52,7 @@ func _ready() -> void:
 	# twice is worse than no button.
 	_quit.visible = OS.get_name() != "Web"
 	_quit.pressed.connect(_quit_game)
+	_build_licence()
 	Save.changed.connect(_refresh)
 	_build_cards()
 	_build_map_cards()
@@ -566,3 +567,75 @@ func _launch_bug(bug: TextureRect, mid_crossing: bool) -> void:
 	var t := create_tween()
 	t.tween_property(bug, "position:x", to_x, secs)
 	t.tween_callback(_launch_bug.bind(bug, false))
+
+
+## Godot is MIT, which asks that the licence text travel with anything built on
+## it. A child will never open this, and that is fine: the requirement is that
+## it is available, not that it is read. The engine hands over its own text and
+## its bundled third-party notices, so nothing here has to be kept in step by
+## hand.
+func _build_licence() -> void:
+	var open := Button.new()
+	open.text = "?"
+	open.name = "About"
+	open.custom_minimum_size = Vector2(Tuning.MIN_TOUCH, Tuning.MIN_TOUCH)
+	open.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	open.offset_left = Tuning.START_EDGE_PAD
+	open.offset_top = -(Tuning.MIN_TOUCH + Tuning.START_EDGE_PAD)
+	open.offset_right = Tuning.MIN_TOUCH + Tuning.START_EDGE_PAD
+	open.offset_bottom = -Tuning.START_EDGE_PAD
+	open.add_theme_font_size_override("font_size", Tuning.TEXT_BODY)
+	add_child(open)
+
+	var panel := PanelContainer.new()
+	panel.name = "About"
+	panel.visible = false
+	# The shared modal style, or the panel draws nothing and the licence sits
+	# unreadable over the cat cards.
+	panel.add_theme_stylebox_override("panel", preload("res://ui/panel.tres"))
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(panel)
+
+	var pad := MarginContainer.new()
+	for side in ["left", "top", "right", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, Tuning.START_EDGE_PAD)
+	panel.add_child(pad)
+
+	var col := VBoxContainer.new()
+	pad.add_child(col)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(scroll)
+
+	var text := Label.new()
+	text.text = "%s\n\n%s" % [Engine.get_license_text(), _third_party()]
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.add_theme_font_size_override("font_size", Tuning.TEXT_SMALL)
+	scroll.add_child(text)
+
+	var close := Button.new()
+	close.text = "Back"
+	close.custom_minimum_size.y = Tuning.MIN_TOUCH
+	close.add_theme_font_size_override("font_size", Tuning.TEXT_BODY)
+	col.add_child(close)
+
+	open.pressed.connect(func() -> void:
+		panel.visible = true
+		close.grab_focus()
+	)
+	close.pressed.connect(func() -> void:
+		panel.visible = false
+		_play.grab_focus()
+	)
+
+
+## The engine's bundled components, several of which ask for attribution by
+## name. Read from the engine rather than listed here, so upgrading Godot
+## cannot leave this claiming something untrue.
+func _third_party() -> String:
+	var names: Array[String] = []
+	for part: Dictionary in Engine.get_copyright_info():
+		names.append(String(part["name"]))
+	return "Also includes: %s." % ", ".join(names)
