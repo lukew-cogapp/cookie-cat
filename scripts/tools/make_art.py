@@ -691,6 +691,42 @@ ICON_BOWL = [
     "................",
     "................",
 ]
+ICON_MUSIC = [
+    "................",
+    "..........oo....",
+    "........ooYYo...",
+    "......ooYYYYo...",
+    ".....oYYYYYYo...",
+    ".....oYYoooo....",
+    ".....oYYo.......",
+    ".....oYYo.......",
+    "...oooYYo.......",
+    "..oYYYoo........",
+    ".oYyYYo.........",
+    ".oYYYYo.........",
+    "..oooo..........",
+    "................",
+    "................",
+    "................",
+]
+ICON_SOUND = [
+    "................",
+    "................",
+    ".....oo.........",
+    "...ooLLo...o....",
+    "..oLLLLo...o....",
+    ".oLLLLLoo...o...",
+    ".oLLlLLLo..o....",
+    ".oLLlLLLo..o....",
+    ".oLLLLLoo...o...",
+    "..oLLLLo...o....",
+    "...ooLLo...o....",
+    ".....oo.........",
+    "................",
+    "................",
+    "................",
+    "................",
+]
 
 # A four-point twinkle for pickups and kill bursts. White core so an instance
 # tint can turn one grid gold, pink or mint.
@@ -1307,6 +1343,8 @@ SPRITES = {
     "icon_magnet": ICON_MAGNET,
     "icon_vest": ICON_VEST,
     "icon_bowl": ICON_BOWL,
+    "icon_music": ICON_MUSIC,
+    "icon_sound": ICON_SOUND,
     "cat_step_a": CAT_STEP_A,
     "cat_step_b": CAT_STEP_B,
     "grub": GRUB,

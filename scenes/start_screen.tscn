@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/start_screen.gd" id="1"]
 [ext_resource type="StyleBox" path="res://ui/panel.tres" id="2"]
@@ -6,6 +6,8 @@
 [ext_resource type="StyleBox" path="res://ui/play_hover.tres" id="4"]
 [ext_resource type="Texture2D" path="res://assets/lawn.png" id="5"]
 [ext_resource type="Texture2D" path="res://assets/cookie.png" id="6"]
+[ext_resource type="Texture2D" path="res://assets/icon_music.png" id="7"]
+[ext_resource type="Texture2D" path="res://assets/icon_sound.png" id="8"]
 
 [node name="StartScreen" type="Control"]
 anchors_preset = 15
@@ -185,13 +187,23 @@ theme_override_constants/separation = 10
 
 [node name="Music" type="Button" parent="Audio"]
 layout_mode = 2
-text = "♪ Music"
+custom_minimum_size = Vector2(104, 44)
+icon = ExtResource("7")
+text = "Music"
 theme_override_font_sizes/font_size = 20
+theme_override_constants/h_separation = 8
+theme_override_constants/icon_max_width = 32
+expand_icon = true
 
 [node name="Sound" type="Button" parent="Audio"]
 layout_mode = 2
-text = "♫ Sound"
+custom_minimum_size = Vector2(112, 44)
+icon = ExtResource("8")
+text = "Sound"
 theme_override_font_sizes/font_size = 20
+theme_override_constants/h_separation = 8
+theme_override_constants/icon_max_width = 32
+expand_icon = true
 
 [node name="Stats" type="Label" parent="."]
 anchors_preset = 8
