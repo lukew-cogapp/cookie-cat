@@ -435,10 +435,39 @@ act on.
 never replaces the live one. The web export needs no renderer change: Godot
 4.7 forces `gl_compatibility` on the web through `rendering_method.web`.
 
-**Nothing can lock a phone to landscape here, and three things that look like
-they would do not.** `window/handheld/orientation` is Android and iOS only:
+The same tag builds Android through `.github/workflows/android.yml`: an APK
+attached to the GitHub release for sideloading, and an AAB uploaded to Play's
+**internal testing** track. Never straight to production, because a Play
+release is hard to take back and the listing is worth looking at first.
+
+### Android signing
+
+The upload key is in 1Password, personal account (`lukehmu@gmail.com`), vault
+`Personal`, item **Cat vs Bugs - Android upload key**: the password, the alias
+(`upload`), the package name, and the keystore itself as an attachment. There
+is no other copy, and none in this repo.
+
+Play App Signing is on, so this is the **upload** key rather than the app
+signing key: Google holds the real one, and can reset this if it is ever lost.
+Without that, a lost key means the app can never be updated again.
+
+Certificate SHA-256, to check a build was signed with the right key:
+`4A:05:AA:FB:6A:9F:0E:0B:73:BC:43:43:7C:D2:9D:F5:3D:37:7D:24:F9:C8:D9:97:CF:1C:CA:3B:2B:55:09:96`
+
+The workflow needs four repository secrets, none of which live here:
+`ANDROID_KEYSTORE_BASE64` (the attachment, base64'd), `ANDROID_KEYSTORE_ALIAS`,
+`ANDROID_KEYSTORE_PASSWORD`, and `PLAY_SERVICE_ACCOUNT_JSON`.
+
+`minSdk` is pinned at 30 in both presets rather than left at Godot's default of
+24, which is a 2016 phone that would run this badly. `targetSdk` is 36, which
+is what Play requires of new uploads from August 2026.
+
+**On web, nothing can lock a phone to landscape, and three things that look
+like they would do not.** On Android `window/handheld/orientation` does the job
+and is set to 4 (sensor landscape); the rest of this applies to the web build,
+which is why `web/rotate.html` stays.
 `DisplayServer.screen_get_orientation` returns `SCREEN_LANDSCAPE` on every
-other platform, so it is a no-op on web. The PWA manifest's `orientation` key
+other platform, so the setting is a no-op there. The PWA manifest's `orientation` key
 only binds a page launched from the home screen in standalone display mode, and
 this game is opened from a shared link in a normal tab, so it is inert.
 `screen.orientation.lock()` needs fullscreen, which needs a tap, and Safari
