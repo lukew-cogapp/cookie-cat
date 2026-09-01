@@ -60,6 +60,7 @@ scripts/hud.gd             health bar, clock, xp bar, the pick screen
 scripts/start_screen.gd    the cat, map and hat shop
 scripts/tools/make_art.py  draws every sprite from pixel grids
 scripts/tools/store_shots.py  curates test/shots into store/screenshots
+scripts/tools/push_listing.py  sends store/ to Play through the API
 assets/*.png               16x16, all generated
 store/                     Play listing assets and copy; .gdignore, never shipped
 ui/*.tres                  shared styles
@@ -494,8 +495,11 @@ Release to testing tracks.
 A build is on the internal testing track: the API took the first bundle with no
 manual upload, so the workflow can make every release including the first.
 
-1. Upload what is in `store/`, and paste the copy from `play-listing.md`. The
-   track has a build but no testers can reach it until the listing is done.
+The listing text and images are pushed too, by `push_listing.py`.
+
+1. The Console questionnaires: content rating, target audience and Families
+   policy, data safety, category and contact details. None are in the API, and
+   they gate publishing.
 2. The closed test: 12 testers opted in for 14 continuous days before
    production is available, because the Play account is a personal one created
    after November 2023.
@@ -510,7 +514,7 @@ from the tagged release and play it before shipping.
 `store/` holds what the Play Console asks for, none of it read by the game:
 `icon_512.png` (the listing icon: the launcher cat with a 32px margin, because
 Play rounds the corners at about 30% of the width), `feature.png` (1024x500,
-24-bit with no alpha, which Play requires), six 1920x1080 screenshots (the
+24-bit with no alpha, which Play requires), seven 1920x1080 screenshots (the
 promotion bar is 16:9 at 1080p; the publish minimum is lower), and
 `play-listing.md`. A `.gdignore` keeps the directory out of the import cache
 and the export, and `store/*` is in every preset's `exclude_filter` besides.
@@ -520,6 +524,20 @@ Regenerate with `make_art.py` (icon and feature graphic), then
 (screenshots, re-encoded to the no-alpha PNG Play wants). The shot window
 holds itself on top while it runs: macOS stops presenting a covered window,
 and every later capture is then the same stale frame.
+
+`uv run --with cryptography python scripts/tools/push_listing.py` then sends
+the lot through the Publishing API, taking the copy from the fenced blocks in
+`play-listing.md` so the file a human edits is the file Play receives. It
+deletes each image kind before uploading, because uploading alone appends and a
+second run would leave two of everything. `--dry-run` prints the parsed copy
+and its lengths without a network call. The key comes from 1Password at run
+time and is never written to disk. The service account needs Store presence on
+top of Release to testing tracks; with only the latter the edit commits and the
+listing is unchanged.
+
+The questionnaires are not in the API and stay Console work: content rating,
+target audience and Families policy, data safety, category, contact details and
+the privacy policy URL.
 
 A promo video is optional and is a YouTube URL only, ads disabled on it.
 Footage can come from `godot --path . --write-movie out.avi --fixed-fps 60
