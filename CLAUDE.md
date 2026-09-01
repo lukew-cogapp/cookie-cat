@@ -536,8 +536,15 @@ top of Release to testing tracks; with only the latter the edit commits and the
 listing is unchanged.
 
 The questionnaires are not in the API and stay Console work: content rating,
-target audience and Families policy, data safety, category, contact details and
-the privacy policy URL.
+target audience and Families policy, data safety, category and contact details.
+
+The privacy policy URL Play asks for is `PRIVACY.md` in this repo, served by
+GitHub's own rendering of the blob view:
+`https://github.com/lukew-cogapp/cookie-cat/blob/main/PRIVACY.md`. A kids app
+must have one whatever it collects, and this one collects nothing. Its claims
+were read out of the source rather than remembered, so re-check them if a
+dependency or a permission is ever added: today the game makes no network
+request at all and asks for `WAKE_LOCK` alone.
 
 A promo video is optional and is a YouTube URL only, ads disabled on it.
 Footage can come from `godot --path . --write-movie out.avi --fixed-fps 60

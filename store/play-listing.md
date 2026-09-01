@@ -97,7 +97,8 @@ stay simple enough for the youngest.
 
 No data collected and no data shared. The save is local: `user://save.json`,
 or `localStorage` on the web build. There is no ad SDK, no in-app purchase, no
-analytics, no HTTP client and no Android permission requested. Checked against
+analytics and no HTTP client. The one permission requested is `WAKE_LOCK`,
+which holds the screen awake and reaches nothing. Checked against
 `scripts/`, `project.godot` and `export_presets.cfg`.
 
 ## What the copy claims, and where it is true
