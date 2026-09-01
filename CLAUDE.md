@@ -486,24 +486,24 @@ from the export dialog.
 
 ### What is left before the first release
 
-1. Google's identity verification has to clear, which is a wait rather than a
-   task. The phone check is gated behind it.
-2. Create the app in the Play Console as `io.github.lukehmu.catvsbugs`. The
-   package name is permanent once live.
-3. Invite `play-publisher@cat-vs-bugs-play.iam.gserviceaccount.com` under
-   Users and permissions, with **Release to testing tracks**. Without it the
-   key authenticates and cannot publish.
-4. Upload what is in `store/`, and paste the copy from `play-listing.md`.
-5. Run the Android workflow with `publish` ticked.
-6. The closed test: 12 testers opted in for 14 continuous days before
+Identity verification has cleared, the app exists in the Play Console as
+`io.github.lukehmu.catvsbugs` (package name now permanent), and
+`play-publisher@cat-vs-bugs-play.iam.gserviceaccount.com` is invited with
+Release to testing tracks.
+
+A build is on the internal testing track: the API took the first bundle with no
+manual upload, so the workflow can make every release including the first.
+
+1. Upload what is in `store/`, and paste the copy from `play-listing.md`. The
+   track has a build but no testers can reach it until the listing is done.
+2. The closed test: 12 testers opted in for 14 continuous days before
    production is available, because the Play account is a personal one created
    after November 2023.
 
-Nothing has been run on a real device yet. Everything about touch, the
-landscape lock, the Back button and the thumbstick is verified by reasoning
-and by screenshots, which is exactly the kind of confidence this file's own
-"what playing it taught" section exists to distrust. Sideload the APK from a
-tagged release before shipping.
+The v5 APK has been sideloaded and played on a real device: touch, the
+landscape lock, the Back button and the thumbstick all behave. That is one
+device and one session, so it retires the worry rather than the habit. Sideload
+from the tagged release and play it before shipping.
 
 ### Play listing assets
 
